@@ -31,6 +31,9 @@ struct PocketView: View {
                 try? await Task.sleep(for: .seconds(1.5))
                 typing = true
             }
+            if ProcessInfo.processInfo.arguments.contains("-mouth-demo") {   // hold both mouths open for a screenshot
+                model.puppet.setMouth(open: 0.9, wide: 1)
+            }
             #endif
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { note in

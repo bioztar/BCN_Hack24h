@@ -42,7 +42,13 @@ final class Puppet {
     private let key = SCNNode()
     private let rim = SCNNode()
     private var headNode: SCNNode?
+    private var mouthMaterials: [SCNMaterial] = []
     private var lookNow: CGFloat = 0
+    /// Lip sync: targets come from the audio analysis, the live values are smoothed (fast attack, slower release).
+    var mouthTarget: CGFloat = 0
+    var mouthWideTarget: CGFloat = 1
+    private var mouthOpen: CGFloat = 0
+    private var mouthWide: CGFloat = 1
     /// Soft contact shadow on the floor under the bust.
     private let shadow = SKShapeNode()
     private var figure: SCNNode?
@@ -129,6 +135,10 @@ final class Puppet {
         }
         shift += (shiftTarget - shift) * min(1, dt * 6)
         talk += (talkTarget - talk) * min(1, dt * 20)
+        let rate: CGFloat = mouthTarget > mouthOpen ? 40 : 18   // snappy open, softer close
+        mouthOpen += (mouthTarget - mouthOpen) * min(1, dt * rate)
+        mouthWide += (mouthWideTarget - mouthWide) * min(1, dt * 20)
+        applyMouth()
         focusNow += (focus - focusNow) * min(1, dt * 8)
 
         node.position.x = baseX + shift
@@ -203,6 +213,14 @@ final class Puppet {
         figureHolder.addChildNode(n)
         figure = n
         headNode = n.childNode(withName: "head", recursively: false)
+        mouthMaterials = n.childNodes.compactMap { $0.geometry?.firstMaterial }
+    }
+
+    private func applyMouth() {
+        for m in mouthMaterials {   // head and body share one material; setting twice is harmless
+            m.setValue(NSNumber(value: Float(mouthOpen)), forKey: "mouthOpen")
+            m.setValue(NSNumber(value: Float(mouthWide)), forKey: "mouthWide")
+        }
     }
 
     private func buildFigureScene() {

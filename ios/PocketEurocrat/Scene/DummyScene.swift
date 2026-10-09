@@ -86,14 +86,20 @@ final class DummyScene: SKScene {
             p.focus = speaker == nil || puppets.count == 1 ? 0.5 : (i == speaker ? 1 : 0)
             // The listener turns its head to the speaker; the speaker faces the camera.
             p.look = (speaker == nil || i == speaker) ? 0 : (speaker! > i ? 1 : -1)
-            if p.persona.id != id { p.talkTarget = 0 }
+            if p.persona.id != id { p.talkTarget = 0; p.mouthTarget = 0 }
         }
     }
 
-    /// 0...1 voice level of the current speaker; bobs their head.
-    func setTalk(_ level: Double, speaker id: String? = nil) {
-        let l = CGFloat(min(max(level, 0), 1))
-        for p in puppets { p.talkTarget = (id == nil || p.persona.id == id) ? l : 0 }
+    /// Lip sync for the speaker: `open` 0...1 (jaw/mouth), `wide` ~1 (narrower/wider mouth). Also bobs the head.
+    func setMouth(open: Double, wide: Double, speaker id: String? = nil) {
+        let o = CGFloat(min(max(open, 0), 1))
+        let w = CGFloat(min(max(wide, 0.7), 1.5))
+        for p in puppets {
+            let mine = id == nil || p.persona.id == id
+            p.mouthTarget = mine ? o : 0
+            p.mouthWideTarget = mine ? w : 1
+            p.talkTarget = mine ? o : 0
+        }
     }
 
     func shake() {

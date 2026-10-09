@@ -120,10 +120,10 @@ final class PocketModel {
     private func talkFor(_ seconds: Double, speaker: String) async {
         let end = Date().addingTimeInterval(seconds)
         while Date() < end, !Task.isCancelled {
-            puppet.setTalk(.random(in: 0.25...0.9), speaker: speaker)
-            try? await Task.sleep(for: .milliseconds(90))
+            puppet.setMouth(open: .random(in: 0.1...0.9), wide: .random(in: 0.9...1.2), speaker: speaker)
+            try? await Task.sleep(for: .milliseconds(110))
         }
-        puppet.setTalk(0, speaker: speaker)
+        puppet.setMouth(open: 0, wide: 1, speaker: speaker)
     }
 
     private func idleLoop() async {
@@ -240,7 +240,7 @@ final class PocketModel {
             if let s = line.stamp { showStamp(s, by: line.speaker) }
             var played = false
             if let path = await audioPath(for: line), let url = backend.resolve(path) {
-                played = await audio.play(url) { [puppet] in puppet.setTalk($0, speaker: line.speaker) }
+                played = await audio.play(url) { [puppet] open, wide in puppet.setMouth(open: open, wide: wide, speaker: line.speaker) }
             }
             if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6), speaker: line.speaker) }
         case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()

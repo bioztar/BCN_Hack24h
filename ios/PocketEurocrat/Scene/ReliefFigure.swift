@@ -14,8 +14,7 @@ enum ReliefFigure {
     private static let relief: Float = 0.9
     /// Cells over which depth ramps up from the silhouette, so edges roll off instead of cliffing.
     private static let edgeRamp: Float = 7
-    /// Neck line as a fraction of the image height from the top, and the overlap (rows) between head and body.
-    static let neckFraction: Float = 0.43
+    /// Overlap (rows) between the head and body meshes, so the head can turn without opening a crack.
     private static let overlapRows = 6
 
     private static var cache: [String: SCNNode] = [:]
@@ -28,9 +27,6 @@ enum ReliefFigure {
         cache[key] = built
         return built.clone()
     }
-
-    /// Neck pivot in figure units (y up, 0 = middle of the figure).
-    static var neckY: Float { (0.5 - neckFraction) * height }
 
     // MARK: true 3D (swap contract)
 
@@ -49,6 +45,44 @@ enum ReliefFigure {
         return outer
     }
 
+    // MARK: lip sync shaders (uniforms set per frame by Puppet: mouthOpen 0...1, mouthWide ~0.8...1.4)
+
+    /// Jaw drop: vertices under the mouth line slide down, weighted by distance from the mouth centre and
+    /// fading out towards the neck, so the chin follows the open mouth.
+    private static let jawShader = """
+    #pragma arguments
+    float mouthOpen;
+    float mouthWide;
+    float mouthU;
+    float mouthV;
+    float mouthHW;
+    float mouthHH;
+    #pragma body
+    float2 uv = _geometry.texcoords[0];
+    float dx = (uv.x - mouthU) / (mouthHW * 1.7 * mouthWide);
+    float wx = exp(-dx * dx);
+    float below = smoothstep(mouthV - mouthHH, mouthV + mouthHH, uv.y);
+    float chin = 1.0 - smoothstep(mouthV + 0.07, mouthV + 0.20, uv.y);
+    _geometry.position.y -= mouthOpen * 0.11 * wx * below * chin;
+    """
+
+    /// Dark mouth interior: an ellipse in texture space (stretched by the jaw drop) fades to near-black.
+    private static let mouthShader = """
+    #pragma arguments
+    float mouthOpen;
+    float mouthWide;
+    float mouthU;
+    float mouthV;
+    float mouthHW;
+    float mouthHH;
+    #pragma body
+    float2 uv = _surface.diffuseTexcoord;
+    float2 d = float2((uv.x - mouthU) / (mouthHW * mouthWide), (uv.y - mouthV) / mouthHH);
+    float inside = 1.0 - smoothstep(0.55, 1.0, length(d));
+    float k = inside * smoothstep(0.03, 0.18, mouthOpen);
+    _surface.diffuse.rgb = mix(_surface.diffuse.rgb, float3(0.06, 0.015, 0.02), k);
+    """
+
     // MARK: photo-relief
 
     private static func relief(officer: Persona, expression: DummyScene.Expression) -> SCNNode {
@@ -62,8 +96,17 @@ enum ReliefFigure {
         material.diffuse.contents = image
         material.lightingModel = .lambert
         material.isDoubleSided = true
+        if let m = MouthStore.rect(for: "\(officer.id)-\(expression.rawValue)") {
+            material.shaderModifiers = [.geometry: jawShader, .surface: mouthShader]
+            for (key, value) in [("mouthU", m.u), ("mouthV", m.v), ("mouthHW", m.hw), ("mouthHH", m.hh), ("mouthOpen", 0), ("mouthWide", 1)] {
+                material.setValue(NSNumber(value: value), forKey: key)
+            }
+        }
 
-        let neckRow = Int(neckFraction * Float(rows - 1))
+        // Split below the chin so the seam never crosses the mouth: mouth line + a face-height allowance.
+        let neckV = min(max((MouthStore.rect(for: "\(officer.id)-\(expression.rawValue)")?.v ?? 0.31) + 0.12, 0.40), 0.60)
+        let neckY = (0.5 - neckV) * height
+        let neckRow = Int(neckV * Float(rows - 1))
         let body = mesh(field: field, width: width, material: material, rows: (neckRow - overlapRows)..<(rows - 1))
         body.name = "body"
         let head = mesh(field: field, width: width, material: material, rows: 0..<(neckRow + overlapRows))
