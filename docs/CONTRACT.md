@@ -11,7 +11,8 @@ Change it only through helm. Demo is **2026-10-10** — favour working over perf
 | `content/personas/*.yaml` | **Lane B** | from `docs/PERSONA.md` roster, all 10 |
 | `packages/shared/` | **Lane B** creates it **first commit**, exactly as below | Lane A imports, never edits |
 | `packages/server/`, `corpus/`, `Dockerfile`, `compose.yaml`, `.env.example` | **Lane B** | |
-| `packages/web/` | **Lane A** | built by Vite, served by the server as static files from `packages/web/dist` |
+| `packages/web/` | **Lane A** | built by Vite, served by the server as static files from `packages/web/dist` at `/` |
+| `packages/pocket/` | **Lane C** | the phone app (PWA) — built by Vite, served from `packages/pocket/dist` at `/pocket/` |
 | `docs/` | helm | |
 
 Root: npm workspaces (`"workspaces": ["packages/*"]`), Node ≥ 22, TypeScript, ESM, vitest.
@@ -76,7 +77,7 @@ export interface WallEntry { speaker: PersonaId; text: string; at: string; }  //
 | Method + path | Body / query | Returns |
 |---|---|---|
 | `GET /api/personas` | — | `Persona[]` |
-| `POST /api/case` | `{ submission: Submission, officers?: [PersonaId, PersonaId] }` | `Case` (officers random pair from the roster's pairings if omitted) |
+| `POST /api/case` | `{ submission: Submission, officers?: [PersonaId, PersonaId] }` | `Case` (officers: one of the three fixed pairs in PERSONA.md, random, if omitted; the roster's pairings if omitted) |
 | `GET /api/case/:caseId/stream` | SSE | `RoastEvent`s for the current round; ends after `awaiting` or `verdict` |
 | `POST /api/case/:caseId/reply` | `{ text: string }` | `204`; next round streams on a fresh `GET …/stream`; each reply raises the tier; tier 5 ends in `verdict` |
 | `POST /api/stt` | raw audio body (`audio/webm` from MediaRecorder) | `{ text: string }` |
@@ -92,7 +93,8 @@ Errors: JSON `{ error: string }` with a proper status; 429 from the rate limiter
 - Every `Provision` in any event resolved from the corpus index. A model-proposed id not in
   the index is **dropped and the line regenerated or reworded without it** — never sent.
 - `audioUrl` may be `null` if TTS fails; the line still arrives (Lane A shows subtitles).
-- Wall gets the officials' lines only, after moderation. Never visitor text.
+- Wall gets the officials' lines only. Never visitor text. No moderation filter (Vitaly, 2026-10-09).
+- `GET /api/pairs` → `{ id: string; officers: [PersonaId, PersonaId] }[]` — the three fixed pairs.
 - Repo intake per PLAN.md "Repo intake rules".
 - First `line` event within ~6 s of opening the stream.
 

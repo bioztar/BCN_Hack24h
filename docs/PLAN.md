@@ -127,7 +127,7 @@ Hours count from kickoff (T0). Demo at T24 unless B1 says otherwise.
 - Repo intake rejects non-GitHub URLs, private repos and redirects; a README containing
   "ignore previous instructions" gets roasted, not obeyed.
 - The card downloads with both stamps, the fine and a working EUR-Lex QR.
-- The wall shows only the officials' lines; moderation blocks a seeded abusive input.
+- The wall shows only the officials' lines (no moderation filter, by Vitaly's call).
 - The live URL survives 30 concurrent visitors (rate-limited, no 500s).
 - Nothing in `PERSONA.md` hard rules is violated in 20 consecutive test roasts.
 
@@ -140,7 +140,7 @@ Hours count from kickoff (T0). Demo at T24 unless B1 says otherwise.
 | Hallucinated article numbers | Validator in L2 is an acceptance criterion |
 | Hostile repo / README injection / SSRF | Intake rules above; content is data, never instructions |
 | Provider filter kills a line on stage | Targets rule in PERSONA.md; canned fallback line per tier |
-| Audience trolls the wall | Officials' text only + moderation pass |
+| Audience trolls the wall | Officials' text only (visitor text never shown) |
 | TTS latency kills timing | Stamp/sigh clips and SFX cover the gap; stream TTS |
 | warden not merged by the event | Grounding starts on EU-AI-Act + GDPR; warden added when ready |
 
@@ -158,3 +158,7 @@ Hours count from kickoff (T0). Demo at T24 unless B1 says otherwise.
   radically different personas added (PERSONA.md), visitor is assigned a pair; fal cap
   **$20 total**, short cheap clips, optional fal image-to-3D busts + procedural three.js
   stamp. `docs/CONTRACT.md` written; Karen reference code in `docs/reference/karen/`.
+- 2026-10-09 19:30 — v1.3 (Vitaly): three fixed pairs (1+2, 4+6, 8+10); **no moderation
+  filter** on the officials' lines; new **Lane C — pocket Eurocrat**, a phone app (PWA at
+  `/pocket/`): a mini 3D official that slides and tumbles as you tilt the phone, shake to
+  get stamped, dictate a pitch to get roasted.
