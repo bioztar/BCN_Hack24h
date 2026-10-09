@@ -6,7 +6,6 @@ import { Corpus } from "../src/corpus.js";
 import { openDb } from "../src/db.js";
 import { Engine } from "../src/engine.js";
 import type { Llm, LlmRequest } from "../src/llm.js";
-import { Moderator } from "../src/moderation.js";
 import { Roster } from "../src/personas.js";
 import { RateLimiter } from "../src/ratelimit.js";
 import { GitHubIntake } from "../src/repo.js";
@@ -23,7 +22,7 @@ export function chunked(text: string, size = 17): AsyncIterable<string> {
   })();
 }
 
-/** Fake Nebius: answers moderation, meta extraction and roast prompts. Records every request. */
+/** Fake Nebius: answers meta extraction and roast prompts. Records every request. */
 export class FakeLlm implements Llm {
   readonly calls: LlmRequest[] = [];
   failRoast = false;
@@ -32,7 +31,6 @@ export class FakeLlm implements Llm {
   stream(req: LlmRequest): AsyncIterable<string> {
     this.calls.push(req);
     const sys = req.messages[0]!.content;
-    if (sys.includes("content moderator")) return chunked(/BLOCKME/.test(req.messages[1]!.content) ? "BLOCK" : "ALLOW");
     if (sys.includes("Extract from the pitch")) return chunked(JSON.stringify({ revenueEur: this.revenue, startup: "Fridgely" }));
     if (this.failRoast) return (async function* () { throw new Error("nebius 503"); })();
     const ids = [...sys.matchAll(/- id "([^"]+)"/g)].map((m) => m[1]!);
@@ -100,7 +98,7 @@ export function entries(dir: string, names: string[]) {
   return names.map((n) => ({ name: n.replace(/\/$/, ""), path: dir ? `${dir}/${n.replace(/\/$/, "")}` : n.replace(/\/$/, ""), type: n.endsWith("/") ? ("dir" as const) : ("file" as const) }));
 }
 
-export function makeApp(opts: { llm?: FakeLlm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number } = {}) {
+export function makeApp(opts: { llm?: FakeLlm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string } = {}) {
   const db = openDb(":memory:");
   const llm = opts.llm === undefined ? new FakeLlm() : opts.llm;
   const tts = opts.tts ?? new FakeTts();
@@ -108,12 +106,14 @@ export function makeApp(opts: { llm?: FakeLlm | null; tts?: FakeTts; github?: ty
   const wall = new Wall(db);
   const app = buildApp({
     db, corpus, roster, engine, wall,
-    moderator: new Moderator(llm, profiles.cheap),
     limiter: new RateLimiter(db, () => opts.perHour ?? 1000),
     audio: new AudioCache(tts, null),
     stt: new FakeStt(),
     intake: new GitHubIntake(opts.github ?? fakeGitHub({ tree: { "": [] }, files: {} }).impl, () => undefined),
     rand: () => 0,
+    webDir: opts.webDir,
+    pocketDir: opts.pocketDir,
+    assetsDir: opts.assetsDir,
   });
   return { app, db, llm, tts, wall, engine };
 }

@@ -25,6 +25,18 @@ export interface PersonaSpec {
   canned: Partial<Record<Tier, CannedLine>>;
 }
 
+export interface Pair {
+  id: string;
+  officers: [PersonaId, PersonaId];
+}
+
+/** The three fixed double acts (PERSONA.md "The pairs", Vitaly 2026-10-09). */
+export const PAIRS: Pair[] = [
+  { id: "commission", officers: ["formblatt", "annexe"] },
+  { id: "basement", officers: ["grandma-gdpr", "auditor-9000"] },
+  { id: "raid", officers: ["de-vries", "the-cookie"] },
+];
+
 export const DEFAULT_PAIR: [PersonaId, PersonaId] = ["formblatt", "annexe"];
 
 export class Roster {
@@ -53,23 +65,15 @@ export class Roster {
     return this.byId.get(id);
   }
 
-  /** The double acts from PERSONA.md, derived from each YAML's `partner`. */
-  pairs(): [PersonaId, PersonaId][] {
-    const out: [PersonaId, PersonaId][] = [];
-    const seen = new Set<string>();
-    for (const s of this.specs) {
-      if (!s.partner || !this.byId.has(s.partner)) continue;
-      const key = [s.id, s.partner].sort().join("|");
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push([s.id, s.partner]);
-    }
-    return out.length ? out : [DEFAULT_PAIR];
+  /** The fixed pairs whose officers are both in the roster. */
+  pairs(): Pair[] {
+    return PAIRS.filter((p) => p.officers.every((o) => this.byId.has(o)));
   }
 
   randomPair(rand: () => number = Math.random): [PersonaId, PersonaId] {
     const pairs = this.pairs();
-    return pairs[Math.floor(rand() * pairs.length)] ?? DEFAULT_PAIR;
+    const pick = pairs[Math.floor(rand() * pairs.length)];
+    return pick ? [pick.officers[0], pick.officers[1]] : DEFAULT_PAIR;
   }
 
   toPersona(id: PersonaId): Persona {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GENERIC_CANNED, extractObjects, scanObjects } from "../src/engine.js";
 import { AI_ACT_BASIS, GDPR_BASIS, calculateFine, extractRevenueHeuristic } from "../src/fine.js";
-import { quotesVisitor, ruleCheck } from "../src/moderation.js";
+import { quotesVisitor } from "../src/visitor.js";
 import { FINDING_PROVISIONS } from "../src/repo.js";
 import { validateLine } from "../src/validator.js";
 import { corpus, roster } from "./helpers.js";
@@ -43,14 +43,7 @@ describe("fine calculator", () => {
   });
 });
 
-describe("moderation rules", () => {
-  it("blocks protected-group and body content, allows institutional satire", () => {
-    expect(ruleCheck("Your pitch is as old as the Council's coffee machine.").ok).toBe(true);
-    expect(ruleCheck("Refused, because of your religion.").ok).toBe(false);
-    expect(ruleCheck("Refused, because of your weight.").ok).toBe(false);
-    expect(ruleCheck("Your burn rate is a fire hazard and your deck is a crime.").ok).toBe(true);
-    expect(ruleCheck("Look at your face.").ok).toBe(false);
-  });
+describe("wall guard", () => {
   it("detects copied visitor text", () => {
     expect(quotesVisitor("He said we are the uber for fridges in europe", ["we are the uber for fridges in europe, buy now"])).toBe(true);
     expect(quotesVisitor("Refused for fridge reasons.", ["we are the uber for fridges in europe"])).toBe(false);
@@ -67,11 +60,18 @@ describe("model output parsing", () => {
 });
 
 describe("content data", () => {
-  it("has ten personas with distinct voices and paired double acts", () => {
+  it("has ten personas with distinct voices and exactly the three fixed pairs", () => {
     expect(roster.specs).toHaveLength(10);
     expect(new Set(roster.specs.map((s) => s.voice.voice)).size).toBe(10);
-    for (const s of roster.specs) expect(s.partner && roster.get(s.partner), s.id).toBeTruthy();
-    expect(roster.pairs().length).toBeGreaterThanOrEqual(5);
+    expect(roster.pairs()).toEqual([
+      { id: "commission", officers: ["formblatt", "annexe"] },
+      { id: "basement", officers: ["grandma-gdpr", "auditor-9000"] },
+      { id: "raid", officers: ["de-vries", "the-cookie"] },
+    ]);
+    for (const p of roster.pairs()) {
+      expect(roster.get(p.officers[0])!.partner).toBe(p.officers[1]);
+      expect(roster.get(p.officers[1])!.partner).toBe(p.officers[0]);
+    }
   });
   it("every hard-coded provision id exists in the index", () => {
     const ids = [
@@ -80,9 +80,6 @@ describe("content data", () => {
       ...Object.values(GENERIC_CANNED).flatMap((c) => c.provisions),
     ];
     for (const id of ids) expect(corpus.has(id), id).toBe(true);
-  });
-  it("canned lines pass the moderation rules", () => {
-    for (const s of roster.specs) for (const c of Object.values(s.canned)) expect(ruleCheck(c!.text).ok, `${s.id}: ${c!.text}`).toBe(true);
   });
   it("persona wire shape omits missing asset files", () => {
     const p = roster.toPersona("formblatt");

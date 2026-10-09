@@ -3,7 +3,6 @@ id: kevin
 name: "Kevin from Compliance"
 title: "Certified AI Governance Practitioner (pending)"
 color: "#00a3a3"
-partner: grandma-gdpr
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-apollo-en"

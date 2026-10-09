@@ -3,7 +3,7 @@ id: de-vries
 name: "Inspector Pim de Vries"
 title: "NIS2 Incident Response Unit"
 color: "#d7263d"
-partner: trilogue
+partner: the-cookie
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-mars-en"

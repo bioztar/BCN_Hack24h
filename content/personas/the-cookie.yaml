@@ -3,7 +3,7 @@ id: the-cookie
 name: "The Cookie"
 title: "A sentient consent banner"
 color: "#c68642"
-partner: sandbox
+partner: de-vries
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-iris-en"

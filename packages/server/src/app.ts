@@ -9,8 +9,8 @@ import type { Corpus } from "./corpus.js";
 import { nextCounter, type Db } from "./db.js";
 import { CaseStore } from "./cases.js";
 import type { CaseState, Engine } from "./engine.js";
-import type { Moderator } from "./moderation.js";
 import type { Roster } from "./personas.js";
+import { quotesVisitor } from "./visitor.js";
 import type { RateLimiter } from "./ratelimit.js";
 import { IntakeError, type GitHubIntake } from "./repo.js";
 import { Sse } from "./sse.js";
@@ -22,13 +22,13 @@ export interface AppDeps {
   corpus: Corpus;
   roster: Roster;
   engine: Engine;
-  moderator: Moderator;
   wall: Wall;
   limiter: RateLimiter;
   audio: AudioCache;
   stt: Stt;
   intake: GitHubIntake;
   webDir?: string;
+  pocketDir?: string;
   assetsDir?: string;
   /** Max wait for TTS before a line goes out with `audioUrl: null`. */
   ttsBudgetMs?: number;
@@ -95,6 +95,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
   app.get("/api/health", async () => ({ ok: true }));
   app.get("/api/personas", async () => d.roster.all());
+  app.get("/api/pairs", async () => d.roster.pairs());
 
   app.get<{ Params: { id: string } }>("/api/provision/:id", async (req, reply) => {
     const p = d.corpus.provision(req.params.id);
@@ -172,12 +173,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         const provisions = line.provisions.map((id) => d.corpus.provision(id)).filter((p): p is NonNullable<typeof p> => Boolean(p));
         push({ type: "line", id: `${state.caseId}-${state.round}-${n++}`, speaker: line.speaker, text: line.text, provisions, clip: line.clip, audioUrl, ...(line.stamp ? { stamp: line.stamp } : {}) });
         state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
-        const at = new Date().toISOString();
-        track(
-          d.moderator.forWall(line.text, visitorTexts(state)).then((m) => {
-            if (m.ok) d.wall.add({ speaker: line.speaker, text: line.text, at });
-          }),
-        );
+        if (!quotesVisitor(line.text, visitorTexts(state))) d.wall.add({ speaker: line.speaker, text: line.text, at: new Date().toISOString() });
       }
       if (state.tier === 5) {
         state.notice = d.engine.notice(state, await meta!);
@@ -267,15 +263,19 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     return reply.header("content-type", a.contentType).header("cache-control", "public, max-age=31536000, immutable").send(a.audio);
   });
 
-  const hasWeb = Boolean(d.webDir && existsSync(d.webDir));
-  if (d.assetsDir && existsSync(d.assetsDir)) {
-    void app.register(fastifyStatic, { root: d.assetsDir, prefix: "/assets/generated/", decorateReply: !hasWeb, index: false });
-  }
-  if (hasWeb) void app.register(fastifyStatic, { root: d.webDir!, prefix: "/", wildcard: true });
+  // Static roots; any missing directory is skipped. Only the first registration decorates reply.
+  const roots = [
+    { root: d.assetsDir, prefix: "/assets/generated/", spa: false },
+    { root: d.pocketDir, prefix: "/pocket/", spa: true },
+    { root: d.webDir, prefix: "/", spa: true },
+  ].filter((r): r is { root: string; prefix: string; spa: boolean } => Boolean(r.root && existsSync(r.root)));
+  roots.forEach((r, i) => void app.register(fastifyStatic, { root: r.root, prefix: r.prefix, decorateReply: i === 0, index: r.spa ? ["index.html"] : false, wildcard: true }));
 
   app.setNotFoundHandler((req, reply) => {
-    if (hasWeb && req.method === "GET" && !req.url.startsWith("/api/") && !req.url.startsWith("/assets/") && existsSync(`${d.webDir}/index.html`)) {
-      return reply.type("text/html").sendFile("index.html");
+    if (req.method === "GET" && !req.url.startsWith("/api/") && !req.url.startsWith("/assets/")) {
+      // SPA fallback: /pocket/* → pocket/index.html, everything else → web/index.html.
+      const spa = roots.find((r) => r.spa && req.url.startsWith(r.prefix) && existsSync(`${r.root}/index.html`));
+      if (spa) return reply.type("text/html").sendFile("index.html", spa.root);
     }
     return fail(reply, 404, "not found");
   });

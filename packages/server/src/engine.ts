@@ -1,7 +1,7 @@
 /**
  * The persona engine. One round = the double act's 3–5 lines for the current tier, streamed
  * from Nebius as one JSON object per line, each validated (speaker, clip, stamp, provisions,
- * moderation) before it is emitted. Model failure → canned lines; the stage is never silent.
+ * citations) before it is emitted. Model failure → canned lines; the stage is never silent.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { parse } from "yaml";
@@ -10,7 +10,6 @@ import type { Profile } from "./config.js";
 import type { Corpus } from "./corpus.js";
 import { calculateFine, extractRevenueHeuristic } from "./fine.js";
 import type { Llm, LlmRequest } from "./llm.js";
-import { ruleCheck } from "./moderation.js";
 import type { PersonaSpec, Roster } from "./personas.js";
 import { FINDING_PROVISIONS } from "./repo.js";
 import { validateLine } from "./validator.js";
@@ -166,15 +165,15 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
   }
 
   /** Turns one raw model object into a safe line, or null if unusable. */
-  shape(raw: unknown, state: CaseState, index: number): LineOut | null {
+  /** `slot` = position in the whole case, so speakers alternate across rounds. */
+  shape(raw: unknown, state: CaseState, slot: number): LineOut | null {
     if (!raw || typeof raw !== "object") return null;
     const o = raw as Record<string, unknown>;
     if (typeof o.text !== "string" || !o.text.trim()) return null;
-    const speaker = state.officers.includes(o.speaker as string) ? (o.speaker as string) : state.officers[(state.lines.length + index) % 2]!;
+    const speaker = state.officers.includes(o.speaker as string) ? (o.speaker as string) : state.officers[slot % 2]!;
     const provisions = Array.isArray(o.provisions) ? o.provisions.filter((p): p is string => typeof p === "string") : [];
     const v = validateLine({ text: o.text.trim().slice(0, 400), provisions }, this.d.corpus);
     if (v.dropped.length) this.d.log?.("dropped unknown provisions", { dropped: v.dropped });
-    if (!ruleCheck(v.text).ok) return null;
     const clip = CLIP_SLOTS.includes(o.clip as ClipSlot) ? (o.clip as ClipSlot) : "talking";
     const stamp = STAMPS.includes(o.stamp as Stamp) ? (o.stamp as Stamp) : undefined;
     const charge = typeof o.charge === "string" && o.charge.trim() ? o.charge.trim().slice(0, 120) : undefined;
@@ -187,13 +186,49 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     return { speaker, text: v.text, provisions: v.provisions, clip: `tier${state.tier}` as ClipSlot };
   }
 
-  /** Streams validated lines as they arrive. Falls back model → fallback model → canned. */
-  async *lines(state: CaseState): AsyncGenerator<LineOut> {
+  /**
+   * Streams validated lines as they arrive. Model → fallback model → canned top-up to 3 lines.
+   * If the model has produced nothing after `firstLineMs`, a canned line opens the round so the
+   * first `line` event lands within the contract's ~6 s; model lines follow when they arrive.
+   */
+  async *lines(state: CaseState, firstLineMs = 5000): AsyncGenerator<LineOut> {
+    const base = state.lines.length;
     const produced: LineOut[] = [];
-    const cands = this.candidates(state);
-    const messages = this.buildMessages(state, cands);
+    const cannedFor = (slot: number): LineOut => {
+      const speaker = state.officers[slot % 2]!;
+      const own = this.canned(state, speaker);
+      return produced.some((l) => l.text === own.text) ? { speaker, ...validateLine(GENERIC_CANNED[state.tier], this.d.corpus), clip: "talking" } : own;
+    };
+    const model = this.modelLines(state, base, produced)[Symbol.asyncIterator]();
+    let next = model.next();
+    const timer = new Promise<"late">((r) => setTimeout(() => r("late"), firstLineMs).unref?.());
+    const first = await Promise.race([next, timer]);
+    if (first === "late") {
+      const line = cannedFor(base);
+      produced.push(line);
+      yield line;
+    }
+    for (;;) {
+      const r = await next;
+      if (r.done) break;
+      if (produced.length < 5) {
+        produced.push(r.value);
+        yield r.value;
+      }
+      next = model.next();
+    }
+    while (produced.length < 3) {
+      const line = cannedFor(base + produced.length);
+      produced.push(line);
+      yield line;
+    }
+  }
+
+  private async *modelLines(state: CaseState, base: number, produced: LineOut[]): AsyncGenerator<LineOut> {
     const p = this.d.profile();
     const models = this.d.llm ? [p.model, p.fallback].filter((m): m is string => Boolean(m)) : [];
+    if (!models.length) return;
+    const messages = this.buildMessages(state, this.candidates(state));
     for (const model of models) {
       if (produced.length >= 3) break;
       let buf = "";
@@ -206,11 +241,8 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
           buf = buf.slice(consumed);
           for (const obj of objects) {
             seen++;
-            const line = this.shape(obj, state, produced.length);
-            if (line && produced.length < 5) {
-              produced.push(line);
-              yield line;
-            }
+            const line = this.shape(obj, state, base + produced.length);
+            if (line && produced.length < 5) yield line;
           }
           if (produced.length >= 5) break;
         }
@@ -218,17 +250,6 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
       } catch (err) {
         this.d.log?.("model call failed", { model, error: err instanceof Error ? err.message : String(err) });
       }
-    }
-    // Canned top-up: the stage never goes silent and every round has at least 3 lines.
-    let i = produced.length;
-    while (produced.length < 3) {
-      const speaker = state.officers[(state.lines.length + i) % 2]!;
-      const line = produced.some((l) => l.speaker === speaker && l.text === this.canned(state, speaker).text)
-        ? { speaker, ...GENERIC_CANNED[state.tier], clip: "talking" as ClipSlot }
-        : this.canned(state, speaker);
-      produced.push(line);
-      yield line;
-      i++;
     }
   }
 
@@ -252,7 +273,7 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
         })) out += d;
         const obj = extractObjects(out, true)[0] as { revenueEur?: unknown; startup?: unknown } | undefined;
         if (revenue === null && typeof obj?.revenueEur === "number" && obj.revenueEur >= 0) revenue = obj.revenueEur;
-        if (typeof obj?.startup === "string" && obj.startup.trim() && ruleCheck(obj.startup).ok) startup = obj.startup.trim().slice(0, 60);
+        if (typeof obj?.startup === "string" && obj.startup.trim()) startup = obj.startup.trim().slice(0, 60);
       } catch (err) {
         this.d.log?.("meta extraction failed", { error: err instanceof Error ? err.message : String(err) });
       }

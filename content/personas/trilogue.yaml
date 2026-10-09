@@ -3,7 +3,6 @@ id: trilogue
 name: "The Trilogue"
 title: "Commission, Parliament and Council, in one grey suit"
 color: "#4b5d4f"
-partner: de-vries
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-zeus-en"

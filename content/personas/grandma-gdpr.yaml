@@ -3,7 +3,7 @@ id: grandma-gdpr
 name: "Oma Gerda"
 title: "Knitting in the corner of the DPO's office"
 color: "#b5651d"
-partner: kevin
+partner: auditor-9000
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-vesta-en"

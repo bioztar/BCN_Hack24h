@@ -25,6 +25,7 @@ export const paths = {
   gags: () => path.join(REPO_ROOT, "content", "gags.yaml"),
   assets: () => path.join(REPO_ROOT, "assets", "generated"),
   web: () => path.join(REPO_ROOT, "packages", "web", "dist"),
+  pocket: () => path.join(REPO_ROOT, "packages", "pocket", "dist"),
   data: () => process.env.DATA_DIR || path.join(REPO_ROOT, "data"),
 };
 

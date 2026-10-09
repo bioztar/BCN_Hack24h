@@ -3,7 +3,7 @@ id: auditor-9000
 name: "AUDITOR-9000"
 title: "1987 mainframe, Berlaymont basement"
 color: "#33ff66"
-partner: chad
+partner: grandma-gdpr
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-orpheus-en"

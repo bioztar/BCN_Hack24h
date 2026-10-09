@@ -3,7 +3,6 @@ id: chad
 name: "Chad Whitmore III"
 title: "Head of EU Policy, a US Big Tech firm (fictional)"
 color: "#ff6b35"
-partner: auditor-9000
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-arcas-en"

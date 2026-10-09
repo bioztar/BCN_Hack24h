@@ -5,7 +5,6 @@ import { buildApp } from "./app.js";
 import { Corpus } from "./corpus.js";
 import { openDb } from "./db.js";
 import { Engine, loadGags } from "./engine.js";
-import { Moderator } from "./moderation.js";
 import { NebiusLlm } from "./nebius.js";
 import { Roster } from "./personas.js";
 import { RateLimiter } from "./ratelimit.js";
@@ -30,13 +29,13 @@ const app = buildApp({
   corpus,
   roster,
   engine,
-  moderator: new Moderator(llm, profiles.cheap),
   wall: new Wall(db),
   limiter: new RateLimiter(db, rateLimitPerHour),
   audio: new AudioCache(new SlngTts(slngConfig), path.join(dataDir, "audio"), (m) => console.warn(m)),
   stt: new SlngStt(slngConfig),
   intake: new GitHubIntake(),
   webDir: paths.web(),
+  pocketDir: paths.pocket(),
   assetsDir: paths.assets(),
   logger: true,
 });

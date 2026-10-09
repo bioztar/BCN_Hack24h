@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Notice, RoastEvent } from "@dg-roast/shared";
 import { parseSse } from "../src/sse.js";
@@ -109,7 +112,7 @@ describe("full case, tier 1 → 5 (mocked Nebius + SLNG)", () => {
   it("works with no model configured at all (canned only) through to the verdict", async () => {
     const { app } = makeApp({ llm: null });
     const c = (await app.inject({ method: "POST", url: "/api/case", payload: { submission: { kind: "text", text: "Pre-revenue, €300k ARR soon" } } })).json() as { caseId: string; officers: string[] };
-    expect(c.officers).toHaveLength(2);
+    expect(c.officers).toEqual(["formblatt", "annexe"]);
     let last: RoastEvent[] = await stream(app, c.caseId);
     for (let i = 0; i < 4; i++) {
       await app.inject({ method: "POST", url: `/api/case/${c.caseId}/reply`, payload: { text: "please" } });
@@ -180,6 +183,35 @@ describe("misc endpoints", () => {
     expect(stt.json()).toEqual({ text: "heard 8 bytes of audio/webm;codecs=opus" });
     expect((await app.inject({ method: "POST", url: "/api/stt", headers: { "content-type": "text/plain" }, payload: "hi" })).statusCode).toBe(415);
     expect((await app.inject({ method: "GET", url: "/api/audio/deadbeef.mp3" })).statusCode).toBe(404);
+  });
+
+  it("pairs endpoint and random assignment use the three fixed pairs", async () => {
+    const { app } = makeApp();
+    const pairs = (await app.inject({ method: "GET", url: "/api/pairs" })).json() as { id: string; officers: string[] }[];
+    expect(pairs.map((p) => p.id)).toEqual(["commission", "basement", "raid"]);
+    expect(pairs[2]!.officers).toEqual(["de-vries", "the-cookie"]);
+  });
+
+  it("serves web at /, pocket at /pocket/ and generated assets, with SPA fallback", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "roast-static-"));
+    for (const [rel, body] of [["web/index.html", "WEB"], ["pocket/index.html", "POCKET"], ["assets/still/formblatt-neutral.png", "PNG"]] as const) {
+      mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      writeFileSync(path.join(dir, rel), body);
+    }
+    const { app } = makeApp({ webDir: path.join(dir, "web"), pocketDir: path.join(dir, "pocket"), assetsDir: path.join(dir, "assets") });
+    expect((await app.inject({ method: "GET", url: "/" })).payload).toBe("WEB");
+    expect((await app.inject({ method: "GET", url: "/pocket/" })).payload).toBe("POCKET");
+    expect((await app.inject({ method: "GET", url: "/pocket/deep/link" })).payload).toBe("POCKET");
+    expect((await app.inject({ method: "GET", url: "/case/123" })).payload).toBe("WEB");
+    expect((await app.inject({ method: "GET", url: "/assets/generated/still/formblatt-neutral.png" })).payload).toBe("PNG");
+    expect((await app.inject({ method: "GET", url: "/assets/generated/still/missing.png" })).statusCode).toBe(404);
+    expect((await app.inject({ method: "GET", url: "/api/nope" })).statusCode).toBe(404);
+  });
+
+  it("starts with every static dir missing", async () => {
+    const { app } = makeApp({ webDir: "/nonexistent/web", pocketDir: "/nonexistent/pocket", assetsDir: "/nonexistent/assets" });
+    expect((await app.inject({ method: "GET", url: "/api/health" })).statusCode).toBe(200);
+    expect((await app.inject({ method: "GET", url: "/" })).statusCode).toBe(404);
   });
 
   it("wall stream replays the last 30 on connect", async () => {

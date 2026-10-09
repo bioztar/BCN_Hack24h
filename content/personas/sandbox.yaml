@@ -3,7 +3,6 @@ id: sandbox
 name: "Baroness Brigitte von Sandbox"
 title: "Head of the Regulatory Sandbox"
 color: "#e0b0ff"
-partner: the-cookie
 voice:
   model: "deepgram/aura:2"
   voice: "aura-2-cordelia-en"
