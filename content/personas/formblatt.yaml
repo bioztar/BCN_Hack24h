@@ -5,8 +5,8 @@ title: "Senior Rapporteur, Unit C.4 (Pre-Conformity)"
 color: "#8a8f98"
 partner: annexe
 voice:
-  model: "deepgram/aura:2"
-  voice: "aura-2-draco-en"
+  model: "slng/fish/tts:s2.1-pro"
+  voice: "79d0bd3e4e5444b18f7b6d89b5927bf1"  # Fish stock "Jordan" — same as assets/manifest.yaml voices.formblatt
 register: "Weary paternal contempt, 71. Slow, wheezes before important words, long pauses he considers a form of power. Speaks in procedure: every idea is a minor administrative inconvenience to be filed, then lost. Sighs are part of the script."
 pinch:
   - "Pick one concrete detail of the pitch (a word, a number, a tool) and treat it as an irregularity in a form."

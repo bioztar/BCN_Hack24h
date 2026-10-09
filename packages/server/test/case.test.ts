@@ -182,7 +182,21 @@ describe("misc endpoints", () => {
     expect(stt.statusCode).toBe(200);
     expect(stt.json()).toEqual({ text: "heard 8 bytes of audio/webm;codecs=opus" });
     expect((await app.inject({ method: "POST", url: "/api/stt", headers: { "content-type": "text/plain" }, payload: "hi" })).statusCode).toBe(415);
+    for (const type of ["audio/mp4", "audio/m4a", "audio/x-m4a"]) {
+      const r = await app.inject({ method: "POST", url: "/api/stt", headers: { "content-type": type }, payload: Buffer.from("m4adata") });
+      expect(r.statusCode).toBe(200);
+      expect(r.json()).toEqual({ text: `heard 7 bytes of ${type}` });
+    }
     expect((await app.inject({ method: "GET", url: "/api/audio/deadbeef.mp3" })).statusCode).toBe(404);
+  });
+
+  it("redirects / to /analyze/ on the analyzer host only", async () => {
+    const { app } = makeApp();
+    const w = await app.inject({ method: "GET", url: "/", headers: { host: "warden.pro7ocol.com" } });
+    expect(w.statusCode).toBe(302);
+    expect(w.headers.location).toBe("/analyze/");
+    expect((await app.inject({ method: "GET", url: "/api/health", headers: { host: "warden.pro7ocol.com" } })).statusCode).toBe(200);
+    expect((await app.inject({ method: "GET", url: "/", headers: { host: "eurocrat.pro7ocol.com" } })).statusCode).not.toBe(302);
   });
 
   it("pairs endpoint and random assignment use the three fixed pairs", async () => {

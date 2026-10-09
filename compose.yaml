@@ -21,7 +21,7 @@ services:
     labels:
       traefik.enable: "true"
       traefik.docker.network: traefik-public
-      traefik.http.routers.roast.rule: Host(`roast.pro7ocol.com`)
+      traefik.http.routers.roast.rule: Host(`eurocrat.pro7ocol.com`) || Host(`warden.pro7ocol.com`)
       traefik.http.routers.roast.entrypoints: websecure
       traefik.http.routers.roast.tls.certresolver: mytlschallenge
       traefik.http.services.roast.loadbalancer.server.port: "8796"

@@ -17,6 +17,8 @@ import { Sse } from "./sse.js";
 import { AUDIO_TYPES, type AudioCache, type Stt } from "./voice.js";
 import type { Wall } from "./wall.js";
 
+export const ANALYZER_HOST = "warden.pro7ocol.com";
+
 export interface AppDeps {
   db: Db;
   corpus: Corpus;
@@ -92,6 +94,14 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
   app.addContentTypeParser(/^(audio|video)\//, { parseAs: "buffer", bodyLimit: 10 * 1024 * 1024 }, (_req, body, done) => done(null, body));
   app.addContentTypeParser("application/octet-stream", { parseAs: "buffer", bodyLimit: 10 * 1024 * 1024 }, (_req, body, done) => done(null, body));
+
+  // warden.pro7ocol.com is the analyzer's host: its root goes to /analyze/ (CONTRACT "Deploy target").
+  app.addHook("onRequest", async (req, reply) => {
+    const host = (req.headers.host ?? "").split(":")[0]?.toLowerCase();
+    if (host === ANALYZER_HOST && req.method === "GET" && (req.url === "/" || req.url.startsWith("/?"))) {
+      return reply.redirect("/analyze/" + req.url.slice(1), 302);
+    }
+  });
 
   app.get("/api/health", async () => ({ ok: true }));
   app.get("/api/personas", async () => d.roster.all());
@@ -242,7 +252,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
   app.post("/api/stt", async (req, reply) => {
     const type = req.headers["content-type"] ?? "";
-    if (!AUDIO_TYPES.test(type) && type !== "application/octet-stream") return fail(reply, 415, "send raw audio (audio/webm)");
+    if (!AUDIO_TYPES.test(type) && type !== "application/octet-stream") return fail(reply, 415, "send raw audio (audio/webm or audio/mp4)");
     const body = req.body as Buffer | undefined;
     if (!Buffer.isBuffer(body) || body.length === 0) return fail(reply, 400, "empty audio");
     if (limited(req, reply)) return reply;

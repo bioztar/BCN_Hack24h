@@ -30,12 +30,21 @@ type Fetch = typeof fetch;
 
 export const AUDIO_TYPES = /^(audio|video)\/(webm|ogg|mp4|mpeg|wav|x-wav|wave|aac|flac|m4a|x-m4a)(;.*)?$/i;
 
+/** Upload filename extension for a recording type: webm (MediaRecorder), m4a/mp4 (iOS), etc. */
+export function sttExt(mimeType: string): string {
+  const sub = (mimeType.split(";")[0]?.split("/")[1] ?? "").trim().toLowerCase();
+  if (sub === "x-m4a" || sub === "m4a") return "m4a";
+  if (sub === "mpeg") return "mp3";
+  if (sub === "x-wav" || sub === "wave") return "wav";
+  return /^[a-z0-9]+$/.test(sub) ? sub : "bin";
+}
+
 export function audioHash(text: string, voice: VoiceSpec): string {
   return createHash("sha256").update(`${voice.model}|${voice.voice}|${text}`).digest("hex").slice(0, 32);
 }
 
 function ttsBody(model: string, voice: string, text: string): Record<string, string> {
-  if (model.includes("fish")) return { text, reference_id: voice };
+  if (model.includes("fish")) return { text, reference_id: voice, format: "mp3" };
   if (model.includes("aura")) return { text, model: voice, encoding: "mp3" };
   return { text, voice_id: voice };
 }
@@ -77,7 +86,7 @@ export class SlngStt implements Stt {
 
   async transcribe(audio: Buffer, mimeType: string): Promise<string> {
     const cfg = this.cfg();
-    const ext = mimeType.split(";")[0]?.split("/")[1] ?? "bin";
+    const ext = sttExt(mimeType);
     const form = new FormData();
     form.set("audio", new Blob([new Uint8Array(audio)], { type: mimeType }), `clip.${ext}`);
     form.set("language", cfg.sttLanguage);

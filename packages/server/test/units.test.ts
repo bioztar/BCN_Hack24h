@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { GENERIC_CANNED, extractObjects, scanObjects } from "../src/engine.js";
+import { GENERIC_CANNED, extractObjects, gagProvisionId, loadGags, pickGags, scanObjects, type CaseState } from "../src/engine.js";
+import { sttExt } from "../src/voice.js";
 import { AI_ACT_BASIS, GDPR_BASIS, calculateFine, extractRevenueHeuristic } from "../src/fine.js";
 import { quotesVisitor } from "../src/visitor.js";
 import { FINDING_PROVISIONS } from "../src/repo.js";
 import { validateLine } from "../src/validator.js";
-import { corpus, roster } from "./helpers.js";
+import path from "node:path";
+import { ROOT, corpus, roster } from "./helpers.js";
 
 describe("citation validator", () => {
   it("drops fake ids and keeps real ones", () => {
@@ -89,5 +91,46 @@ describe("content data", () => {
   });
   it("corpus search finds relevant provisions", () => {
     expect(corpus.search("personal data breach notification", 5).map((p) => p.id)).toContain("gdpr-33");
+  });
+});
+
+describe("gag bank (content/gags.yaml)", () => {
+  const gags = loadGags(path.join(ROOT, "content", "gags.yaml"), corpus);
+
+  it("maps A0's provision labels onto corpus ids", () => {
+    expect(gagProvisionId("AI-Act Art. 3(1)", corpus)).toBe("ai-act-3");
+    expect(gagProvisionId("AI-Act Annex III(4)", corpus)).toBe("ai-act-annex-iii");
+    expect(gagProvisionId("GDPR Art. 83(5)(a)", corpus)).toBe("gdpr-83");
+    expect(gagProvisionId("NIS2 Art. 21(2)(d)", corpus)).toBe("nis2-21");
+    expect(gagProvisionId("DORA Art. 19(1)", corpus)).toBe("dora-19");
+    expect(gagProvisionId("ISO27001 A.8.29", corpus)).toBe("iso27001-a8.29");
+    expect(gagProvisionId("SOC2 CC6.1", corpus)).toBe("soc2-cc6");
+    expect(gagProvisionId("GDPR Art. 999", corpus)).toBeNull();
+  });
+
+  it("loads verified gags only, every provision in the index", () => {
+    expect(gags.length).toBeGreaterThan(100);
+    for (const g of gags) for (const id of g.provisions) expect(corpus.has(id)).toBe(true);
+  });
+
+  it("picks gags for the officers, tier and submission kind", () => {
+    const state = { officers: ["formblatt", "annexe"], tier: 2, submission: { kind: "text", text: "x" } } as unknown as CaseState;
+    const picked = pickGags(gags, state, 6, () => 0.5);
+    expect(picked).toHaveLength(6);
+    for (const g of picked) {
+      expect(["formblatt", "annexe", "both", undefined]).toContain(g.speaker);
+      expect(Math.abs((g.tier ?? 2) - 2)).toBeLessThanOrEqual(1);
+      expect(["any", "text", undefined]).toContain(g.trigger);
+    }
+  });
+});
+
+describe("stt upload names", () => {
+  it("maps recording types to file extensions", () => {
+    expect(sttExt("audio/webm;codecs=opus")).toBe("webm");
+    expect(sttExt("audio/mp4")).toBe("mp4");
+    expect(sttExt("audio/m4a")).toBe("m4a");
+    expect(sttExt("audio/x-m4a")).toBe("m4a");
+    expect(sttExt("audio/mpeg")).toBe("mp3");
   });
 });

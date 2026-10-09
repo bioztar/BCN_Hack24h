@@ -73,22 +73,80 @@ function personaBlock(p: PersonaSpec): string {
   Signature moves: ${p.signature.join(" ")}`;
 }
 
-/** Gags from content/gags.yaml (A0) when present; any shape with text + provision id(s) is accepted. */
-export function loadGags(file: string, corpus: Corpus): { text: string; provisions: string[] }[] {
+export interface Gag {
+  text: string;
+  provisions: string[];
+  speaker?: string;
+  tier?: number;
+  trigger?: string;
+}
+
+/** A0 cites by label ("AI-Act Art. 3(1)", "ISO27001 A.8.29", "SOC2 CC6.1"); map to a corpus id or null. */
+export function gagProvisionId(label: string, corpus: Corpus): string | null {
+  if (corpus.has(label)) return label;
+  const l = label.trim();
+  const cands: string[] = [];
+  const art = /^(AI[- ]Act|GDPR|NIS ?2|DORA)\s+Art\.?\s*(\d+[a-z]?)/i.exec(l);
+  if (art) {
+    const act = art[1]!.toLowerCase().replace(/[\s-]/g, "").replace("aiact", "ai-act");
+    cands.push(`${act}-${art[2]!.toLowerCase()}`);
+  }
+  const annex = /^AI[- ]Act\s+Annex\s+([IVXL]+)/i.exec(l);
+  if (annex) cands.push(`ai-act-annex-${annex[1]!.toLowerCase()}`);
+  const iso = /^ISO(?:\/IEC)?\s*(27001|42001)(?::\d{4})?\s+(?:Annex\s+)?A\.?\s?(\d+(?:\.\d+)*)/i.exec(l);
+  if (iso) {
+    const top = iso[2]!.split(".")[0];
+    cands.push(`iso${iso[1]}-a${iso[2]}`, `iso${iso[1]}-a.${iso[2]}`, `iso${iso[1]}-a.${top}`);
+  }
+  const soc = /^SOC\s?2\s+CC(\d)/i.exec(l);
+  if (soc) cands.push(`soc2-cc${soc[1]}`);
+  return cands.find((c) => corpus.has(c)) ?? null;
+}
+
+/** Gags from content/gags.yaml (A0). Only `verified` gags whose provision resolves in the index are kept. */
+export function loadGags(file: string, corpus: Corpus): Gag[] {
   if (!existsSync(file)) return [];
   try {
     const raw = parse(readFileSync(file, "utf8")) as unknown;
     const list = Array.isArray(raw) ? raw : Array.isArray((raw as { gags?: unknown })?.gags) ? (raw as { gags: unknown[] }).gags : [];
-    const out: { text: string; provisions: string[] }[] = [];
+    const out: Gag[] = [];
     for (const g of list as Record<string, unknown>[]) {
+      if (g.verified === false) continue;
       const text = [g.text, g.line, g.gag, g.joke].find((v) => typeof v === "string") as string | undefined;
-      const prov = [g.provisions, g.provision, g.provision_id, g.provisionId, g.cite].flat().filter((v): v is string => typeof v === "string" && corpus.has(v));
-      if (text && prov.length) out.push({ text, provisions: prov });
+      const prov = [g.provisions, g.provision, g.provision_id, g.provisionId, g.cite]
+        .flat()
+        .filter((v): v is string => typeof v === "string")
+        .map((v) => gagProvisionId(v, corpus))
+        .filter((v): v is string => Boolean(v));
+      if (!text || !prov.length) continue;
+      out.push({
+        text,
+        provisions: [...new Set(prov)],
+        ...(typeof g.speaker === "string" ? { speaker: g.speaker } : {}),
+        ...(typeof g.tier === "number" ? { tier: g.tier } : {}),
+        ...(typeof g.trigger === "string" ? { trigger: g.trigger } : {}),
+      });
     }
     return out;
   } catch {
     return [];
   }
+}
+
+/** Gags for this round: matching tier (±1), officer ("both" = any) and submission kind ("any" = all). */
+export function pickGags(gags: Gag[], state: CaseState, n = 6, rand: () => number = Math.random): Gag[] {
+  const fits = gags.filter(
+    (g) =>
+      (g.tier === undefined || Math.abs(g.tier - state.tier) <= 1) &&
+      (!g.speaker || g.speaker === "both" || state.officers.includes(g.speaker)) &&
+      (!g.trigger || g.trigger === "any" || g.trigger === state.submission.kind),
+  );
+  const pool = fits.length >= n ? fits : [...fits, ...gags.filter((g) => !fits.includes(g) && (!g.trigger || g.trigger === "any" || g.trigger === state.submission.kind))];
+  return pool
+    .map((g) => [rand(), g] as const)
+    .sort((a, b) => a[0] - b[0])
+    .slice(0, n)
+    .map(([, g]) => g);
 }
 
 export const GENERIC_CANNED: Record<Tier, { text: string; provisions: string[] }> = {
@@ -105,7 +163,7 @@ export interface EngineDeps {
   roster: Roster;
   profile: () => Profile;
   cheap: () => Profile;
-  gags: () => { text: string; provisions: string[] }[];
+  gags: () => Gag[];
   log?: (msg: string, meta?: Record<string, unknown>) => void;
   now?: () => Date;
 }
@@ -129,7 +187,7 @@ export class Engine {
       const p = this.d.corpus.get(id)!;
       return `${p.id} | ${p.label} | ${p.title}`;
     });
-    const gags = this.d.gags().sort(() => Math.random() - 0.5).slice(0, 6);
+    const gags = pickGags(this.d.gags(), state);
     const system = `You write the dialogue for DG ROAST: two fictional EU officials refuse a startup pitch, citing real law. Satire of regulation, not of people.
 
 ${HARD_RULES}
