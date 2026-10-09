@@ -539,6 +539,7 @@ assets:
     category: audition
     line: "Ah. Yes. The file. I have read the file. [sigh] Twice. And I regret to inform you... it is incomplete."
     voice: formblatt-alt-alaric
+    optional: true  # cartesia/sonic:3 is WebSocket-only on SLNG (POST /v1/tts → 405)
     duration_s: 12
     provider: *fish
   - id: voice-annexe
@@ -563,6 +564,7 @@ assets:
     category: audition
     line: "Bonjour. I have read your proposal. It is very ambitious. Ambition is not, unfortunately, an annex."
     voice: annexe-alt-carol
+    optional: true  # cartesia/sonic:3 is WebSocket-only on SLNG (POST /v1/tts → 405)
     duration_s: 9
     provider: *fish
   - id: voice-council
