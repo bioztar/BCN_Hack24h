@@ -1,0 +1,40 @@
+# One service. Traefik is NOT in this file: uk-lon-1 already runs a shared Traefik
+# (the n8n compose project) that fronts every site on the box, and it is not ours to
+# change. We join its network and attach labels. Same pattern gavel uses.
+services:
+  karen:
+    build: .
+    image: karen:latest
+    container_name: karen-web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8795"
+      DATA_DIR: /data
+    volumes:
+      - karen-data:/data
+    # Bound to loopback, never 0.0.0.0. Traefik is the only route in.
+    ports:
+      - "127.0.0.1:8795:8795"
+    networks:
+      - traefik-public
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: traefik-public
+      traefik.http.routers.karen.rule: Host(`karen.pro7ocol.com`)
+      traefik.http.routers.karen.entrypoints: websecure
+      traefik.http.routers.karen.tls.certresolver: mytlschallenge
+      traefik.http.services.karen.loadbalancer.server.port: "8795"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8795/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  traefik-public:
+    external: true
+
+volumes:
+  karen-data:

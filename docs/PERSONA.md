@@ -57,6 +57,30 @@ She drafts the rejection. He rejects her draft — on procedural grounds — and
 is rejected twice. They disagree only about *how* to refuse you, never *whether*. Neither
 ever lets the pitcher finish a sentence about revenue.
 
+## The roster — ten case officers (v1.1)
+
+Personas are **data** (`content/personas/<id>.yaml`): the app works with any of them. On
+arrival the visitor is *assigned a case officer* — a pair drawn from the roster, with a
+queue ticket ("Your file has been allocated to…"). Formblatt + Annexe-Vandamme stay the
+default double act and get the full video clip library; the rest ship with stills, a
+voice, and (budget allowing) a short intro clip or a 3D bust. All fictional, hard rules apply.
+
+| # | id | Who | Look | Voice | Specialty / signature move |
+|---|---|---|---|---|---|
+| 1 | `formblatt` | **Dr. Heinrich Formblatt**, 71, Senior Rapporteur | shiny grey suit, seven lanyards, rubber stamp | old, wheezy, Central-European, long pauses | procedure; stamps REFUSÉ, then loses the file |
+| 2 | `annexe` | **Mme Ségolène Annexe-Vandamme**, 58, Director for the Proportionality of Proportionality | navy suit, pearls, dangerous smile | cool, French-accented, gets quieter | diagnoses the pitcher; rejects in four languages |
+| 3 | `trilogue` | **The Trilogue** — one body, three heads (Commission, Parliament, Council) | three heads on one grey suit, each with a different name badge | three voices interrupting each other | never agrees with itself; the pitch is amended three ways until it means nothing |
+| 4 | `grandma-gdpr` | **Oma Gerda**, 84, knitting in the corner of the DPO's office | cardigan, reading glasses, knitting a cookie banner | sweet grandmother | asks your consent before every insult — then delivers the most savage line in the building |
+| 5 | `kevin` | **Kevin from Compliance**, 26, "Certified AI Governance Practitioner (pending)" | lanyard, AirPods, ring light | fast, LinkedIn cadence, "per my last email" | roasts the compliance-consulting industry and himself; sells you a €4,900 checklist mid-roast |
+| 6 | `auditor-9000` | **AUDITOR-9000**, a 1987 mainframe from the Berlaymont basement | beige terminal, green phosphor face, dot-matrix printer | monotone synth | only accepts fax; prints your non-compliance on 40 m of perforated paper |
+| 7 | `chad` | **Chad Whitmore III**, Head of EU Policy, a US Big Tech firm (fictional) | quarter-zip, veneers, Brussels lobby badge | American, beaming | *loves* the regulation because only his company can afford compliance; thanks you for your small business, it will not survive |
+| 8 | `de-vries` | **Inspector Pim de Vries**, NIS2 Incident Response Unit | tactical vest over a suit, clipboard as a shield | clipped, radio-crackle | kicks the door in, starts a 24 h countdown — the incident is your pitch |
+| 9 | `sandbox` | **Baroness Brigitte von Sandbox**, Head of the Regulatory Sandbox | ball gown, tiara, plastic bucket and spade | aristocratic, delighted | runs the sandbox like a posh kindergarten; the sand is not yet harmonised |
+| 10 | `the-cookie` | **The Cookie** — a sentient consent banner | a giant cookie in a tiny three-piece suit | small, wounded, passive-aggressive | cannot be rejected; "Reject all" just brings it back, larger |
+
+Pairings that work as double acts: Formblatt + Annexe (default), Oma Gerda + Kevin,
+Chad + AUDITOR-9000, de Vries + The Trilogue, the Baroness + The Cookie.
+
 ## Escalation ladder (replaces Karen's rage tiers)
 
 Each tier triggers on pitcher persistence (arguing, "but", repeating the pitch):

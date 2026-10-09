@@ -152,3 +152,9 @@ Hours count from kickoff (T0). Demo at T24 unless B1 says otherwise.
   lip-sync; three inputs — text, dictation (SLNG STT/TTS), GitHub repo; inference on the
   existing Nebius keys. Added A0 asset-pipeline Devin session, B6/B7 approval + spend cap,
   repo-intake security rules.
+- 2026-10-09 19:00 — v1.2 (Vitaly): **demo is 2026-10-10**; pre-existing-code rule not
+  relevant → app lanes L1/L2 dispatched now, in parallel with A0; no sponsors; judged on
+  **originality + fun**; repo visibility doesn't matter; names OK but roster of 10
+  radically different personas added (PERSONA.md), visitor is assigned a pair; fal cap
+  **$20 total**, short cheap clips, optional fal image-to-3D busts + procedural three.js
+  stamp. `docs/CONTRACT.md` written; Karen reference code in `docs/reference/karen/`.
