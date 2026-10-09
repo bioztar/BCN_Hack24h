@@ -141,7 +141,7 @@ One container, two hostnames (Vitaly, 2026-10-09 — DNS for both already points
 
 Traefik labels as in `docs/reference/karen/compose.yaml` with a rule
 `Host(\`eurocrat.pro7ocol.com\`) || Host(\`warden.pro7ocol.com\`)`, container bound to
-`127.0.0.1:8796`, port 8796, SQLite under `/data`. The server redirects `/` → `/analyze/`
+`127.0.0.1:8806` (host; 8796 is taken by mirrors-api), port 8796, SQLite under `/data`. The server redirects `/` → `/analyze/`
 when the `Host` header is `warden.pro7ocol.com`. The roast verdict's "Get the real report"
 links to `https://warden.pro7ocol.com/analyze/`. helm deploys.
 

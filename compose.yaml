@@ -15,7 +15,7 @@ services:
       - ./assets/generated:/app/assets/generated:ro
     # Bound to loopback, never 0.0.0.0. Traefik is the only route in.
     ports:
-      - "127.0.0.1:8796:8796"
+      - "127.0.0.1:8806:8796"
     networks:
       - traefik-public
     labels:
