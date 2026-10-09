@@ -104,6 +104,11 @@ describe("gag bank (content/gags.yaml)", () => {
     expect(gagProvisionId("NIS2 Art. 21(2)(d)", corpus)).toBe("nis2-21");
     expect(gagProvisionId("DORA Art. 19(1)", corpus)).toBe("dora-19");
     expect(gagProvisionId("ISO27001 A.8.29", corpus)).toBe("iso27001-a8.29");
+    for (const id of ["iso27001-6.1.2", "iso27001-9.2"]) {
+      const p = corpus.get(id)!;
+      expect(p.label).toBe(`ISO/IEC 27001 cl. ${id.slice(9)}`);
+      expect(p.text).toMatch(/not reproduced — copyright ISO\/IEC/);
+    }
     expect(gagProvisionId("SOC2 CC6.1", corpus)).toBe("soc2-cc6");
     expect(gagProvisionId("GDPR Art. 999", corpus)).toBeNull();
   });

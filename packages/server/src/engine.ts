@@ -220,6 +220,15 @@ export function speakable(raw: string, speakers: string[] = []): string {
   return s;
 }
 
+/** Stamp for a canned/fallback line: none at tier 1; from tier 2 the YAML override, else chosen from the text. */
+export function cannedStamp(tier: Tier, text: string, override?: string): Stamp | undefined {
+  if (tier < 2) return undefined;
+  if (STAMPS.includes(override as Stamp)) return override as Stamp;
+  if (/renvoy|commission/i.test(text)) return "RENVOYÉ EN COMMISSION";
+  if (/incomplet|missing|mislaid|insufficient/i.test(text)) return "INCOMPLET";
+  return "REFUSÉ";
+}
+
 /** "€35,000,000" → "35 million euros", for the tier-5 prompt. */
 export function spokenEur(n: number): string {
   if (n >= 1e9) return `${+(n / 1e9).toFixed(2)} billion euros`;
@@ -264,7 +273,7 @@ ${prov.join("\n")}
 ${gags.length ? `\nGAG BANK (inspiration, do not copy verbatim):\n${gags.map((g) => `- ${g.text} [${g.provisions.join(", ")}]`).join("\n")}\n` : ""}
 ${state.tier === 5 && state.fine ? `THE FINE (already calculated, final): ${spokenEur(state.fine.fineEur)} (€${state.fine.fineEur.toLocaleString("en-GB")}); basis: ${state.fine.fineBasis}. Any line that mentions the fine states exactly this amount. Never state any other amount, figure or percentage for the fine.\n\n` : ""}SPOKEN TEXT ONLY: "text" is read aloud by a voice engine, word for word. No stage directions, no *actions*, no [bracketed cues], no "OFF-STAGE", no sound effects, no speaker-name prefix, and never a provision id like "gdpr-6" — ids go only in "provisions"; in speech say the label ("Article 6 GDPR"). A catchphrase or signature line already in <already_said> must not be used again.
 
-OUTPUT: 3 to 5 lines, alternating speakers, starting with "${first}". Each line is ONE JSON object on its own line, nothing else (no prose, no array, no code fence):
+OUTPUT: 3 to 5 lines, alternating speakers, starting with "${first}".${state.tier >= 2 ? ' At least one line this round MUST carry a stamp (not null) — the officials always stamp from tier 2 on.' : ""} Each line is ONE JSON object on its own line, nothing else (no prose, no array, no code fence):
 {"speaker":"<${a!.id}|${b!.id}>","text":"<one or two spoken sentences, max 40 words>","provisions":["<candidate id>"],"clip":"<${CLIP_SLOTS.join("|")}>","stamp":<null|"REFUSÉ"|"INCOMPLET"|"RENVOYÉ EN COMMISSION">,"charge":"<the finding in under 12 words>"}
 Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" when stamping${state.intake ? ', "repo-horror" when reacting to the repository' : ""}${state.tier === 5 ? ', "verdict" for the last line' : ""}. Be specific to THIS pitch: pick concrete details. Short, sharp, spoken English.`;
 
@@ -306,7 +315,9 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
   canned(state: CaseState, speaker: PersonaId): LineOut {
     const c = this.d.roster.get(speaker)?.canned?.[state.tier] ?? GENERIC_CANNED[state.tier];
     const v = validateLine(c, this.d.corpus);
-    return { speaker, text: speakable(v.text), provisions: v.provisions, clip: `tier${state.tier}` as ClipSlot };
+    const text = speakable(v.text);
+    const stamp = cannedStamp(state.tier, text, (c as { stamp?: string }).stamp);
+    return { speaker, text, provisions: v.provisions, clip: `tier${state.tier}` as ClipSlot, ...(stamp ? { stamp } : {}) };
   }
 
   partner(state: CaseState, speaker: PersonaId | undefined): PersonaId {
@@ -324,7 +335,9 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     const own = this.canned(state, speaker);
     if (!said.includes(own.text) && this.dropRepeats(state, own.text, said) === own.text) return own;
     const g = validateLine(GENERIC_CANNED[state.tier], this.d.corpus);
-    return { speaker, text: speakable(g.text), provisions: g.provisions, clip: "talking" };
+    const text = speakable(g.text);
+    const stamp = cannedStamp(state.tier, text);
+    return { speaker, text, provisions: g.provisions, clip: stamp ? "stamp" : "talking", ...(stamp ? { stamp } : {}) };
   }
 
   /** Every canned/fallback line the officials of the fixed pairs can speak, for TTS pre-rendering at boot. */
@@ -408,6 +421,12 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     } finally {
       abandon.abort();
       void model.return(undefined).catch(() => undefined);
+    }
+    // From tier 2 every round lands at least one stamp: if the model forgot, a stamped canned line closes it.
+    if (state.tier >= 2 && !produced.some((l) => l.stamp) && produced.length < 5) {
+      const line = this.fill(state, this.partner(state, last()), said());
+      produced.push(line);
+      yield line;
     }
     while (produced.length < 3) {
       const line = this.fill(state, this.partner(state, last()), said());

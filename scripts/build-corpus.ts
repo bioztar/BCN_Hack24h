@@ -182,6 +182,38 @@ export function parseIso27001(md: string): IndexedProvision[] {
   return out;
 }
 
+/** ISO/IEC 27001 management-system clauses the analyzer cites, as `iso27001-<clause>`. */
+export const ISO27001_CLAUSES = ["6.1.2", "9.2"];
+
+/** Clause ids + warden's authored requirement summary as the title (from the clauses 4–10 table). No ISO text. */
+export function parseIso27001Clauses(md: string, wanted = ISO27001_CLAUSES): IndexedProvision[] {
+  const rows = tableRows(md, /Key requirements \(management-system clauses 4–10\)/);
+  const inRange = (c: string, range: string) => {
+    const [from, to = from] = range.split(/\s*[–-]\s*/).map((x) => x.trim().split(".").map(Number));
+    const n = c.split(".").map(Number);
+    const cmp = (x: number[], y: number[]) => {
+      for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
+      return 0;
+    };
+    return cmp(n, from!) >= 0 && cmp(n, to!) <= 0;
+  };
+  const out: IndexedProvision[] = [];
+  for (const c of wanted) {
+    const row = rows.find((r) => r[2] && inRange(c, r[2]));
+    if (!row) throw new Error(`ISO 27001 clause ${c} not found in warden's clauses table`);
+    const title = squash(row[1]!.replace(/\*\*/g, "").replace(/\s*\([^)]*\)/g, ""));
+    out.push({
+      id: `iso27001-${c}`,
+      label: `ISO/IEC 27001 cl. ${c}`,
+      title,
+      url: "https://www.iso.org/standard/27001",
+      framework: "ISO/IEC 27001",
+      text: `ISO/IEC 27001:2022 clause ${c} (requirement area: ${title}). Clause text not reproduced — copyright ISO/IEC.`,
+    });
+  }
+  return out;
+}
+
 export function parseIso42001(md: string): IndexedProvision[] {
   const out: IndexedProvision[] = [];
   for (const [group, theme] of tableRows(md, /Annex A control groups/)) {
@@ -260,6 +292,7 @@ function main(): void {
   for (const [file, act] of acts) all.push(...parseEuAct(readFileSync(file, "utf8"), act));
   all.push(...parseNistRmf(read(warden, "corpus/nist/nist-ai-100-1.md")));
   all.push(...parseIso27001(read(warden, "frameworks/iso-27001.md")));
+  all.push(...parseIso27001Clauses(read(warden, "frameworks/iso-27001.md")));
   all.push(...parseIso42001(read(warden, "frameworks/iso-42001.md")));
   all.push(...parseSoc2(read(warden, "frameworks/soc2.md")));
   all.push(...parseOwasp(read(warden, "corpus/standards/owasp-llm-top10.md")));

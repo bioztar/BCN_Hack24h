@@ -7,6 +7,8 @@ import type { ClipSlot, Persona, PersonaId, Tier } from "@dg-roast/shared";
 export interface CannedLine {
   text: string;
   provisions: string[];
+  /** Optional override; tier ≥ 2 canned lines get a stamp either way (Engine.cannedStamp). */
+  stamp?: string;
 }
 
 export interface PersonaSpec {

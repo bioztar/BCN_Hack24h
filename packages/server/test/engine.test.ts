@@ -93,6 +93,31 @@ describe("engine", () => {
     expect(lines[1]!.speaker).not.toBe(lines[0]!.speaker);
   }, 15000);
 
+  it("canned/fallback lines carry a stamp from tier 2 (none at tier 1)", async () => {
+    for (const tier of [1, 2, 3, 4, 5] as const) {
+      for (const officers of [["formblatt", "annexe"], ["grandma-gdpr", "auditor-9000"], ["de-vries", "the-cookie"]] as const) {
+        const lines = await collect(mk(null), { ...state(), tier, officers: [...officers] });
+        for (const l of lines) expect(Boolean(l.stamp), `${officers[0]} t${tier}: ${l.text}`).toBe(tier >= 2);
+      }
+    }
+  });
+
+  it("from tier 2, a round whose model lines carry no stamp still lands one, and the prompt demands it", async () => {
+    const unstamped: Llm = {
+      async *stream() {
+        for (const t of ["de-vries", "the-cookie", "de-vries"]) yield json(t, `plain line by ${t}`);
+      },
+    };
+    const s = { ...state(), tier: 2 as const };
+    const lines = await collect(mk(unstamped), s);
+    expect(lines.slice(0, 3).map((l) => l.text)).toEqual(["plain line by de-vries", "plain line by the-cookie", "plain line by de-vries"]);
+    expect(lines.filter((l) => l.stamp).length).toBeGreaterThanOrEqual(1);
+    const [sys] = mk(null).buildMessages(s, mk(null).candidates(s));
+    expect(sys!.content).toMatch(/At least one line this round MUST carry a stamp/);
+    const [sys1] = mk(null).buildMessages(state(), mk(null).candidates(state()));
+    expect(sys1!.content).not.toMatch(/MUST carry a stamp/);
+  });
+
   it("strips stage directions, cues, OFF-STAGE tags and raw provision ids before anything is spoken", () => {
     expect(speakable("*wheeze* Your consent is invalid. [sigh] Truly.")).toBe("Your consent is invalid. Truly.");
     expect(speakable("OFF-STAGE: THE COUNCIL BANGS A GAVEL. Refused.")).toBe("Refused.");
