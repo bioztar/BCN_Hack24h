@@ -57,6 +57,7 @@ export type RoastEvent =
   | { type: "tier"; tier: Tier; name: string }
   | { type: "line"; id: string; speaker: PersonaId; text: string; provisions: Provision[]; clip: ClipSlot; audioUrl: string | null; stamp?: "REFUSÉ" | "INCOMPLET" | "RENVOYÉ EN COMMISSION" }
   | { type: "verdict"; notice: Notice }
+  | { type: "audio"; id: string; audioUrl: string }                      // late TTS for an already-sent line (same id)
   | { type: "awaiting"; prompt: string }                                  // pitcher may argue back
   | { type: "error"; message: string };
 
@@ -81,7 +82,7 @@ export interface WallEntry { speaker: PersonaId; text: string; at: string; }  //
 | `POST /api/case` | `{ submission: Submission, officers?: [PersonaId, PersonaId] }` | `Case` (officers: one of the three fixed pairs in PERSONA.md, random, if omitted; the roster's pairings if omitted) |
 | `GET /api/case/:caseId/stream` | SSE | `RoastEvent`s for the current round; ends after `awaiting` or `verdict` |
 | `POST /api/case/:caseId/reply` | `{ text: string }` | `204`; next round streams on a fresh `GET …/stream`; each reply raises the tier; tier 5 ends in `verdict` |
-| `POST /api/stt` | raw audio body (`audio/webm` from MediaRecorder) | `{ text: string }` |
+| `POST /api/stt` | raw audio body; `Content-Type` is passed through to SLNG. Accepted: `audio/webm` (MediaRecorder), `audio/mp4` / `audio/m4a` / `audio/x-m4a` (iOS AVAudioRecorder), also ogg, mpeg, wav, aac, flac. Other types → 415 | `{ text: string }` |
 | `GET /api/audio/:hash.mp3` | — | TTS clip (cached by hash) |
 | `GET /api/wall/stream` | SSE | `WallEntry` events; on connect the last 30 |
 | `GET /api/provision/:id` | — | `Provision` |
@@ -93,7 +94,9 @@ Errors: JSON `{ error: string }` with a proper status; 429 from the rate limiter
 
 - Every `Provision` in any event resolved from the corpus index. A model-proposed id not in
   the index is **dropped and the line regenerated or reworded without it** — never sent.
-- `audioUrl` may be `null` if TTS fails; the line still arrives (Lane A shows subtitles).
+- `audioUrl` may be `null` if TTS fails or is not ready within ~2.5 s; the line still arrives (Lane A shows subtitles).
+  If the audio finishes later, a follow-up `{type:"audio", id, audioUrl}` event (same `id` as the line) arrives before
+  the round's `awaiting`/`verdict`. Clients may play it if that line has not been shown yet, or ignore it.
 - Wall gets the officials' lines only. Never visitor text. No moderation filter (Vitaly, 2026-10-09).
 - `GET /api/pairs` → `{ id: string; officers: [PersonaId, PersonaId] }[]` — the three fixed pairs.
 - Repo intake per PLAN.md "Repo intake rules".
