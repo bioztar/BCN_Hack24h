@@ -2,6 +2,7 @@
   "formblatt": {
     "kind": "person",
     "head": {"cx": 0.03, "cz": 1.97, "rx": 0.40, "ry": 0.46, "rz": 0.53},
+    "hair_style": "ring", "hair_boost": 1.15,
     "shoulder_z": 1.39, "torso_rx": 0.97, "torso_ry": 0.38, "neck_x": 0.02,
     "ears": true, "relief_head": 0.55, "relief_torso": 0.30,
     "pts": [248, 170, 320, 350, 640, 580]
@@ -15,7 +16,9 @@
   },
   "grandma-gdpr": {
     "kind": "person",
-    "head": {"cx": 0.0, "cz": 1.98, "rx": 0.33, "ry": 0.35, "rz": 0.46},
+    "head": {"cx": 0.0, "cz": 1.92, "rx": 0.34, "ry": 0.35, "rz": 0.39},
+    "bun": {"cx": 0.07, "cy": 0.06, "cz": 2.38, "r": [0.17, 0.15, 0.13]},
+    "hair_boost": 1.05,
     "shoulder_z": 1.52, "torso_rx": 0.95, "torso_ry": 0.38, "neck_x": 0.0,
     "ears": true, "relief_head": 0.50, "relief_torso": 0.30,
     "pts": [300, 150, 330, 360, 90, 650]

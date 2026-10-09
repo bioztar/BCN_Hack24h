@@ -116,10 +116,27 @@ def build_person():
     h = CFG["head"]
     sh = CFG["shoulder_z"]
     hair, skin, suit = lin(PAL["hair"]), lin(PAL["skin"]), lin(PAL["suit"])
-    hair_z = h["cz"] - 0.2 * h["rz"]
+    boost = CFG.get("hair_boost", 1.0)
+    hair = tuple(min(c * boost, 1.0) for c in hair[:3]) + (1.0,)
+    ring = CFG.get("hair_style") == "ring"
     head = ellipsoid("head", (h["cx"], 0.0, h["cz"]), (h["rx"], h["ry"], h["rz"]), 96, 48)
-    set_zone(head, lambda c: mix(skin, hair, smooth(hair_z - 0.08, hair_z + 0.08, c.z)))
+
+    def hair_w(c):
+        """Hair on the back half of the skull, blended over the ear plane; 'ring' = fringe band."""
+        back = smooth(-0.25, 0.30, c.y / h["ry"])
+        z_rel = (c.z - h["cz"]) / h["rz"]
+        nape = smooth(-0.75, -0.55, z_rel)
+        if ring:  # bald crown, white ring round back and sides
+            return back * nape * (1 - smooth(0.05, 0.30, z_rel))
+        return max(back * nape, smooth(0.0, 0.3, z_rel))
+
+    set_zone(head, lambda c: mix(skin, hair, hair_w(c)))
     heads = [head]
+    if "bun" in CFG:
+        b = CFG["bun"]
+        bun = ellipsoid("bun", (b["cx"], b["cy"], b["cz"]), tuple(b["r"]), 32, 16)
+        set_zone(bun, lambda c: hair)
+        heads.append(bun)
     if CFG["ears"]:
         for n, sgn in (("ear_l", -1), ("ear_r", 1)):
             e = ellipsoid(n, (h["cx"] + sgn * h["rx"], 0.05, h["cz"] - 0.13 * h["rz"]),
