@@ -17,6 +17,28 @@ enum CutoutStore {
         return placeholder(color: UIColor(hex: officer.color), expression: expression)
     }
 
+    struct DepthMap {
+        let bytes: [UInt8]
+        let width: Int
+        let height: Int
+    }
+
+    /// `<officer>-<expression>-depth.png` (8-bit gray, 0 = background). nil -> flat card.
+    static func depth(officer: Persona, expression: DummyScene.Expression) -> DepthMap? {
+        let name = "\(officer.id)-\(expression.rawValue)-depth"
+        guard let path = Bundle.main.path(forResource: name, ofType: "png"),
+              let cg = UIImage(contentsOfFile: path)?.cgImage else { return nil }
+        let w = cg.width, h = cg.height
+        var bytes = [UInt8](repeating: 0, count: w * h)
+        let drawn = bytes.withUnsafeMutableBytes { buf -> Bool in
+            guard let ctx = CGContext(data: buf.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                      space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        return drawn ? DepthMap(bytes: bytes, width: w, height: h) : nil
+    }
+
     static func placeholder(color: UIColor, expression: DummyScene.Expression) -> UIImage {
         let size = CGSize(width: 600, height: 800)
         return UIGraphicsImageRenderer(size: size).image { r in

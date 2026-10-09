@@ -1,3 +1,4 @@
+import SceneKit
 import SpriteKit
 import UIKit
 
@@ -19,11 +20,17 @@ final class DummyScene: SKScene {
 
     private(set) var isDown = false
 
-    private let bust = SKSpriteNode()
+    /// Pivot at the base of the bust; everything physical (lean, topple, talk bob) is applied here.
+    private let pivot = SKNode()
+    /// The photo-relief figure rendered by SceneKit inside the SpriteKit scene.
+    private let view3D = SK3DNode(viewportSize: CGSize(width: 100, height: 100))
+    private let figureScene = SCNScene()
+    private let figureHolder = SCNNode()   // yawed as the dummy leans, so it turns in 3D
+    private var figure: SCNNode?
+    private var bustH: CGFloat = 0
     private var papers: [SKSpriteNode] = []
     private var officer = Roster.officers[0]
     private var expression: Expression = .neutral
-    private var textures: [String: SKTexture] = [:]
     private var stance: Stance = .upright
     private var gx: CGFloat = 0
     private var theta: CGFloat = 0
@@ -38,16 +45,17 @@ final class DummyScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = UIColor(red: 0.07, green: 0.08, blue: 0.12, alpha: 1)
         scaleMode = .resizeFill
-        bust.anchorPoint = CGPoint(x: 0.5, y: 0.02)
-        bust.zPosition = 1
-        addChild(bust)
+        buildFigureScene()
+        pivot.zPosition = 1
+        pivot.addChild(view3D)
+        addChild(pivot)
         buildPapers()
-        refreshTexture()
+        refreshFigure()
         layout()
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
-        guard bust.parent != nil else { return }
+        guard pivot.parent != nil else { return }
         layout()
     }
 
@@ -60,12 +68,12 @@ final class DummyScene: SKScene {
 
     func setOfficer(_ persona: Persona) {
         officer = persona
-        refreshTexture()
+        refreshFigure()
     }
 
     func setExpression(_ e: Expression) {
         expression = e
-        refreshTexture()
+        refreshFigure()
     }
 
     /// 0...1 mouth/voice level; bobs the head while the officer speaks.
@@ -116,9 +124,14 @@ final class DummyScene: SKScene {
         shift += (shiftTarget - shift) * min(1, dt * 6)
         talk += (talkTarget - talk) * min(1, dt * 20)
 
-        bust.position.x = size.width / 2 + shift
-        bust.zRotation = theta + sin(CGFloat(now) * 14) * 0.03 * talk
-        bust.yScale = 1 + 0.04 * talk
+        pivot.position.x = size.width / 2 + shift
+        pivot.zRotation = theta + sin(CGFloat(now) * 14) * 0.03 * talk
+        pivot.yScale = 1 + 0.04 * talk
+        // 3D: turn towards the lean (up to ~50° when lying down), nod while talking, faint idle sway.
+        figureHolder.eulerAngles = SCNVector3(
+            Float(-0.06 * talk),
+            Float(-theta * 0.5 + sin(CGFloat(now) * 0.9) * 0.05),
+            0)
     }
 
     private func updateStance(now: TimeInterval) {
@@ -143,34 +156,54 @@ final class DummyScene: SKScene {
         let down = stance != .upright
         guard down != isDown else { return }
         isDown = down
-        refreshTexture()
+        refreshFigure()
     }
 
     // MARK: visuals
 
-    private var fallShift: CGFloat { max(0, bust.size.height - size.width / 2 + size.width * 0.1) }
+    private var fallShift: CGFloat { max(0, bustH - size.width / 2 + size.width * 0.1) }
 
     private func layout() {
         let floorY = size.height * 0.1
-        bust.position = CGPoint(x: size.width / 2 + shift, y: floorY)
+        pivot.position = CGPoint(x: size.width / 2 + shift, y: floorY)
         physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(x: 0, y: floorY - 4, width: size.width, height: size.height))
         physicsBody?.friction = 0.6
-        resizeBust()
+        // Figure is 2.0 units tall inside a 2.2-unit-tall viewport; cut-outs are 3:4.
+        let w = size.width * 0.9
+        bustH = w * 4 / 3
+        view3D.viewportSize = CGSize(width: w * 1.1, height: bustH * 1.1)
+        view3D.position = CGPoint(x: 0, y: bustH / 2)   // image bottom edge sits on the pivot
     }
 
-    private func resizeBust() {
-        guard let tex = bust.texture, size.width > 0 else { return }
-        let w = size.width * 0.78
-        bust.size = CGSize(width: w, height: w * tex.size().height / tex.size().width)
+    private func buildFigureScene() {
+        figureScene.rootNode.addChildNode(figureHolder)
+        let camera = SCNNode()
+        camera.camera = SCNCamera()
+        camera.camera?.fieldOfView = 25
+        camera.position = SCNVector3(0, 0, 5)
+        figureScene.rootNode.addChildNode(camera)
+        let ambient = SCNNode()
+        ambient.light = SCNLight()
+        ambient.light?.type = .ambient
+        ambient.light?.intensity = 750
+        let key = SCNNode()
+        key.light = SCNLight()
+        key.light?.type = .directional
+        key.light?.intensity = 850
+        key.eulerAngles = SCNVector3(-0.5, -0.6, 0)
+        figureScene.rootNode.addChildNode(ambient)
+        figureScene.rootNode.addChildNode(key)
+        view3D.scnScene = figureScene
+        view3D.pointOfView = camera
     }
 
-    private func refreshTexture() {
+    private func refreshFigure() {
+        guard pivot.parent != nil else { return }
         let e: Expression = isDown ? .appalled : expression
-        let key = "\(officer.id)-\(e.rawValue)"
-        let tex = textures[key] ?? SKTexture(image: CutoutStore.image(officer: officer, expression: e))
-        textures[key] = tex
-        bust.texture = tex
-        resizeBust()
+        figure?.removeFromParentNode()
+        let node = ReliefFigure.node(officer: officer, expression: e)
+        figureHolder.addChildNode(node)
+        figure = node
     }
 
     private func buildPapers() {
