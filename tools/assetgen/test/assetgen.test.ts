@@ -76,9 +76,12 @@ describe("manifest", () => {
   it("has a 3D bust per persona and a minimal formblatt/annexe clip set", () => {
     const outDir = tmp();
     const s = loadState(outDir);
-    expect(planStage(m, "models3d", { outDir, state: s }).map((c) => c.rel).sort()).toEqual(DEMO.map((p) => `3d/${p}.glb`).sort());
-    expect(planStage(m, "models3d", { outDir, state: s, includeOptional: true })).toHaveLength(PERSONAS.length);
-    const clips = planStage(m, "clips", { outDir, state: s });
+    expect(planStage(m, "models3d", { outDir, state: s })).toHaveLength(0);
+    expect(planStage(m, "clips", { outDir, state: s })).toHaveLength(0);
+    const busts = planStage(m, "models3d", { outDir, state: s, includeOptional: true });
+    expect(busts).toHaveLength(PERSONAS.length);
+    expect(busts.map((c) => c.rel)).toEqual(expect.arrayContaining(DEMO.map((p) => `3d/${p}.glb`)));
+    const clips = planStage(m, "clips", { outDir, state: s, includeOptional: true });
     expect(clips.map((c) => c.rel).sort()).toEqual(
       ["formblatt", "annexe"].flatMap((p) => ["idle", "talking", "stamp", "verdict"].map((x) => `clip/${p}-${x}.mp4`)).sort(),
     );

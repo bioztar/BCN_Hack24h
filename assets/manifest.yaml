@@ -614,9 +614,10 @@ assets:
     duration_s: 9
     provider: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-delia-en}
 
-  # --- 3D busts (optional stage models3d) from each persona's approved neutral still
+  # --- 3D busts (stage models3d; all optional: fal, not in the default plan) from each persona's approved neutral still
   - id: formblatt
     kind: model3d
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: formblatt
     category: bust
     source_still: formblatt-neutral
@@ -624,6 +625,7 @@ assets:
     params: {"texture_size": "1024"}
   - id: annexe
     kind: model3d
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: annexe
     category: bust
     source_still: annexe-neutral
@@ -639,6 +641,7 @@ assets:
     optional: true
   - id: grandma-gdpr
     kind: model3d
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: grandma-gdpr
     category: bust
     source_still: grandma-gdpr-neutral
@@ -654,6 +657,7 @@ assets:
     optional: true
   - id: auditor-9000
     kind: model3d
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: auditor-9000
     category: bust
     source_still: auditor-9000-neutral
@@ -669,6 +673,7 @@ assets:
     optional: true
   - id: de-vries
     kind: model3d
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: de-vries
     category: bust
     source_still: de-vries-neutral
@@ -684,6 +689,7 @@ assets:
     optional: true
   - id: the-cookie
     kind: model3d
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: the-cookie
     category: bust
     source_still: the-cookie-neutral
@@ -693,6 +699,7 @@ assets:
   # --- minimal clip set (formblatt + annexe): idle, talking, stamp, verdict — 3–5 s each
   - id: formblatt-idle
     kind: clip-silent
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: formblatt
     category: idle
     prompt: "The man sits almost still behind his desk, breathing slowly, blinking heavily, adjusting his bifocals once. Locked-off camera, subtle motion only, seamless loop. Photorealistic, same person as the image."
@@ -702,6 +709,7 @@ assets:
     params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
   - id: formblatt-talking
     kind: clip-silent
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: formblatt
     category: talking
     prompt: "The man speaks slowly and wearily to the camera, mouth moving as if talking, small tired hand gestures, one sigh. Locked-off camera, no cuts. Photorealistic, same person as the image."
@@ -711,6 +719,7 @@ assets:
     params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
   - id: formblatt-stamp
     kind: clip-silent
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: formblatt
     category: stamp
     prompt: "The man lifts the wooden rubber stamp and slams it down hard on the form, the desk shudders, papers jump. Locked-off camera, no cuts. Photorealistic, same person as the image."
@@ -720,6 +729,7 @@ assets:
     params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
   - id: formblatt-verdict
     kind: clip-speaking
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: formblatt
     category: verdict
     line: "The file is closed. Your file is refused. [sigh] It has been refused... thoroughly."
@@ -729,6 +739,7 @@ assets:
     provider: *lipsync
   - id: annexe-idle
     kind: clip-silent
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: annexe
     category: idle
     prompt: "The woman sits perfectly still, a faint polite smile, one slow blink, she straightens a pen on the desk. Locked-off camera, subtle motion only, seamless loop. Photorealistic, same person as the image."
@@ -738,6 +749,7 @@ assets:
     params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
   - id: annexe-talking
     kind: clip-silent
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: annexe
     category: talking
     prompt: "The woman speaks calmly and precisely to the camera, mouth moving as if talking, minimal gestures, she leans in slightly. Locked-off camera, no cuts. Photorealistic, same person as the image."
@@ -747,6 +759,7 @@ assets:
     params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
   - id: annexe-stamp
     kind: clip-silent
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: annexe
     category: stamp
     prompt: "The woman brings a rubber stamp down onto the form with one precise, unhurried movement, then aligns it with her fingertip. Locked-off camera, no cuts. Photorealistic, same person as the image."
@@ -756,6 +769,7 @@ assets:
     params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
   - id: annexe-verdict
     kind: clip-speaking
+    optional: true  # fal is out of credits; the stage animates/3D-renders the cut-outs in the browser
     official: annexe
     category: verdict
     line: "Your startup is not illegal. It is merely... non-compliant. I have signed it."
