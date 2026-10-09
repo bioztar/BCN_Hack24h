@@ -12,6 +12,9 @@ final class DummyScene: SKScene {
     /// Height of the SwiftUI control bar the scene sits behind; the floor is just above it.
     var bottomInset: CGFloat = 150 { didSet { if figureRoot.parent != nil { layout() } } }
 
+    /// Current mouth-open target per officer id (test/debug): only the speaker's is ever non-zero.
+    var mouthTargets: [String: CGFloat] { Dictionary(uniqueKeysWithValues: puppets.map { ($0.persona.id, $0.mouthTarget) }) }
+
     /// True while any officer is lying on its side.
     var isDown: Bool { puppets.contains { $0.isDown } }
 
@@ -129,17 +132,24 @@ final class DummyScene: SKScene {
 
     // MARK: layout
 
-    private var floorY: CGFloat { bottomInset + 10 }
-    private var bustH: CGFloat { puppets.first?.bustH ?? 0 }
+    /// Faces (eyes/mouth) sit at this fraction of the screen height, measured from the bottom.
+    private let faceLevel: CGFloat = 0.55
+    /// Eye/mouth height as a fraction of the bust image height, from its bottom edge.
+    private let faceFraction: CGFloat = 0.72
+
+    private var bustW: CGFloat { size.width * (puppets.count > 1 ? 0.86 : 0.9) }
+    private var bustH: CGFloat { puppets.first?.bustH ?? bustW * 4 / 3 }
+    /// Floor of the busts: put the faces at `faceLevel`, but never above the control bar's top edge, so the
+    /// flat bottom of the cut-out always hides behind the bar.
+    private var floorY: CGFloat { min(size.height * faceLevel - bustH * faceFraction, bottomInset) }
 
     private func layout() {
-        physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(x: 0, y: floorY - 4, width: size.width, height: size.height))
+        physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(x: 0, y: bottomInset + 6, width: size.width, height: size.height))
         physicsBody?.friction = 0.6
         let duo = puppets.count > 1
-        let width = size.width * (duo ? 0.64 : 0.9)
         for (i, p) in puppets.enumerated() {
-            let cx = duo ? size.width * (i == 0 ? 0.31 : 0.69) : size.width / 2
-            p.layout(centerX: cx, floorY: floorY, width: width)
+            let cx = duo ? size.width * (i == 0 ? 0.30 : 0.70) : size.width / 2
+            p.layout(centerX: cx, floorY: floorY, width: bustW)
         }
     }
 
@@ -152,7 +162,7 @@ final class DummyScene: SKScene {
             let free = max(size.height - kb - top, 100)
             let bandH = bustH * 0.5                                  // head + shoulders
             scale = min(max(free * 0.92 / bandH, 1), 1.5)
-            let faceY = floorY + bustH * 0.76
+            let faceY = floorY + bustH * faceFraction
             let target = kb + free / 2
             offset = CGPoint(x: size.width / 2 * (1 - scale), y: target - scale * faceY)
         } else {

@@ -32,7 +32,7 @@ struct PocketView: View {
                 typing = true
             }
             if ProcessInfo.processInfo.arguments.contains("-mouth-demo") {   // hold both mouths open for a screenshot
-                model.puppet.setMouth(open: 0.9, wide: 1)
+                model.puppet.setMouth(open: 0.9, wide: 1, speaker: model.duo.first?.id)   // left officer only
             }
             #endif
         }

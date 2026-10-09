@@ -57,16 +57,18 @@ enum ReliefFigure {
     float mouthV;
     float mouthHW;
     float mouthHH;
+    float mouthIW;
     #pragma body
     float2 uv = _geometry.texcoords[0];
     float dx = (uv.x - mouthU) / (mouthHW * 1.7 * mouthWide);
     float wx = exp(-dx * dx);
     float below = smoothstep(mouthV - mouthHH, mouthV + mouthHH, uv.y);
     float chin = 1.0 - smoothstep(mouthV + 0.07, mouthV + 0.20, uv.y);
-    _geometry.position.y -= mouthOpen * 0.11 * wx * below * chin;
+    _geometry.position.y -= mouthOpen * 0.066 * wx * below * chin;   // max drop ~60% of the first version
     """
 
-    /// Dark mouth interior: an ellipse in texture space (stretched by the jaw drop) fades to near-black.
+    /// Mouth cavity: an ellipse clipped to the inner-lips width (in texture space, so the jaw drop stretches it
+    /// into the opening). Dark red under the upper lip fading to black, plus a faint upper-teeth strip.
     private static let mouthShader = """
     #pragma arguments
     float mouthOpen;
@@ -75,12 +77,18 @@ enum ReliefFigure {
     float mouthV;
     float mouthHW;
     float mouthHH;
+    float mouthIW;
     #pragma body
     float2 uv = _surface.diffuseTexcoord;
-    float2 d = float2((uv.x - mouthU) / (mouthHW * mouthWide), (uv.y - mouthV) / mouthHH);
-    float inside = 1.0 - smoothstep(0.55, 1.0, length(d));
-    float k = inside * smoothstep(0.03, 0.18, mouthOpen);
-    _surface.diffuse.rgb = mix(_surface.diffuse.rgb, float3(0.06, 0.015, 0.02), k);
+    float halfH = mouthHH * 0.5;
+    float2 d = float2((uv.x - mouthU) / (mouthIW * mouthWide), (uv.y - mouthV) / halfH);
+    float inside = 1.0 - smoothstep(0.72, 1.0, length(d));
+    float k = inside * smoothstep(0.04, 0.2, mouthOpen);
+    float depth = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);   // 0 = under the upper lip, 1 = bottom of the opening
+    float3 cavity = mix(float3(0.30, 0.05, 0.06), float3(0.015, 0.0, 0.01), smoothstep(0.0, 0.75, depth));
+    float teeth = (1.0 - smoothstep(0.08, 0.30, depth)) * (1.0 - smoothstep(0.5, 0.85, abs(d.x))) * smoothstep(0.2, 0.5, mouthOpen);
+    cavity = mix(cavity, float3(0.78, 0.74, 0.68), teeth * 0.5);
+    _surface.diffuse.rgb = mix(_surface.diffuse.rgb, cavity, k);
     """
 
     // MARK: photo-relief
@@ -98,7 +106,8 @@ enum ReliefFigure {
         material.isDoubleSided = true
         if let m = MouthStore.rect(for: "\(officer.id)-\(expression.rawValue)") {
             material.shaderModifiers = [.geometry: jawShader, .surface: mouthShader]
-            for (key, value) in [("mouthU", m.u), ("mouthV", m.v), ("mouthHW", m.hw), ("mouthHH", m.hh), ("mouthOpen", 0), ("mouthWide", 1)] {
+            for (key, value) in [("mouthU", m.u), ("mouthV", m.v), ("mouthHW", m.hw), ("mouthHH", m.hh), ("mouthIW", m.iw),
+                                 ("mouthOpen", 0), ("mouthWide", 1)] {
                 material.setValue(NSNumber(value: value), forKey: key)
             }
         }
@@ -112,8 +121,11 @@ enum ReliefFigure {
         let head = mesh(field: field, width: width, material: material, rows: 0..<(neckRow + overlapRows))
         head.name = "head"
         // Head rotates about the neck: pivot and position at the neck point.
-        head.pivot = SCNMatrix4MakeTranslation(0, neckY, 0)
-        head.position = SCNVector3(0, neckY, 0)
+        // Pivot at the neck's actual depth (the relief puts it well in front of z = 0), or turning the head
+        // would shear the overlap rows sideways and show a seam across the shoulders.
+        let neckZ = field.z[min(neckRow, rows - 1) * columns + columns / 2]
+        head.pivot = SCNMatrix4MakeTranslation(0, neckY, neckZ)
+        head.position = SCNVector3(0, neckY, neckZ)
 
         let root = SCNNode()
         root.addChildNode(body)

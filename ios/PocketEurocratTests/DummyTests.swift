@@ -8,6 +8,18 @@ final class DummyTests: XCTestCase {
         return t
     }
 
+    func testOnlyTheSpeakerMouthMoves() {
+        let s = DummyScene(size: CGSize(width: 390, height: 700))
+        s.setDuo([Roster.officers[0], Roster.officers[1]])
+        s.setMouth(open: 0.9, wide: 1, speaker: "annexe")
+        XCTAssertEqual(s.mouthTargets["annexe"], 0.9)
+        XCTAssertEqual(s.mouthTargets["formblatt"], 0)
+        s.setSpeaker("formblatt")                          // turn passes: annexe closes immediately
+        XCTAssertEqual(s.mouthTargets["annexe"], 0)
+        s.setMouth(open: 0.5, wide: 1, speaker: "someone-not-on-screen")
+        XCTAssertEqual(s.mouthTargets.values.reduce(0, +), 0)
+    }
+
     func testToppleThenRecover() {
         let s = DummyScene(size: CGSize(width: 390, height: 700))
         s.setDuo([Roster.officers[0]])

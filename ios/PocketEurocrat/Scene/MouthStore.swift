@@ -6,6 +6,8 @@ import Foundation
 enum MouthStore {
     struct Rect {
         let u: Float, v: Float, hw: Float, hh: Float
+        /// Half width of the inner-lips gap: the mouth cavity is clipped to it.
+        let iw: Float
     }
 
     private static let table: [String: Rect] = {
@@ -14,8 +16,9 @@ enum MouthStore {
             guard let url = Bundle.main.url(forResource: file, withExtension: "json"),
                   let data = try? Data(contentsOf: url),
                   let raw = try? JSONSerialization.jsonObject(with: data) as? [String: [Double]] else { continue }
-            for (name, v) in raw where v.count == 4 {
-                out[name] = Rect(u: Float(v[0]), v: Float(v[1]), hw: Float(v[2]), hh: Float(v[3]))
+            for (name, v) in raw where v.count >= 4 {
+                let iw = v.count > 4 ? Float(v[4]) : Float(v[2]) * 0.8
+                out[name] = Rect(u: Float(v[0]), v: Float(v[1]), hw: Float(v[2]), hh: Float(v[3]), iw: iw)
             }
         }
         return out
