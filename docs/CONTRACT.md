@@ -261,3 +261,54 @@ lose points. Mostly Chinese and American models (the real distribution), very ra
   server-issued `GET /api/game/start` → `{ seed, token }` (HMAC, 2 min TTL), score capped by
   a plausible max for the seed/duration; per-IP rate limit. Stored in SQLite under DATA_DIR
   (own table/file — don't touch the roast DB schema).
+
+## Arcade — four Eurocrat games (Vitaly, 2026-10-10 02:10)
+
+`/game/` becomes the **Eurocrat Arcade**: a landing page with four game tiles + today's
+top score per game. Each game is its own workspace package, Vite build, own base path,
+same look (EU blue/yellow, Arial, form numbers, stamps), mobile-first, `?mock=1` (no server),
+`?embed=1` (no chrome; posts `{type:"score", game, score, rank, ...}` to
+`window.webkit?.messageHandlers?.eurocrat` and `window.parent`), share card PNG at the end,
+synthesized WebAudio SFX. **No real company logos, no official EU emblem image.**
+
+| Game | Package | Path | Owner |
+|---|---|---|---|
+| Whack-a-Model (+ arcade landing + shared leaderboard plugin) | `packages/game` | `/game/` (landing), `/game/whack/` | Lane G |
+| Legal or Banned? (swipe) | `packages/swipe` | `/swipe/` | Lane S |
+| Regulatory Flappy | `packages/flappy` | `/flappy/` | Lane F |
+| In Triplicate (falling forms) | `packages/triplicate` | `/triplicate/` | Lane T |
+
+**Shared leaderboard** (Lane G's `gamePlugin`): every route takes a `game` id
+(`"whack" | "swipe" | "flappy" | "triplicate"`): `GET /api/game/start?game=…` → `{seed, token}`,
+`POST /api/game/score` `{game, name, score, durationMs, seed, token, stats}` → `{rank}`,
+`GET /api/game/leaderboard?game=…&limit=20`. Plausibility caps per game live in the plugin
+(each game lane documents its max-score formula in its README; Lane G encodes it).
+
+### Legal or Banned? (`/swipe/`)
+Tinder-style cards, each a short product pitch ("An app that reads employees' emotions from
+their webcam during meetings"). Swipe **left = BANNED**, **right = ALLOWED**. After each swipe
+the card flips: the verdict stamp + the real basis in one deadpan line + citation chip
+(EUR-Lex link) — e.g. "PROHIBITED — emotion recognition at work, AI Act Art. 5(1)(f)" or
+"ALLOWED — high-risk, Annex III(4). Bring 400 forms." 20 cards per round, 8 s timer per
+card, streak bonus. ≥ 80 cards in `cards.json`, drawn from the AI Act (Art. 5 prohibitions,
+Annex III high-risk, Art. 50 transparency, minimal-risk) and GDPR/DORA/NIS2 where it's a
+clear yes/no. **Every citation must exist in `corpus/provisions.json`** (test enforces it);
+the verdict must be legally right (the comedy is that the law is real). End screen: score,
+rank ("Would pass the bar in Luxembourg" … "Should not be allowed near a startup"), and
+"Analyse your own idea for real →" link to `https://warden.pro7ocol.com/analyze/`.
+
+### Regulatory Flappy (`/flappy/`)
+Tap to flap your startup (a tiny rocket/unicorn) through gaps between pillars labelled with
+regulations (GDPR, AI Act, DORA, NIS2, CRA, DSA, DMA, Data Act, eIDAS 2, CSRD…). Gaps narrow
+and pillars speed up; pickups: "Regulatory sandbox" (brief invincibility, "the sand is not
+yet harmonised"), "Delegated act" (pillars suddenly move). Crash → stamp "DISSOLVED" + the
+regulation that killed you + one real fact line about it. Score = pillars passed; the
+Meanwhile joke on the end screen.
+
+### In Triplicate (`/triplicate/`)
+Falling forms (Tetris-like blocks shaped as documents: A-38, Annex IV, DPIA, CE declaration,
+Form 27B/6…) drop into three Directorate-General inbox columns; steer/rotate so each form
+lands in the matching DG (colour + label). Filling a row of three matched forms stamps
+"APPROVED IN TRIPLICATE" and clears it; a wrong inbox sends the form "back to the queue"
+(adds a grey junk block). Speeds up; game over when the stack hits the ceiling ("Your file
+has been archived"). Touch: swipe to move, tap to rotate; keyboard on desktop.
