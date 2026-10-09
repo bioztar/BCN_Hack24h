@@ -1,0 +1,5 @@
+*.xcodeproj
+PocketEurocrat/Info.plist
+build/
+DerivedData/
+xcuserdata/
