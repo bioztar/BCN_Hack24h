@@ -47,7 +47,7 @@ export class SseParser {
   }
 }
 
-const TYPES = new Set(["officers", "intake", "tier", "line", "verdict", "awaiting", "error"]);
+const TYPES = new Set(["officers", "intake", "tier", "line", "audio", "verdict", "awaiting", "error"]);
 
 /** Turns an SSE message into a RoastEvent; tolerates servers that put the type only in `event:`. */
 export function toRoastEvent(msg: SseMessage): RoastEvent | null {

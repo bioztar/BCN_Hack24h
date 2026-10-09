@@ -80,13 +80,13 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .tiers span.on { background: var(--gold); }
 .hud-bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 12px calc(var(--safe-b) + 12px); display: flex; gap: 10px; z-index: 5; }
 .pitch-btn { flex: 1; font-size: 18px; }
-.subtitle { position: absolute; left: 10px; right: 10px; bottom: calc(var(--safe-b) + 76px); background: rgba(255,255,255,0.96); border-left: 5px solid var(--eu); padding: 10px 12px; font-size: 16px; line-height: 1.3; box-shadow: 0 4px 14px rgba(0,0,0,0.3); z-index: 6; opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+.subtitle { position: absolute; left: 10px; right: 10px; top: calc(var(--safe-t) + 64px); max-height: 38%; overflow-y: auto; background: rgba(255,255,255,0.96); border-left: 5px solid var(--eu); padding: 10px 12px; font-size: 16px; line-height: 1.3; box-shadow: 0 4px 14px rgba(0,0,0,0.3); z-index: 6; opacity: 0; transform: translateY(-8px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
 .subtitle.show { opacity: 1; transform: none; pointer-events: auto; }
 .sub-who { font: bold 12px Arial; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; filter: brightness(0.75); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .chip { font: bold 12px Arial; color: var(--eu); background: #e8eefb; border: 1px solid var(--eu); border-radius: 12px; padding: 4px 10px; text-decoration: none; }
 .chip::after { content: " ↗"; }
-.hint { position: absolute; left: 50%; top: calc(var(--safe-t) + 64px); transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; padding: 6px 10px; border-radius: 12px; white-space: nowrap; opacity: 0; transition: opacity 0.4s; z-index: 4; pointer-events: none; }
+.hint { position: absolute; left: 50%; bottom: calc(var(--safe-b) + 76px); transform: translateX(-50%); background: rgba(0,0,0,0.6); color: #fff; font-size: 12px; padding: 6px 10px; border-radius: 12px; white-space: nowrap; opacity: 0; transition: opacity 0.4s; z-index: 4; pointer-events: none; }
 .hint.show { opacity: 1; }
 .tier-banner { position: absolute; left: 0; right: 0; top: 34%; text-align: center; color: #fff; background: rgba(0,51,153,0.9); padding: 12px 0; z-index: 7; opacity: 0; pointer-events: none; border-top: 3px solid var(--gold); border-bottom: 3px solid var(--gold); }
 .tier-banner small { display: block; font-size: 11px; letter-spacing: 3px; color: var(--gold); }

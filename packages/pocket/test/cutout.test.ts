@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { headCrop } from "../src/cutout";
+import { describe, expect, it, vi } from "vitest";
+import { headCrop, loadCutout } from "../src/cutout";
 
 function alphaMap(w: number, h: number, opaque: (x: number, y: number) => boolean): Uint8Array {
   const a = new Uint8Array(w * h);
@@ -22,5 +22,30 @@ describe("headCrop", () => {
   });
   it("falls back to the whole image when fully transparent", () => {
     expect(headCrop(new Uint8Array(50 * 80), 50, 80)).toEqual({ x: 0, y: 0, size: 50 });
+  });
+});
+
+describe("loadCutout", () => {
+  it("requests each persona's cutout once per session and caches the miss", async () => {
+    const srcs: string[] = [];
+    class FakeImage {
+      crossOrigin = "";
+      naturalWidth = 0;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(v: string) {
+        srcs.push(v);
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal("Image", FakeImage);
+    try {
+      expect(await loadCutout("formblatt")).toBeNull();
+      expect(await loadCutout("formblatt")).toBeNull();
+      expect(await loadCutout("annexe")).toBeNull();
+      expect(srcs).toEqual(["/assets/generated/cutout/formblatt-neutral.png", "/assets/generated/cutout/annexe-neutral.png"]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
