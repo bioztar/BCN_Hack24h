@@ -47,6 +47,10 @@ export class Corpus {
     return new Corpus(raw.provisions);
   }
 
+  get size(): number {
+    return this.byId.size;
+  }
+
   has(id: string): boolean {
     return this.byId.has(id);
   }

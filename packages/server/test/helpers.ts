@@ -1,0 +1,119 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildApp } from "../src/app.js";
+import { profiles } from "../src/config.js";
+import { Corpus } from "../src/corpus.js";
+import { openDb } from "../src/db.js";
+import { Engine } from "../src/engine.js";
+import type { Llm, LlmRequest } from "../src/llm.js";
+import { Moderator } from "../src/moderation.js";
+import { Roster } from "../src/personas.js";
+import { RateLimiter } from "../src/ratelimit.js";
+import { GitHubIntake } from "../src/repo.js";
+import { AudioCache, type Stt, type Tts } from "../src/voice.js";
+import { Wall } from "../src/wall.js";
+
+export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+export const corpus = Corpus.load(path.join(ROOT, "corpus", "provisions.json"));
+export const roster = Roster.load(path.join(ROOT, "content", "personas"), path.join(ROOT, "assets", "generated"));
+
+export function chunked(text: string, size = 17): AsyncIterable<string> {
+  return (async function* () {
+    for (let i = 0; i < text.length; i += size) yield text.slice(i, i + size);
+  })();
+}
+
+/** Fake Nebius: answers moderation, meta extraction and roast prompts. Records every request. */
+export class FakeLlm implements Llm {
+  readonly calls: LlmRequest[] = [];
+  failRoast = false;
+  constructor(readonly revenue: number | null = 1_000_000_000) {}
+
+  stream(req: LlmRequest): AsyncIterable<string> {
+    this.calls.push(req);
+    const sys = req.messages[0]!.content;
+    if (sys.includes("content moderator")) return chunked(/BLOCKME/.test(req.messages[1]!.content) ? "BLOCK" : "ALLOW");
+    if (sys.includes("Extract from the pitch")) return chunked(JSON.stringify({ revenueEur: this.revenue, startup: "Fridgely" }));
+    if (this.failRoast) return (async function* () { throw new Error("nebius 503"); })();
+    const ids = [...sys.matchAll(/- id "([^"]+)"/g)].map((m) => m[1]!);
+    const tier = Number(/CURRENT TIER (\d)/.exec(sys)![1]);
+    const [a, b] = ids as [string, string];
+    const lines = [
+      { speaker: a, text: `Tier ${tier}: your fridge processes biometric data, which Article 999 forbids.`, provisions: ["ai-act-999", "gdpr-9"], clip: `tier${tier}`, stamp: null, charge: "Biometric fridge." },
+      { speaker: b, text: `I refuse your draft. Under Article 50 it lacks transparency.`, provisions: ["ai-act-50", "made-up-1"], clip: "talking", stamp: tier >= 2 ? "REFUSÉ" : null, charge: "Undisclosed chatbot." },
+      { speaker: a, text: "Then we refuse it twice, in triplicate.", provisions: ["gdpr-6"], clip: "stamp", stamp: "INCOMPLET" },
+    ];
+    // One compact, one pretty-printed (spans chunks/newlines), one compact.
+    const out = `${JSON.stringify(lines[0])}\n${JSON.stringify(lines[1], null, 2)}\n${JSON.stringify(lines[2])}\n`;
+    return chunked(out);
+  }
+}
+
+export class FakeTts implements Tts {
+  calls = 0;
+  fail = false;
+  async synthesize(text: string) {
+    this.calls++;
+    if (this.fail) throw new Error("SLNG_API_KEY is not set");
+    return { audio: Buffer.from(`mp3:${text}`), contentType: "audio/mpeg" };
+  }
+}
+
+export class FakeStt implements Stt {
+  async transcribe(audio: Buffer, mime: string) {
+    return `heard ${audio.length} bytes of ${mime}`;
+  }
+}
+
+export interface FakeRepo {
+  meta?: Record<string, unknown>;
+  status?: number;
+  tree: Record<string, { name: string; path: string; type: "file" | "dir" }[]>;
+  files: Record<string, string>;
+  redirect?: boolean;
+}
+
+/** Fake api.github.com. Records URLs so tests can prove nothing else was fetched. */
+export function fakeGitHub(repo: FakeRepo) {
+  const urls: string[] = [];
+  const impl = (async (input: string | URL | Request) => {
+    const url = String(input);
+    urls.push(url);
+    if (repo.redirect) return new Response(null, { status: 301, headers: { location: "https://evil.example/" } });
+    const u = new URL(url);
+    if (u.hostname !== "api.github.com") throw new Error(`off-host fetch ${url}`);
+    const m = /^\/repos\/([^/]+)\/([^/]+)(?:\/contents\/?(.*))?$/.exec(u.pathname)!;
+    if (m[3] === undefined) {
+      if (repo.status) return new Response("{}", { status: repo.status });
+      return Response.json({ full_name: `${m[1]}/${m[2]}`, private: false, description: "A fridge that judges you", stargazers_count: 7, language: "TypeScript", default_branch: "main", license: null, ...repo.meta });
+    }
+    const p = decodeURIComponent(m[3]);
+    if (p in repo.files) return new Response(repo.files[p], { headers: { "content-type": "text/plain" } });
+    const listing = repo.tree[p];
+    if (listing) return Response.json(listing);
+    return new Response("{}", { status: 404 });
+  }) as typeof fetch;
+  return { impl, urls };
+}
+
+export function entries(dir: string, names: string[]) {
+  return names.map((n) => ({ name: n.replace(/\/$/, ""), path: dir ? `${dir}/${n.replace(/\/$/, "")}` : n.replace(/\/$/, ""), type: n.endsWith("/") ? ("dir" as const) : ("file" as const) }));
+}
+
+export function makeApp(opts: { llm?: FakeLlm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number } = {}) {
+  const db = openDb(":memory:");
+  const llm = opts.llm === undefined ? new FakeLlm() : opts.llm;
+  const tts = opts.tts ?? new FakeTts();
+  const engine = new Engine({ llm, corpus, roster, profile: profiles.roast, cheap: profiles.cheap, gags: () => [] });
+  const wall = new Wall(db);
+  const app = buildApp({
+    db, corpus, roster, engine, wall,
+    moderator: new Moderator(llm, profiles.cheap),
+    limiter: new RateLimiter(db, () => opts.perHour ?? 1000),
+    audio: new AudioCache(tts, null),
+    stt: new FakeStt(),
+    intake: new GitHubIntake(opts.github ?? fakeGitHub({ tree: { "": [] }, files: {} }).impl, () => undefined),
+    rand: () => 0,
+  });
+  return { app, db, llm, tts, wall, engine };
+}
