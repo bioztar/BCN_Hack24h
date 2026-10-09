@@ -95,29 +95,16 @@ export class GitHubIntake {
     if (meta.full_name.toLowerCase() !== `${owner}/${repo}`.toLowerCase()) throw new IntakeError("repository was renamed or moved; submit its current URL", 400);
 
     const branch = encodeURIComponent(meta.default_branch);
-    const top = (await this.json<{ name: string; path: string; type: string }[]>(`/repos/${slug}/contents/?ref=${branch}`)) ?? [];
-    const paths = new Set<string>(top.map((e) => e.path));
-    const dirs = top.filter((e) => e.type === "dir").slice(0, 30);
-    // Top level + 2 depth: one listing per top-level dir, then one per second-level dir, capped.
-    const second: string[] = [];
-    for (const d of dirs) {
-      if (paths.size > MAX_TREE_ENTRIES) break;
-      const items = (await this.json<{ path: string; type: string }[]>(`/repos/${slug}/contents/${d.path.split("/").map(encodeURIComponent).join("/")}?ref=${branch}`).catch(() => null)) ?? [];
-      for (const it of items.slice(0, 60)) {
-        paths.add(it.path);
-        if (it.type === "dir" && /^(\.github|src|app|lib|tests?|spec|packages|config)$/i.test(d.path)) second.push(it.path);
-      }
-    }
-    for (const d of second.slice(0, 15)) {
-      if (paths.size > MAX_TREE_ENTRIES) break;
-      const items = (await this.json<{ path: string }[]>(`/repos/${slug}/contents/${d.split("/").map(encodeURIComponent).join("/")}?ref=${branch}`).catch(() => null)) ?? [];
-      for (const it of items.slice(0, 40)) paths.add(it.path);
-    }
-
-    const readmePath = top.find((e) => /^readme(\.[a-z]+)?$/i.test(e.name))?.path;
+    // One recursive tree call (unauthenticated GitHub allows 60 calls/h); keep top level + 2 depth.
+    const tree = await this.json<{ tree?: { path: string; type: string; mode?: string }[] }>(`/repos/${slug}/git/trees/${branch}?recursive=1`).catch(() => null);
+    const entries = (tree?.tree ?? []).filter((e) => typeof e.path === "string" && e.path.split("/").length <= 3).slice(0, MAX_TREE_ENTRIES);
+    const paths = new Set<string>(entries.map((e) => e.path));
+    // Regular files only: a symlink (mode 120000) named README could point at .env — never fetch it.
+    const isFile = (e: { type: string; mode?: string }) => e.type === "blob" && e.mode !== "120000";
+    const readmePath = entries.find((e) => !e.path.includes("/") && isFile(e) && /^readme(\.[a-z]+)?$/i.test(e.path))?.path;
     const readme = readmePath ? ((await this.raw(`/repos/${slug}/contents/${encodeURIComponent(readmePath)}?ref=${branch}`, README_MAX)) ?? "") : "";
 
-    const manifests = [...paths].filter((p) => MANIFESTS.includes(p.split("/").pop() ?? "") && p.split("/").length <= 3).slice(0, MANIFEST_MAX);
+    const manifests = entries.filter((e) => isFile(e) && MANIFESTS.includes(e.path.split("/").pop() ?? "")).map((e) => e.path).slice(0, MANIFEST_MAX);
     let manifestText = "";
     for (const m of manifests) manifestText += `\n${(await this.raw(`/repos/${slug}/contents/${m.split("/").map(encodeURIComponent).join("/")}?ref=${branch}`, MANIFEST_BYTES)) ?? ""}`;
 
@@ -149,7 +136,7 @@ export function computeFindings(o: { paths: string[]; hasLicense: boolean; readm
   if (llm) out.push({ key: "llm-sdk", detail: `LLM SDK in the manifest: ${llm[0]}` });
   const analytics = o.manifestText.match(ANALYTICS_SDK);
   if (analytics) out.push({ key: "analytics-sdk", detail: `Analytics/telemetry SDK in the manifest: ${analytics[0]}` });
-  if (!lower.some((p) => /(^|\/)(tests?|spec|__tests__)(\/|$)|\.(test|spec)\.[a-z]+$|_test\.(go|py)$|^test_.*\.py$/.test(p))) out.push({ key: "no-tests", detail: "No tests found in the top two levels." });
+  if (!lower.some((p) => /(^|\/)(tests?|spec|__tests__)(\/|$)|\.(test|spec)\.[a-z]+$|_test\.(go|py)$|(^|\/)test_.*\.py$|(^|\/)(tests?|spec)\.[a-z0-9]+$/.test(p))) out.push({ key: "no-tests", detail: "No tests found in the top two levels." });
   if (!lower.some((p) => p.startsWith(".github/workflows") || base(p) === ".gitlab-ci.yml" || base(p) === ".travis.yml" || p.startsWith(".circleci"))) out.push({ key: "no-ci", detail: "No CI configuration." });
   return out;
 }

@@ -30,7 +30,8 @@ export const paths = {
 };
 
 export const port = () => positive("PORT", 8796);
-export const rateLimitPerHour = () => positive("RATE_LIMIT_PER_HOUR", 40);
+/** High default: the venue shares one public IP. */
+export const rateLimitPerHour = () => positive("RATE_LIMIT_PER_HOUR", 1000);
 
 export interface Profile {
   model: string;
@@ -41,11 +42,11 @@ export interface Profile {
   extraBody: Record<string, unknown>;
 }
 
-/** Kimi-K3 per the brief; DeepSeek-V4-Pro is Karen's measured fast fallback. Thinking stays off. */
+/** DeepSeek-V4-Pro first (helm's live test: Kimi-K3 hit the 12 s timeout in 5/10 rounds), Kimi-K3 as fallback. Thinking stays off. */
 export const profiles = {
   roast: (): Profile => ({
-    model: process.env.NEBIUS_MODEL || "moonshotai/Kimi-K3",
-    fallback: process.env.NEBIUS_FALLBACK_MODEL || "deepseek-ai/DeepSeek-V4-Pro",
+    model: process.env.NEBIUS_MODEL || "deepseek-ai/DeepSeek-V4-Pro",
+    fallback: process.env.NEBIUS_FALLBACK_MODEL || "moonshotai/Kimi-K3",
     temperature: 0.95,
     maxOutputTokens: 900,
     timeoutMs: positive("NEBIUS_TIMEOUT_MS", 12000),

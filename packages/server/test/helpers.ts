@@ -4,7 +4,7 @@ import { buildApp } from "../src/app.js";
 import { profiles } from "../src/config.js";
 import { Corpus } from "../src/corpus.js";
 import { openDb } from "../src/db.js";
-import { Engine } from "../src/engine.js";
+import { Engine, type Timings } from "../src/engine.js";
 import type { Llm, LlmRequest } from "../src/llm.js";
 import { Roster } from "../src/personas.js";
 import { RateLimiter } from "../src/ratelimit.js";
@@ -50,8 +50,10 @@ export class FakeLlm implements Llm {
 export class FakeTts implements Tts {
   calls = 0;
   fail = false;
+  delayMs = 0;
   async synthesize(text: string) {
     this.calls++;
+    if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     if (this.fail) throw new Error("SLNG_API_KEY is not set");
     return { audio: Buffer.from(`mp3:${text}`), contentType: "audio/mpeg" };
   }
@@ -66,7 +68,7 @@ export class FakeStt implements Stt {
 export interface FakeRepo {
   meta?: Record<string, unknown>;
   status?: number;
-  tree: Record<string, { name: string; path: string; type: "file" | "dir" }[]>;
+  tree: Record<string, { name: string; path: string; type: "file" | "dir" | "symlink" }[]>;
   files: Record<string, string>;
   redirect?: boolean;
 }
@@ -80,6 +82,11 @@ export function fakeGitHub(repo: FakeRepo) {
     if (repo.redirect) return new Response(null, { status: 301, headers: { location: "https://evil.example/" } });
     const u = new URL(url);
     if (u.hostname !== "api.github.com") throw new Error(`off-host fetch ${url}`);
+    const t = /^\/repos\/[^/]+\/[^/]+\/git\/trees\/[^/]+$/.exec(u.pathname);
+    if (t) {
+      const tree = Object.values(repo.tree).flat().map((e) => ({ path: e.path, type: e.type === "dir" ? "tree" : "blob", mode: e.type === "symlink" ? "120000" : e.type === "dir" ? "040000" : "100644" }));
+      return Response.json({ sha: "x", tree, truncated: false });
+    }
     const m = /^\/repos\/([^/]+)\/([^/]+)(?:\/contents\/?(.*))?$/.exec(u.pathname)!;
     if (m[3] === undefined) {
       if (repo.status) return new Response("{}", { status: repo.status });
@@ -94,15 +101,20 @@ export function fakeGitHub(repo: FakeRepo) {
   return { impl, urls };
 }
 
+/** "dir/" → directory, "name@" → symlink, else a regular file. */
 export function entries(dir: string, names: string[]) {
-  return names.map((n) => ({ name: n.replace(/\/$/, ""), path: dir ? `${dir}/${n.replace(/\/$/, "")}` : n.replace(/\/$/, ""), type: n.endsWith("/") ? ("dir" as const) : ("file" as const) }));
+  return names.map((n) => {
+    const name = n.replace(/[/@]$/, "");
+    const type = n.endsWith("/") ? ("dir" as const) : n.endsWith("@") ? ("symlink" as const) : ("file" as const);
+    return { name, path: dir ? `${dir}/${name}` : name, type };
+  });
 }
 
-export function makeApp(opts: { llm?: FakeLlm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string } = {}) {
+export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number } = {}) {
   const db = openDb(":memory:");
-  const llm = opts.llm === undefined ? new FakeLlm() : opts.llm;
+  const llm = (opts.llm === undefined ? new FakeLlm() : opts.llm) as FakeLlm | null;
   const tts = opts.tts ?? new FakeTts();
-  const engine = new Engine({ llm, corpus, roster, profile: profiles.roast, cheap: profiles.cheap, gags: () => [] });
+  const engine = new Engine({ llm, corpus, roster, profile: profiles.roast, cheap: profiles.cheap, gags: () => [], timings: opts.timings });
   const wall = new Wall(db);
   const app = buildApp({
     db, corpus, roster, engine, wall,
@@ -114,6 +126,8 @@ export function makeApp(opts: { llm?: FakeLlm | null; tts?: FakeTts; github?: ty
     webDir: opts.webDir,
     pocketDir: opts.pocketDir,
     assetsDir: opts.assetsDir,
+    roundDeadlineMs: opts.roundDeadlineMs,
+    ttsBudgetMs: opts.ttsBudgetMs,
   });
   return { app, db, llm, tts, wall, engine };
 }

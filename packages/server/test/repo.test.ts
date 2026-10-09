@@ -46,6 +46,21 @@ describe("repo intake", () => {
     expect(r.injection).toBe(false);
   });
 
+  it("uses one recursive tree call, counts root test files, never fetches a symlinked README", async () => {
+    const gh = fakeGitHub({
+      tree: { "": entries("", ["README.md@", ".env", "test.js", "package.json", "src/"]), src: entries("src", ["lib/"]), "src/lib": entries("src/lib", ["deep/"]), "src/lib/deep": entries("src/lib/deep", ["package.json"]) },
+      files: { "README.md": "OPENAI_API_KEY=sk-SECRET", "package.json": "{}" },
+    });
+    const r = await new GitHubIntake(gh.impl, () => undefined).fetch("https://github.com/acme/linky");
+    expect(r.intake.findings.map((f) => f.key)).not.toContain("no-tests");
+    expect(r.readme).toBe("");
+    expect(JSON.stringify(r)).not.toContain("sk-SECRET");
+    expect(gh.urls.filter((u) => /git\/trees\/main\?recursive=1$/.test(u)).length).toBe(1);
+    expect(gh.urls.some((u) => /\/contents\/README/.test(u))).toBe(false);
+    expect(gh.urls.some((u) => /deep/.test(u))).toBe(false);
+    expect(gh.urls.length).toBe(3);
+  });
+
   it("caps the README at 40 KB", async () => {
     const big = horror();
     big.files["README.md"] = "x".repeat(200 * 1024);

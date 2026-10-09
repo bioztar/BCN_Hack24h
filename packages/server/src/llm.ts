@@ -18,6 +18,8 @@ export interface LlmRequest {
   /** Merged verbatim into the request body — carries `chat_template_kwargs.thinking:false`. */
   extraBody: Record<string, unknown>;
   stream: boolean;
+  /** Aborting it cancels the HTTP request and its body stream (the engine abandons stalled models). */
+  signal?: AbortSignal;
 }
 
 export interface Llm {

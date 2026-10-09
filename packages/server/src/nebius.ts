@@ -53,7 +53,7 @@ export class NebiusLlm implements Llm {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify(buildBody(req)),
-      signal: AbortSignal.timeout(req.timeoutMs),
+      signal: req.signal ? AbortSignal.any([AbortSignal.timeout(req.timeoutMs), req.signal]) : AbortSignal.timeout(req.timeoutMs),
     });
     if (!res.ok) throw new NebiusError(`nebius ${res.status} on ${req.model}`, res.status);
 
@@ -96,7 +96,7 @@ export async function* readSse(body: ReadableStream<Uint8Array>): AsyncIterable<
       }
     }
   } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
+    // Never await the cancel: on a stalled body it may not settle, and the caller has already moved on.
+    void reader.cancel().catch(() => undefined);
   }
 }

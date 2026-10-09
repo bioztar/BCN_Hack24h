@@ -1,14 +1,14 @@
 /** The ministry's HTTP surface — docs/CONTRACT.md "HTTP API". Every provider is injected. */
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { TIER_NAMES, type Case, type PersonaId, type RoastEvent, type Submission, type Tier } from "@dg-roast/shared";
 import type { Corpus } from "./corpus.js";
 import { nextCounter, type Db } from "./db.js";
 import { CaseStore } from "./cases.js";
-import type { CaseState, Engine } from "./engine.js";
+import type { CaseState, Engine, LineOut } from "./engine.js";
 import type { Roster } from "./personas.js";
 import { quotesVisitor } from "./visitor.js";
 import type { RateLimiter } from "./ratelimit.js";
@@ -32,8 +32,16 @@ export interface AppDeps {
   webDir?: string;
   pocketDir?: string;
   assetsDir?: string;
-  /** Max wait for TTS before a line goes out with `audioUrl: null`. */
+  /** Max wait for TTS before a line goes out with `audioUrl: null` (a later `audio` event follows). */
   ttsBudgetMs?: number;
+  /** Before `awaiting`/`verdict`, wait at most this long for late audio. */
+  lateAudioMs?: number;
+  /** A canned opener speaks if no model line arrives by then. */
+  firstLineMs?: number;
+  /** Hard cap on a round: `awaiting` or `verdict` is always emitted by then (plus TTS waits). */
+  roundDeadlineMs?: number;
+  /** Tier 5: max wait for the model's revenue extraction before the heuristic is used. */
+  metaBudgetMs?: number;
   logger?: boolean;
   rand?: () => number;
 }
@@ -51,6 +59,8 @@ interface Runtime {
   done: boolean;
   bus: EventEmitter;
 }
+
+const STOP = Symbol("stop");
 
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise((resolve) => {
@@ -98,9 +108,12 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   // warden.pro7ocol.com is the analyzer's host: its root goes to /analyze/ (CONTRACT "Deploy target").
   app.addHook("onRequest", async (req, reply) => {
     const host = (req.headers.host ?? "").split(":")[0]?.toLowerCase();
-    if (host === ANALYZER_HOST && req.method === "GET" && (req.url === "/" || req.url.startsWith("/?"))) {
+    if (req.method !== "GET" && req.method !== "HEAD") return;
+    if (host === ANALYZER_HOST && (req.url === "/" || req.url.startsWith("/?"))) {
       return reply.redirect("/analyze/" + req.url.slice(1), 302);
     }
+    const [pathname, query] = [req.url.split("?")[0], req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""];
+    if (pathname === "/pocket" || pathname === "/analyze") return reply.redirect(`${pathname}/${query}`, 301);
   });
 
   app.get("/api/health", async () => ({ ok: true }));
@@ -164,10 +177,37 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
   const visitorTexts = (s: CaseState) => [s.submission.text ?? "", ...s.replies, s.intake?.description ?? "", s.readme ?? ""].filter(Boolean);
 
+  /**
+   * One round. Lines go out as soon as they arrive (audio attached if ready within ttsBudgetMs, else a
+   * later `audio` event). Whatever happens — slow, stalled or failing model — the round ends with
+   * `awaiting` or `verdict` within roundDeadlineMs (plus bounded TTS waits).
+   */
   async function runRound(state: CaseState, rt: Runtime): Promise<void> {
     const push = (e: RoastEvent) => {
       rt.events.push(e);
       rt.bus.emit("event", e);
+    };
+    const started = Date.now();
+    const deadline = started + (d.roundDeadlineMs ?? 20000);
+    const lateAudio: Promise<void>[] = [];
+    let chain: Promise<void> = Promise.resolve();
+    let meta: { revenueEur: number; startup: string } | null = null;
+    let n = 0;
+    let count = 0;
+    const emit = (line: LineOut) => {
+      const id = `${state.caseId}-${state.round}-${n++}`;
+      const spec = d.roster.get(line.speaker)!;
+      const render = d.audio.render(line.text, spec.voice);
+      const arrived = Date.now();
+      const provisions = line.provisions.map((pid) => d.corpus.provision(pid)).filter((p): p is NonNullable<typeof p> => Boolean(p));
+      state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
+      count++;
+      chain = chain.then(async () => {
+        const audioUrl = await withTimeout(render, Math.max(0, arrived + (d.ttsBudgetMs ?? 2500) - Date.now()), null);
+        push({ type: "line", id, speaker: line.speaker, text: line.text, provisions, clip: line.clip, audioUrl, ...(line.stamp ? { stamp: line.stamp } : {}) });
+        if (!quotesVisitor(line.text, visitorTexts(state))) d.wall.add({ speaker: line.speaker, text: line.text, at: new Date().toISOString() });
+        if (!audioUrl) lateAudio.push(render.then((url) => (url ? push({ type: "audio", id, audioUrl: url }) : undefined), () => undefined));
+      });
     };
     try {
       if (state.round === 0) {
@@ -175,18 +215,34 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         if (state.intake) push({ type: "intake", repo: state.intake });
       }
       push({ type: "tier", tier: state.tier, name: TIER_NAMES[state.tier - 1]! });
-      const meta = state.tier === 5 ? d.engine.extractMeta(state) : null;
-      let n = 0;
-      for await (const line of d.engine.lines(state)) {
-        const spec = d.roster.get(line.speaker)!;
-        const audioUrl = await withTimeout(d.audio.render(line.text, spec.voice), d.ttsBudgetMs ?? 3500, null);
-        const provisions = line.provisions.map((id) => d.corpus.provision(id)).filter((p): p is NonNullable<typeof p> => Boolean(p));
-        push({ type: "line", id: `${state.caseId}-${state.round}-${n++}`, speaker: line.speaker, text: line.text, provisions, clip: line.clip, audioUrl, ...(line.stamp ? { stamp: line.stamp } : {}) });
-        state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
-        if (!quotesVisitor(line.text, visitorTexts(state))) d.wall.add({ speaker: line.speaker, text: line.text, at: new Date().toISOString() });
-      }
       if (state.tier === 5) {
-        state.notice = d.engine.notice(state, await meta!);
+        meta = await withTimeout(d.engine.extractMeta(state), d.metaBudgetMs ?? 1500, d.engine.metaFallback(state));
+        state.fine = d.engine.previewFine(state, meta);
+      }
+      const firstLineMs = Math.max(300, (d.firstLineMs ?? 3500) - (Date.now() - started));
+      const it = d.engine.lines(state, { firstLineMs, roundMs: Math.max(1000, deadline - Date.now() - 1000) })[Symbol.asyncIterator]();
+      try {
+        for (;;) {
+          const r = await withTimeout<IteratorResult<LineOut> | typeof STOP>(it.next(), Math.max(0, deadline - Date.now()), STOP);
+          if (r === STOP) {
+            app.log.warn({ caseId: state.caseId, tier: state.tier }, "round deadline hit; closing with canned lines");
+            break;
+          }
+          if (r.done) break;
+          emit(r.value);
+        }
+      } finally {
+        void it.return(undefined).catch(() => undefined);
+      }
+      while (count < 3) emit(d.engine.fill(state, d.engine.partner(state, state.lines.at(-1)?.speaker), state.lines.map((l) => l.text)));
+      await chain;
+      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 3000, undefined);
+    } catch (err) {
+      app.log.error({ err }, "round failed; closing it anyway");
+    }
+    try {
+      if (state.tier === 5) {
+        state.notice = d.engine.notice(state, meta ?? d.engine.metaFallback(state));
         state.done = true;
         push({ type: "verdict", notice: state.notice });
       } else {
@@ -195,7 +251,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       state.roundPending = false;
       cases.save(state);
     } catch (err) {
-      app.log.error({ err }, "round failed");
+      app.log.error({ err }, "round close failed");
       push({ type: "error", message: "The ministry has suffered an administrative incident. Please reopen the stream." });
       runtimes.delete(state.caseId);
     } finally {
@@ -273,6 +329,15 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     return reply.header("content-type", a.contentType).header("cache-control", "public, max-age=31536000, immutable").send(a.audio);
   });
 
+  // assets/generated is created if missing so pictures that land after deploy are served without a restart
+  // (@fastify/static resolves files per request). Other missing roots are skipped.
+  if (d.assetsDir && !existsSync(d.assetsDir)) {
+    try {
+      mkdirSync(d.assetsDir, { recursive: true });
+    } catch {
+      /* read-only filesystem: skipped below */
+    }
+  }
   // Static roots; any missing directory is skipped. Only the first registration decorates reply.
   const roots = [
     { root: d.assetsDir, prefix: "/assets/generated/", spa: false },

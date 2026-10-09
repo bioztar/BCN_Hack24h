@@ -190,6 +190,50 @@ describe("misc endpoints", () => {
     expect((await app.inject({ method: "GET", url: "/api/audio/deadbeef.mp3" })).statusCode).toBe(404);
   });
 
+  it("a never-ending model stream still ends the round with awaiting", async () => {
+    const hang = { stream: () => ({ [Symbol.asyncIterator]: () => ({ next: () => new Promise<IteratorResult<string>>(() => undefined) }) }) };
+    const { app } = makeApp({ llm: hang, timings: { firstLineMs: 50, firstTokenMs: 150, idleMs: 100 }, roundDeadlineMs: 1500 });
+    const c = (await app.inject({ method: "POST", url: "/api/case", payload: { submission: { kind: "text", text: "An AI for cats" } } })).json() as { caseId: string };
+    const t0 = Date.now();
+    const events = await stream(app, c.caseId);
+    expect(Date.now() - t0).toBeLessThan(3000);
+    expect(events.filter((e) => e.type === "line").length).toBe(3);
+    expect(events.at(-1)!.type).toBe("awaiting");
+    expect((await app.inject({ method: "POST", url: `/api/case/${c.caseId}/reply`, payload: { text: "hello?" } })).statusCode).toBe(204);
+  });
+
+  it("slow TTS: the line goes out with audioUrl null, then a follow-up audio event before awaiting", async () => {
+    const tts = new FakeTts();
+    tts.delayMs = 120;
+    const { app } = makeApp({ llm: null, tts, ttsBudgetMs: 20 });
+    const c = (await app.inject({ method: "POST", url: "/api/case", payload: { submission: { kind: "text", text: "An AI for cats" } } })).json() as { caseId: string };
+    const events = await stream(app, c.caseId);
+    const lines = events.filter((e) => e.type === "line");
+    const audio = events.filter((e) => e.type === "audio");
+    expect(lines.every((l) => l.audioUrl === null)).toBe(true);
+    expect(audio.map((a) => a.id).sort()).toEqual(lines.map((l) => l.id).sort());
+    for (const a of audio) expect(a.audioUrl).toMatch(/^\/api\/audio\/[a-f0-9]{32}\.mp3$/);
+    expect(events.at(-1)!.type).toBe("awaiting");
+  });
+
+  it("301s /pocket and /analyze to their trailing-slash roots", async () => {
+    const { app } = makeApp();
+    for (const [from, to] of [["/pocket", "/pocket/"], ["/analyze", "/analyze/"], ["/pocket?x=1", "/pocket/?x=1"]]) {
+      const r = await app.inject({ method: "GET", url: from! });
+      expect(r.statusCode, from).toBe(301);
+      expect(r.headers.location).toBe(to);
+    }
+  });
+
+  it("serves generated assets that land after boot", async () => {
+    const dir = path.join(mkdtempSync(path.join(tmpdir(), "roast-late-")), "generated");
+    const { app } = makeApp({ assetsDir: dir });
+    expect((await app.inject({ method: "GET", url: "/assets/generated/still/x.png" })).statusCode).toBe(404);
+    mkdirSync(path.join(dir, "still"), { recursive: true });
+    writeFileSync(path.join(dir, "still", "x.png"), "LATE");
+    expect((await app.inject({ method: "GET", url: "/assets/generated/still/x.png" })).payload).toBe("LATE");
+  });
+
   it("redirects / to /analyze/ on the analyzer host only", async () => {
     const { app } = makeApp();
     const w = await app.inject({ method: "GET", url: "/", headers: { host: "warden.pro7ocol.com" } });

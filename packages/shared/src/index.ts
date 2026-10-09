@@ -30,6 +30,7 @@ export type RoastEvent =
   | { type: "tier"; tier: Tier; name: string }
   | { type: "line"; id: string; speaker: PersonaId; text: string; provisions: Provision[]; clip: ClipSlot; audioUrl: string | null; stamp?: "REFUSÉ" | "INCOMPLET" | "RENVOYÉ EN COMMISSION" }
   | { type: "verdict"; notice: Notice }
+  | { type: "audio"; id: string; audioUrl: string }                      // late TTS for an already-sent line (same id)
   | { type: "awaiting"; prompt: string }                                  // pitcher may argue back
   | { type: "error"; message: string };
 

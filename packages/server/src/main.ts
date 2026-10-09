@@ -24,6 +24,7 @@ let gags = loadGags(paths.gags(), corpus);
 setInterval(() => (gags = loadGags(paths.gags(), corpus)), 60_000).unref();
 
 const engine = new Engine({ llm, corpus, roster, profile: profiles.roast, cheap: profiles.cheap, gags: () => gags, log: (msg, meta) => console.warn(msg, meta ?? "") });
+const audio = new AudioCache(new SlngTts(slngConfig), path.join(dataDir, "audio"), (m) => console.warn(m));
 const app = buildApp({
   db,
   corpus,
@@ -31,7 +32,7 @@ const app = buildApp({
   engine,
   wall: new Wall(db),
   limiter: new RateLimiter(db, rateLimitPerHour),
-  audio: new AudioCache(new SlngTts(slngConfig), path.join(dataDir, "audio"), (m) => console.warn(m)),
+  audio,
   stt: new SlngStt(slngConfig),
   intake: new GitHubIntake(),
   webDir: paths.web(),
@@ -42,3 +43,17 @@ const app = buildApp({
 
 await app.listen({ host: process.env.HOST || "0.0.0.0", port: port() });
 console.log(`DG ROAST ministry open on :${port()} — ${roster.specs.length} officials, ${corpus.size} provisions`);
+
+// Pre-render every canned/fallback line (cached by content hash) so fallbacks always have audio.
+if (process.env.SLNG_API_KEY) {
+  const jobs = engine.cannedLines();
+  let next = 0;
+  let ok = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const j = jobs[next++]!;
+      if (await audio.render(j.text, roster.get(j.speaker)!.voice)) ok++;
+    }
+  };
+  void Promise.all([worker(), worker(), worker()]).then(() => console.log(`pre-rendered ${ok}/${jobs.length} canned lines`));
+}
