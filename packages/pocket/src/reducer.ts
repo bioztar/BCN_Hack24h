@@ -60,6 +60,8 @@ export function reduce(s: RoastState, a: Action): RoastState {
     case "line":
       if (s.lines.some((l) => l.id === a.id)) return s;
       return { ...s, lines: [...s.lines, a] };
+    case "audio":
+      return s;
     case "awaiting":
       if (s.phase === "verdict") return s;
       return { ...s, phase: "awaiting", prompt: a.prompt };

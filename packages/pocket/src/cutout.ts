@@ -67,11 +67,23 @@ export function headCanvas(img: HTMLImageElement, out = 256): HTMLCanvasElement 
   }
 }
 
+const cutouts = new Map<string, Promise<HTMLImageElement | null>>();
+
+/** One request per persona per page session; a miss (404) is cached too. */
+export function loadCutout(personaId: string): Promise<HTMLImageElement | null> {
+  let p = cutouts.get(personaId);
+  if (!p) {
+    p = loadImage(cutoutUrl(personaId));
+    cutouts.set(personaId, p);
+  }
+  return p;
+}
+
 /** Mounts the persona's cutout as a face plane if the asset exists; keeps the procedural face otherwise. */
 export async function tryApplyCutout(rig: Rig, personaId: string): Promise<boolean> {
   const m = rig.faceMount;
   if (!m) return false;
-  const img = await loadImage(cutoutUrl(personaId));
+  const img = await loadCutout(personaId);
   const canvas = img && headCanvas(img);
   if (!canvas) return false;
   const tex = new THREE.CanvasTexture(canvas);

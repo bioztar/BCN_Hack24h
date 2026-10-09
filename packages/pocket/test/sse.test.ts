@@ -27,4 +27,10 @@ describe("SseParser", () => {
     expect(toRoastEvent({ event: "message", data: "not json" })).toBe(null);
     expect(toRoastEvent({ event: "message", data: '{"type":"party"}' })).toBe(null);
   });
+
+  it("accepts the late-TTS audio event", () => {
+    const p = new SseParser();
+    const [m] = p.push('data: {"type":"audio","id":"l1","audioUrl":"/api/audio/l1.mp3"}\n\n');
+    expect(toRoastEvent(m!)).toEqual({ type: "audio", id: "l1", audioUrl: "/api/audio/l1.mp3" });
+  });
 });

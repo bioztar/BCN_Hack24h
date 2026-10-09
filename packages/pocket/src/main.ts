@@ -2,7 +2,8 @@ import "./style.css";
 import { LiveApi, MockApi, type Api } from "./api";
 import { Sound, buzz, voiceFor, type Playback } from "./audio";
 import { drawNotice, formatEur, toBlob } from "./card";
-import { cutoutUrl, headCanvas, loadImage } from "./cutout";
+import { AudioBook } from "./audiobook";
+import { headCanvas, loadCutout } from "./cutout";
 import { reactionLine, type Reaction } from "./lines";
 import { ShakeDetector, Stillness, gravityFromOrientation, lowPass, toScreenFrame, type Vec3 } from "./motion";
 import { initialState, reduce, type Action, type LineEvent, type RoastState } from "./reducer";
@@ -57,7 +58,7 @@ async function showPick(): Promise<void> {
     const img = el("div", "officer-img");
     const src = thumbs.get(p.id);
     if (src) img.style.backgroundImage = `url(${src})`;
-    void loadImage(cutoutUrl(p.id)).then((ci) => {
+    void loadCutout(p.id).then((ci) => {
       const face = ci && headCanvas(ci, 160);
       if (!face) return;
       const badge = el("div", "officer-face");
@@ -139,6 +140,8 @@ let stage: Stage | null = null;
 let state: RoastState = initialState;
 let streamAbort: AbortController | null = null;
 const queue: LineEvent[] = [];
+const lateAudio = new AudioBook();
+const LATE_AUDIO_WAIT_MS = 1500;
 let played = 0;
 let speaking: { id: PersonaId; pb: Playback } | null = null;
 let playing = false;
@@ -623,6 +626,7 @@ function bindDictation(btn: HTMLButtonElement, status: HTMLElement, onText: (t: 
 
 function dispatch(a: Action): void {
   const prev = state;
+  if (a.type === "audio") lateAudio.set(a.id, a.audioUrl);
   state = reduce(state, a);
   if (state.tier !== prev.tier && state.tier) onTier(state.tier, state.tierName ?? "");
   if (state.officers !== prev.officers && state.officers) onOfficers(state.officers);
@@ -638,6 +642,7 @@ function resetCase(): void {
   streamAbort?.abort();
   stopSpeaking();
   queue.length = 0;
+  lateAudio.clear();
   played = 0;
   state = initialState;
   for (const id of [...(stage?.actors.keys() ?? [])]) if (id !== me?.id) stage?.removeActor(id);
@@ -724,9 +729,11 @@ async function pump(): Promise<void> {
       const line = queue[played++]!;
       say(line.speaker, line.text, line.provisions, 0);
       if (line.stamp) stampScreen(line.stamp, line.speaker);
+      let url = line.audioUrl ?? lateAudio.get(line.id);
+      if (!url && !api.mock && sound.ready) url = await lateAudio.wait(line.id, LATE_AUDIO_WAIT_MS);
       let pb: Playback;
       try {
-        pb = line.audioUrl && sound.ready ? await sound.play(line.audioUrl) : sound.mumble(line.text, voiceFor(line.speaker));
+        pb = url && sound.ready ? await sound.play(url) : sound.mumble(line.text, voiceFor(line.speaker));
       } catch {
         pb = sound.mumble(line.text, voiceFor(line.speaker));
       }
