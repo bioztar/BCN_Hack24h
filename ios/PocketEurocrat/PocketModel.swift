@@ -31,6 +31,7 @@ final class PocketModel {
     @ObservationIgnored private let audio = AudioService()
     @ObservationIgnored private var lastActivity = Date()
     @ObservationIgnored private var caseID: String?
+    @ObservationIgnored private var lateAudio: [String: String] = [:]
     @ObservationIgnored private var started = false
     @ObservationIgnored private var stampTask: Task<Void, Never>?
 
@@ -182,12 +183,40 @@ final class PocketModel {
                 caseID = id
             }
             phase = .roasting
-            for try await event in backend.stream(caseID: id) { await handle(event) }
+            try await consume(backend.stream(caseID: id))
             if phase == .roasting { phase = .idle }
         } catch {
             errorMessage = error.localizedDescription
             phase = .idle
         }
+    }
+
+    /// Events are played strictly in order by one consumer, while the network reader keeps filing late
+    /// `audio` events (TTS that finished after its line was sent) so a line can pick its clip up on arrival.
+    private func consume(_ stream: AsyncThrowingStream<RoastEvent, Error>) async throws {
+        lateAudio = [:]
+        let (queue, push) = AsyncStream.makeStream(of: RoastEvent.self)
+        let player = Task { for await event in queue { await handle(event) } }
+        do {
+            for try await event in stream {
+                if case .audio(let id, let url) = event { lateAudio[id] = url } else { push.yield(event) }
+            }
+        } catch {
+            push.finish()
+            await player.value
+            throw error
+        }
+        push.finish()
+        await player.value
+    }
+
+    private func audioPath(for line: RoastLine) async -> String? {
+        if let p = line.audioUrl { return p }
+        for _ in 0..<25 {   // up to ~2.5 s for the late clip
+            if let p = lateAudio[line.id] { return p }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return lateAudio[line.id]
     }
 
     private func handle(_ event: RoastEvent) async {
@@ -197,14 +226,14 @@ final class PocketModel {
             subtitle = line
             if let s = line.stamp { showStamp(s) }
             var played = false
-            if let path = line.audioUrl, let url = backend.resolve(path) {
+            if let path = await audioPath(for: line), let url = backend.resolve(path) {
                 played = await audio.play(url) { [puppet] in puppet.setTalk($0) }
             }
             if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6)) }
         case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle
-        case .officers, .unknown: break
+        case .officers, .audio, .unknown: break
         }
     }
 

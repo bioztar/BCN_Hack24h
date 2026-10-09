@@ -89,11 +89,12 @@ enum RoastEvent: Decodable, Equatable {
     case tier(Int, name: String)
     case line(RoastLine)
     case verdict(Notice)
+    case audio(lineID: String, url: String)   // late TTS for an already-sent line
     case awaiting(String)
     case error(String)
     case unknown
 
-    private enum Keys: String, CodingKey { case type, officers, ticket, tier, name, notice, prompt, message }
+    private enum Keys: String, CodingKey { case type, officers, ticket, tier, name, notice, prompt, message, id, audioUrl }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -102,6 +103,7 @@ enum RoastEvent: Decodable, Equatable {
         case "tier": self = .tier(try c.decode(Int.self, forKey: .tier), name: try c.decode(String.self, forKey: .name))
         case "line": self = .line(try RoastLine(from: decoder))
         case "verdict": self = .verdict(try c.decode(Notice.self, forKey: .notice))
+        case "audio": self = .audio(lineID: try c.decode(String.self, forKey: .id), url: try c.decode(String.self, forKey: .audioUrl))
         case "awaiting": self = .awaiting(try c.decode(String.self, forKey: .prompt))
         case "error": self = .error(try c.decode(String.self, forKey: .message))
         default: self = .unknown

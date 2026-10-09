@@ -12,7 +12,7 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Config flip: "mock" = fixture backend (no server), "live" = https://eurocrat.pro7ocol.com
-    ROAST_BACKEND: mock
+    ROAST_BACKEND: live
     ROAST_BASE_URL: https://eurocrat.pro7ocol.com
 targets:
   PocketEurocrat:
