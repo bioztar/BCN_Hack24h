@@ -19,7 +19,12 @@ final class PocketModel {
     var notice: Notice?
     var errorMessage: String?
 
-    let box = BoxScene()
+    let puppet: DummyScene = {
+        let s = DummyScene(size: CGSize(width: 390, height: 700))
+        s.scaleMode = .resizeFill
+        return s
+    }()
+    var smug = false
     @ObservationIgnored let backend: RoastBackend
     @ObservationIgnored private let motion = MotionService()
     @ObservationIgnored private let haptics = HapticsService()
@@ -39,15 +44,15 @@ final class PocketModel {
     func start() {
         guard !started else { return }
         started = true
-        box.setOfficerColor(hex: selected.color)
-        box.onBump = { [weak self] strength in
+        puppet.setOfficer(selected)
+        puppet.onImpact = { [weak self] strength in
             DispatchQueue.main.async { self?.haptics.bump(strength: strength); self?.wake() }
         }
         motion.onGravity = { [weak self] x, y in
             guard let self else { return }
             let moved = abs(x - lastGravity.x) + abs(y - lastGravity.y) > 0.03
             lastGravity = (x, y)
-            box.setGravity(x: x, y: y)
+            puppet.setGravity(x: x, y: y)
             if moved { wake() }
         }
         motion.onShake = { [weak self] in self?.shake() }
@@ -60,31 +65,57 @@ final class PocketModel {
 
     func select(_ id: String) {
         selectedID = id
-        box.setOfficerColor(hex: selected.color)
+        puppet.setOfficer(selected)
         wake()
     }
 
     func wake() {
         lastActivity = Date()
-        if isAsleep { isAsleep = false; box.setAsleep(false) }
+        if isAsleep { isAsleep = false; refreshExpression() }
+    }
+
+    /// Face priority: asleep > stamping > smug > neutral (the scene itself overrides with "appalled" while toppled).
+    private func refreshExpression() {
+        puppet.setExpression(isAsleep ? .asleep : stamp != nil ? .stamping : smug ? .smug : .neutral)
     }
 
     // MARK: shake -> stamp
 
     func shake() {
         wake()
-        box.shake()
+        puppet.shake()
         showStamp("REFUSÉ")
     }
 
     private func showStamp(_ text: String) {
         haptics.stamp()
         stamp = text
+        refreshExpression()
         stampTask?.cancel()
         stampTask = Task {
             try? await Task.sleep(for: .milliseconds(1400))
-            if !Task.isCancelled { stamp = nil }
+            if !Task.isCancelled { stamp = nil; refreshExpression() }
         }
+    }
+
+    private func showSmug() {
+        smug = true
+        refreshExpression()
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            smug = false
+            refreshExpression()
+        }
+    }
+
+    /// No audio clip: fake a speaking level for `seconds` so the bust still talks.
+    private func talkFor(_ seconds: Double) async {
+        let end = Date().addingTimeInterval(seconds)
+        while Date() < end, !Task.isCancelled {
+            puppet.setTalk(.random(in: 0.25...0.9))
+            try? await Task.sleep(for: .milliseconds(90))
+        }
+        puppet.setTalk(0)
     }
 
     private func idleLoop() async {
@@ -92,7 +123,7 @@ final class PocketModel {
             try? await Task.sleep(for: .seconds(1))
             if !isAsleep, phase == .idle, Date().timeIntervalSince(lastActivity) > Self.sleepAfter {
                 isAsleep = true
-                box.setAsleep(true)
+                refreshExpression()
             }
         }
     }
@@ -103,7 +134,7 @@ final class PocketModel {
         let paired = Roster.officers.compactMap { local in live.first { $0.id == local.id } }
         if paired.count == Roster.officers.count {
             officers = paired
-            box.setOfficerColor(hex: selected.color)
+            puppet.setOfficer(selected)
         }
     }
 
@@ -165,12 +196,12 @@ final class PocketModel {
         case .line(let line):
             subtitle = line
             if let s = line.stamp { showStamp(s) }
+            var played = false
             if let path = line.audioUrl, let url = backend.resolve(path) {
-                await audio.play(url)
-            } else {
-                try? await Task.sleep(for: .seconds(min(max(Double(line.text.count) * 0.045, 1.8), 6)))
+                played = await audio.play(url) { [puppet] in puppet.setTalk($0) }
             }
-        case .verdict(let n): notice = n; phase = .idle; caseID = nil
+            if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6)) }
+        case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle
         case .officers, .unknown: break

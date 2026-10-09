@@ -1,4 +1,4 @@
-import SceneKit
+import SpriteKit
 import SwiftUI
 
 struct PocketView: View {
@@ -10,7 +10,7 @@ struct PocketView: View {
         ZStack {
             VStack(spacing: 0) {
                 officerPicker
-                SceneView(scene: model.box.scene, options: [], preferredFramesPerSecond: 60)
+                SpriteView(scene: model.puppet, preferredFramesPerSecond: 60)
                     .onTapGesture { typing = false; model.wake() }
                 if let line = model.subtitle { SubtitleBar(line: line, tier: model.tierName) }
                 controls

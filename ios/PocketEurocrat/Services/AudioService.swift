@@ -3,30 +3,38 @@ import AVFoundation
 /// Plays roast audio (TTS mp3 from /api/audio/:hash.mp3) and records the dictated pitch.
 @MainActor
 final class AudioService {
-    private var player: AVPlayer?
+    private var player: AVAudioPlayer?
     private var recorder: AVAudioRecorder?
     private let recordURL = FileManager.default.temporaryDirectory.appending(path: "pitch.m4a")
 
-    /// Plays `url` and returns when it ends (or after `maxSeconds`, so a stalled stream can't wedge the queue).
-    func play(_ url: URL, maxSeconds: Double = 30) async {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-        try? AVAudioSession.sharedInstance().setActive(true)
-        let item = AVPlayerItem(url: url)
-        let p = AVPlayer(playerItem: item)
-        player = p
-        p.play()
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                for await _ in NotificationCenter.default.notifications(named: .AVPlayerItemDidPlayToEndTime, object: item) { return }
+    /// Downloads and plays `url`, reporting a 0...1 voice level (metering) ~30x/s so the bust can "talk".
+    /// Returns false if the clip could not be fetched/decoded (caller falls back to a timed pause).
+    @discardableResult
+    func play(_ url: URL, maxSeconds: Double = 30, onLevel: (Double) -> Void) async -> Bool {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+            try? AVAudioSession.sharedInstance().setActive(true)
+            let p = try AVAudioPlayer(data: data)
+            p.isMeteringEnabled = true
+            player = p
+            guard p.play() else { return false }
+            let deadline = Date().addingTimeInterval(maxSeconds)
+            while p.isPlaying, Date() < deadline, !Task.isCancelled {
+                p.updateMeters()
+                onLevel(Double(min(max((p.averagePower(forChannel: 0) + 45) / 45, 0), 1)))   // -45 dB...0 dB
+                try? await Task.sleep(for: .milliseconds(33))
             }
-            group.addTask { try? await Task.sleep(for: .seconds(maxSeconds)) }
-            await group.next()
-            group.cancelAll()
+            p.stop()
+            onLevel(0)
+            return true
+        } catch {
+            print("audio: playback failed: \(error)")
+            return false
         }
-        p.pause()
     }
 
-    func stopPlayback() { player?.pause(); player = nil }
+    func stopPlayback() { player?.stop(); player = nil }
 
     // MARK: dictation
 
