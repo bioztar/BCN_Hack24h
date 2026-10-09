@@ -84,6 +84,16 @@ describe("analyzerPlugin", () => {
     expect(second.headers["retry-after"]).toBeDefined();
   });
 
+  it("defaults to 40 analyses per IP per 10 min (shared venue IP), configurable via env", async () => {
+    const payload = { kind: "idea", text: "An AI assistant that scores CVs for employers." };
+    const app = await make();
+    for (let k = 0; k < 40; k++) expect((await app.inject({ method: "POST", url: "/api/analyze", payload })).statusCode).toBe(202);
+    expect((await app.inject({ method: "POST", url: "/api/analyze", payload })).statusCode).toBe(429);
+    const small = await make({ env: { ANALYZER_RATE_LIMIT: "2" } });
+    for (let k = 0; k < 2; k++) expect((await small.inject({ method: "POST", url: "/api/analyze", payload })).statusCode).toBe(202);
+    expect((await small.inject({ method: "POST", url: "/api/analyze", payload })).statusCode).toBe(429);
+  });
+
   it("expires reports after the TTL", () => {
     let t = 0;
     const store = new ReportStore(60 * 60 * 1000, () => t);

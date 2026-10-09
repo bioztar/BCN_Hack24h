@@ -8,7 +8,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { documentIntake, ideaIntake } from "./intake/document.js";
 import { IntakeError } from "./intake/errors.js";
-import type { GitHubIntake } from "./intake/github.js";
+import { secretFileSeverity, type GitHubIntake } from "./intake/github.js";
 import { parseJsonReply, type ChatMessage, type Llm } from "./llm.js";
 import {
   aiActClassifyMessages,
@@ -58,7 +58,23 @@ export interface Deps {
   batchSize?: number;
   concurrency?: number;
   skillsDir?: string;
+  /** Called when a stage degrades instead of failing. Receives metadata only — never content. */
+  log?: (e: StageFailure) => void;
 }
+
+export interface StageFailure {
+  stage: string;
+  errorClass: string;
+  status?: number;
+}
+
+export function errorClass(e: unknown): string {
+  if (!(e instanceof Error)) return typeof e;
+  const n = e.constructor.name;
+  return n === "Error" || n === "DOMException" ? e.name : n;
+}
+
+const defaultLog = (e: StageFailure) => console.warn(`[analyzer] ${e.stage} failed (${e.errorClass}${e.status ? `, HTTP ${e.status}` : ""}); continuing with a fallback`);
 
 export const SEVERITY_RANK: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 const SEVERITIES = Object.keys(SEVERITY_RANK) as Severity[];
@@ -70,19 +86,22 @@ export const CHECKLIST_FOR: Record<Intake["kind"], ChecklistName> = { idea: "pro
 
 /** Collects what validation dropped or rewrote, for the report's validation block. */
 class Ledger {
+  /** Not in the index — genuinely unverifiable. */
   dropped = new Set<string>();
+  /** Indexed AI Act references deliberately kept out of the warden half (hand-off rule). */
+  stripped = new Set<string>();
   reworded = 0;
   prose(text: unknown, fw: Framework | null, index: ProvisionIndex, allow: (f: string) => boolean): { text: string; citations: Citation[] } {
     const r = cleanProse(redact(String(text ?? "")), fw, index, allow);
-    if (r.dropped.length) {
-      this.reworded++;
-      r.dropped.forEach((d) => this.dropped.add(d));
-    }
+    if (r.dropped.length || r.stripped.length) this.reworded++;
+    r.dropped.forEach((d) => this.dropped.add(d));
+    r.stripped.forEach((d) => this.stripped.add(d));
     return r;
   }
   proposed(ids: unknown, strings: unknown, fw: Framework | null, index: ProvisionIndex, allow: (f: string) => boolean): Citation[] {
     const v = validateProposed(ids, strings, fw, index, allow);
     v.dropped.forEach((d) => this.dropped.add(d));
+    v.stripped.forEach((d) => this.stripped.add(d));
     return v.citations;
   }
 }
@@ -99,18 +118,50 @@ const str = (v: unknown, max = 600) => (typeof v === "string" ? v.trim().slice(0
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 
-async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
-  const out = new Array<R>(items.length);
-  let next = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(n, items.length) }, async () => {
-      while (next < items.length) {
-        const k = next++;
-        out[k] = await fn(items[k]!);
-      }
-    }),
-  );
-  return out;
+/** Caps in-flight model calls; a released slot is handed straight to the next waiter. */
+function semaphore(n: number) {
+  let active = 0;
+  const queue: (() => void)[] = [];
+  return async <T>(fn: () => Promise<T>): Promise<T> => {
+    if (active < n) active++;
+    else await new Promise<void>((r) => queue.push(r));
+    try {
+      return await fn();
+    } finally {
+      const next = queue.shift();
+      if (next) next();
+      else active--;
+    }
+  };
+}
+
+/**
+ * Pairs batch item k with a model entry: by id when that id is a real batch id the model used
+ * exactly once; otherwise positionally (entry k), unless entry k carries another item's unique id.
+ * Models often echo the schema's example id for every entry, so ids alone are not trusted.
+ */
+export function matcher(ids: string[], raws: unknown[]): (k: number) => Record<string, unknown> | undefined {
+  const idOf = (r: unknown) => str(obj(r).id, 16).toUpperCase();
+  const want = new Set(ids.map((i) => i.toUpperCase()));
+  const count = new Map<string, number>();
+  for (const r of raws) count.set(idOf(r), (count.get(idOf(r)) ?? 0) + 1);
+  const unique = new Map<string, Record<string, unknown>>();
+  for (const r of raws) if (want.has(idOf(r)) && count.get(idOf(r)) === 1) unique.set(idOf(r), obj(r));
+  return (k) => {
+    const own = ids[k]!.toUpperCase();
+    const hit = unique.get(own);
+    if (hit) return hit;
+    const pos = raws[k];
+    if (pos === undefined) return undefined;
+    return unique.has(idOf(pos)) ? undefined : obj(pos);
+  };
+}
+
+/** Filename-only: a finding that names only registry-config secrets (.npmrc) is at most medium. */
+export function capSecretSeverity(sev: Severity, evidence: string, sensitive: string[]): Severity {
+  if (SEVERITY_RANK[sev] >= SEVERITY_RANK.medium) return sev;
+  const named = sensitive.filter((p) => evidence.includes(p.split("/").pop() ?? p));
+  return named.length && named.every((p) => secretFileSeverity(p) === "medium") ? "medium" : sev;
 }
 
 function chunk<T>(xs: T[], n: number): T[][] {
@@ -134,12 +185,21 @@ export async function analyze(req: AnalyzeRequest, deps: Deps, emit: (e: Progres
   const ledger = new Ledger();
   const { index, skills } = deps;
   const batchSize = deps.batchSize ?? 10;
-  const concurrency = deps.concurrency ?? 3;
+  const limit = semaphore(Math.max(1, deps.concurrency ?? 6));
+  const log = deps.log ?? defaultLog;
+  /** Degrade a failed model stage to an empty reply, logging stage + error class only. */
+  const soft =
+    (stage: string) =>
+    (e: unknown): Record<string, unknown> => {
+      const status = (e as { status?: unknown }).status;
+      log({ stage, errorClass: errorClass(e), ...(typeof status === "number" ? { status } : {}) });
+      return {};
+    };
 
   const ask = async (stage: string, messages: ChatMessage[], maxOutputTokens: number): Promise<Record<string, unknown>> => {
     let msgs = messages;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const r = await deps.llm.complete({ stage, messages: msgs, maxOutputTokens });
+      const r = await limit(() => deps.llm.complete({ stage, messages: msgs, maxOutputTokens }));
       usage.calls++;
       usage.promptTokens += r.promptTokens;
       usage.completionTokens += r.completionTokens;
@@ -161,95 +221,97 @@ export async function analyze(req: AnalyzeRequest, deps: Deps, emit: (e: Progres
   // 1. Intake
   const intake = await stage("intake", () => runIntake(req, deps), (i) => i.facts[0] ?? "");
 
-  // 2. Classify — eu-ai-act first (tier + role), then warden (applicability + hand-off flag only).
-  const { aiAct, warden } = await stage(
-    "classify",
-    async () => {
-      const [a, w] = await Promise.all([ask("classify.ai-act", aiActClassifyMessages(intake, skills), 3000), ask("classify.warden", wardenClassifyMessages(intake, skills), 3000)]);
-      return { aiAct: normaliseAiAct(a, index, ledger), warden: normaliseWarden(w, index, ledger) };
-    },
-    ({ aiAct: a, warden: w }) => `AI Act: ${a.tier}${a.roles.length ? ` (${a.roles.join(", ")})` : ""} · ${w.frameworks.filter((f) => ACTIVE.includes(f.status)).length} frameworks apply`,
-  );
-  const context = classificationContext(aiAct, warden);
+  // 2–4 run as two independent chains (eu-ai-act, warden): classify → checklist → findings.
+  // Each chain only needs its own classification, so neither waits on the other; overlap,
+  // dates, penalties and the explainer join both at the end. Progress events stay per stage.
+  emit({ type: "stage", stage: "classify", status: "start" });
+  const aiP = ask("classify.ai-act", aiActClassifyMessages(intake, skills), 3000).then((a) => normaliseAiAct(a, index, ledger));
+  const wP = ask("classify.warden", wardenClassifyMessages(intake, skills), 3000).then((w) => normaliseWarden(w, index, ledger));
+  const classified = Promise.all([aiP, wP]).then(([a, w]) => {
+    emit({ type: "stage", stage: "classify", status: "done", detail: `AI Act: ${a.tier}${a.roles.length ? ` (${a.roles.join(", ")})` : ""} · ${w.frameworks.filter((f) => ACTIVE.includes(f.status)).length} frameworks apply` });
+    emit({ type: "stage", stage: "checklist", status: "start" });
+  });
 
   // 3. Checklists — both skills, matching artifact type (warden selectable), batched.
   const euList: ChecklistName = CHECKLIST_FOR[intake.kind];
   const wardenList: ChecklistName = req.checklist ?? CHECKLIST_FOR[intake.kind];
-  const statusOf = new Map(warden.frameworks.map((f) => [f.framework as string, f.status]));
-  const checklist = await stage(
-    "checklist",
-    async () => {
-      const results: { item: ChecklistItem; result: ChecklistResult }[] = [];
-      const batches: { skill: SkillName; items: ChecklistItem[] }[] = [];
-      const plan = (skill: SkillName, items: ChecklistItem[]) => {
-        const live: ChecklistItem[] = [];
-        for (const item of items) {
-          const auto = autoNa(skill, item, aiAct, statusOf);
-          if (auto) results.push({ item, result: toResult(item, "n/a", "N/A", auto, item.severity ?? "low") });
-          else live.push(item);
-        }
-        for (const b of chunk(live, batchSize)) batches.push({ skill, items: b });
-      };
-      plan("eu-ai-act", skills.checklist("eu-ai-act", euList));
-      plan("warden", skills.checklist("warden", wardenList));
-      const evaluated = await pool(batches, concurrency, async (b) => {
-        const raw = await ask(`checklist.${b.skill}`, checklistMessages(intake, skills, b.skill, b.items, context), 220 * b.items.length + 400).catch(() => ({ results: [] }));
-        const byId = new Map(arr(raw.results).map((r) => [str(obj(r).id, 10).toUpperCase(), obj(r)]));
-        return b.items.map((item) => {
-          const r = byId.get(item.id);
-          if (!r) return { item, result: toResult(item, "unclear", "UNKNOWN", "Not assessed — the model did not return this item.", item.severity ?? "medium") };
+  const evaluate = async (skill: SkillName, list: ChecklistName, ctx: string, na: (item: ChecklistItem) => string | null) => {
+    const items = skills.checklist(skill, list);
+    const done = new Map<ChecklistItem, ChecklistResult>();
+    const live: ChecklistItem[] = [];
+    for (const item of items) {
+      const auto = na(item);
+      if (auto) done.set(item, toResult(item, "n/a", "N/A", auto, item.severity ?? "low"));
+      else live.push(item);
+    }
+    await Promise.all(
+      chunk(live, batchSize).map(async (b) => {
+        const st = `checklist.${skill}`;
+        const raw = await ask(st, checklistMessages(intake, skills, skill, b, ctx), 220 * b.length + 400).catch(soft(st));
+        const pick = matcher(b.map((i) => i.id), arr(raw.results));
+        b.forEach((item, k) => {
+          const r = pick(k);
+          if (!r) return done.set(item, toResult(item, "unclear", "UNKNOWN", "Not assessed — the model did not return this item.", item.severity ?? "medium"));
           const status = normStatus(r.status, r.verdict);
-          const allow = b.skill === "warden" ? NOT_AI_ACT : ANY;
-          const evidence = ledger.prose(str(r.evidence, 400) || "No evidence in the artifact.", b.skill === "warden" ? null : "AI Act", index, allow).text;
-          const sev = item.severity ?? (SEVERITIES.includes(r.severity as Severity) ? (r.severity as Severity) : "medium");
-          return { item, result: toResult(item, status, str(r.verdict, 30).toUpperCase() || status.toUpperCase(), evidence, sev) };
+          const allow = skill === "warden" ? NOT_AI_ACT : ANY;
+          const evidence = ledger.prose(str(r.evidence, 400) || "No evidence in the artifact.", skill === "warden" ? null : "AI Act", index, allow).text;
+          const sev = capSecretSeverity(item.severity ?? (SEVERITIES.includes(r.severity as Severity) ? (r.severity as Severity) : "medium"), evidence, intake.sensitiveFiles);
+          done.set(item, toResult(item, status, str(r.verdict, 30).toUpperCase() || status.toUpperCase(), evidence, sev));
         });
-      });
-      results.push(...evaluated.flat());
-      const order = (x: { item: ChecklistItem }) => `${x.item.skill === "eu-ai-act" ? 0 : 1}`;
-      const ids = [...skills.checklist("eu-ai-act", euList), ...skills.checklist("warden", wardenList)];
-      results.sort((a, b) => order(a).localeCompare(order(b)) || ids.indexOf(a.item) - ids.indexOf(b.item));
-      return results;
-    },
-    (r) => `${r.length} items · ${r.filter((x) => x.result.status === "gap").length} gaps`,
-  );
+      }),
+    );
+    return items.map((item) => ({ item, result: done.get(item)! }));
+  };
+  const euChecklist = aiP.then((ai) => evaluate("eu-ai-act", euList, classificationContext(ai, null), (item) => autoNa("eu-ai-act", item, ai, new Map())));
+  const wChecklist = wP.then((w) => {
+    const statusOf = new Map(w.frameworks.map((f) => [f.framework as string, f.status]));
+    return evaluate("warden", wardenList, classificationContext(null, w), (item) => autoNa("warden", item, null, statusOf));
+  });
+  const checklisted = Promise.all([classified, euChecklist, wChecklist]).then(([, e, w]) => {
+    const all = [...e, ...w];
+    emit({ type: "stage", stage: "checklist", status: "done", detail: `${all.length} items · ${all.filter((x) => x.result.status === "gap").length} gaps` });
+    emit({ type: "stage", stage: "report", status: "start" });
+    return all;
+  });
 
-  // 4. Report — findings per skill (batched), overlap, dates, penalties, explainer.
-  const reportParts = await stage(
-    "report",
-    async () => {
-      const findings: Finding[] = [];
-      for (const skill of ["eu-ai-act", "warden"] as SkillName[]) {
-        const open = checklist.filter((x) => x.item.skill === skill && (x.result.status === "gap" || x.result.status === "unclear")).sort((a, b) => SEVERITY_RANK[a.result.severity] - SEVERITY_RANK[b.result.severity] || (a.result.status === "gap" ? -1 : 1));
-        const written = await pool(chunk(open, 12), concurrency, async (batch) => {
-          const raw = await ask(`report.${skill}`, findingsMessages(skills, skill, batch, context, intake), 260 * batch.length + 400).catch(() => ({ findings: [] }));
-          const byId = new Map(arr(raw.findings).map((f) => [str(obj(f).id, 10).toUpperCase(), obj(f)]));
-          return batch.map(({ item, result }) => buildFinding(skill, item, result, byId.get(item.id) ?? {}, index, ledger));
-        });
-        findings.push(...written.flat());
-      }
-      findings.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || (a.status === b.status ? 0 : a.status === "gap" ? -1 : 1) || (a.skill === b.skill ? 0 : a.skill === "eu-ai-act" ? -1 : 1));
-      const overlap = buildOverlap(skills, warden, findings);
-      const deadlines = buildDeadlines(skills, aiAct, warden);
-      const penalties = buildPenalties(skills, aiAct, warden);
-      let explainer: Explainer | null = null;
-      if (req.explainer !== false) {
-        const summary = [
-          context,
-          "Top findings:",
-          ...findings.slice(0, 8).map((f) => `- [${f.severity}] ${f.title}: ${f.what} Fix: ${f.fix}`),
-          `Deadlines: ${deadlines.slice(0, 6).map((d) => `${d.date} ${d.framework} — ${d.event}`).join("; ")}`,
-        ].join("\n");
-        const raw = await ask("report.explainer", explainerMessages(skills, plainLanguage(deps.skillsDir ?? SKILLS_DIR, warden), summary), 1200).catch(() => null);
-        if (raw && str(raw.body, 6000)) {
-          const body = ledger.prose(str(raw.body, 6000), null, index, NOT_AI_ACT);
-          explainer = { body: body.text, sources: dedupe([...body.citations, ...ledger.proposed(raw.provisions, raw.sources, null, index, NOT_AI_ACT)]) };
-        }
-      }
-      return { findings, overlap, deadlines, penalties, explainer };
-    },
-    (p) => `${p.findings.length} findings`,
-  );
+  // 4. Report — findings per skill (batched, both skills in parallel), then overlap, dates, penalties, explainer.
+  const writeFindings = async (skill: SkillName, items: { item: ChecklistItem; result: ChecklistResult }[], ctx: string) => {
+    const open = items.filter((x) => x.result.status === "gap" || x.result.status === "unclear").sort((a, b) => SEVERITY_RANK[a.result.severity] - SEVERITY_RANK[b.result.severity] || (a.result.status === "gap" ? -1 : 1));
+    const written = await Promise.all(
+      chunk(open, 12).map(async (batch) => {
+        const st = `report.${skill}`;
+        const raw = await ask(st, findingsMessages(skills, skill, batch, ctx, intake), 260 * batch.length + 400).catch(soft(st));
+        const pick = matcher(batch.map((x) => x.item.id), arr(raw.findings));
+        return batch.map(({ item, result }, k) => buildFinding(skill, item, result, pick(k) ?? {}, index, ledger));
+      }),
+    );
+    return written.flat();
+  };
+  const euFindings = Promise.all([aiP, euChecklist]).then(([ai, items]) => writeFindings("eu-ai-act", items, classificationContext(ai, null)));
+  const wFindings = Promise.all([wP, wChecklist]).then(([w, items]) => writeFindings("warden", items, classificationContext(null, w)));
+  const [aiAct, warden, checklist, euF, wF] = await Promise.all([aiP, wP, checklisted, euFindings, wFindings]);
+  const context = classificationContext(aiAct, warden);
+
+  const findings = [...euF, ...wF].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || (a.status === b.status ? 0 : a.status === "gap" ? -1 : 1) || (a.skill === b.skill ? 0 : a.skill === "eu-ai-act" ? -1 : 1));
+  const overlap = buildOverlap(skills, warden, findings);
+  const deadlines = buildDeadlines(skills, aiAct, warden);
+  const penalties = buildPenalties(skills, aiAct, warden);
+  let explainer: Explainer | null = null;
+  if (req.explainer !== false) {
+    const summary = [
+      context,
+      "Top findings:",
+      ...findings.slice(0, 8).map((f) => `- [${f.severity}] ${f.title}: ${f.what} Fix: ${f.fix}`),
+      `Deadlines: ${deadlines.slice(0, 6).map((d) => `${d.date} ${d.framework} — ${d.event}`).join("; ")}`,
+    ].join("\n");
+    const raw = await ask("report.explainer", explainerMessages(skills, plainLanguage(deps.skillsDir ?? SKILLS_DIR, warden), summary), 1200).catch(soft("report.explainer"));
+    if (str(raw.body, 6000)) {
+      const body = ledger.prose(str(raw.body, 6000), null, index, NOT_AI_ACT);
+      explainer = { body: body.text, sources: dedupe([...body.citations, ...ledger.proposed(raw.provisions, raw.sources, null, index, NOT_AI_ACT)]) };
+    }
+  }
+  const reportParts = { findings, overlap, deadlines, penalties, explainer };
+  emit({ type: "stage", stage: "report", status: "done", detail: `${findings.length} findings` });
 
   // 5. Validate — final sweep: every citation must be an indexed provision; warden carries no AI Act.
   const report = await stage(
@@ -258,9 +320,9 @@ export async function analyze(req: AnalyzeRequest, deps: Deps, emit: (e: Progres
       const keep = (cs: Citation[], allow: (f: string) => boolean = ANY) =>
         cs.filter((c) => {
           const p = index.get(c.id);
-          const ok = !!p && p.framework === c.framework && allow(c.framework);
-          if (!ok) ledger.dropped.add(c.id);
-          return ok;
+          if (!p || p.framework !== c.framework) ledger.dropped.add(c.id);
+          else if (!allow(c.framework)) ledger.stripped.add(c.id);
+          return !!p && p.framework === c.framework && allow(c.framework);
         });
       aiAct.decisions.forEach((d) => (d.citations = keep(d.citations)));
       warden.frameworks.forEach((f) => (f.citations = keep(f.citations, NOT_AI_ACT)));
@@ -295,8 +357,8 @@ export function normStatus(status: unknown, verdict: unknown): ItemStatus {
 }
 
 /** Deterministic n/a: AI Act items when out of scope; warden items whose frameworks are all not triggered. */
-function autoNa(skill: SkillName, item: ChecklistItem, ai: AiActClassification, status: Map<string, Applicability>): string | null {
-  if (skill === "eu-ai-act" && ai.tier === "out of scope") return "Not applicable: the AI Act classification found the artifact out of scope.";
+function autoNa(skill: SkillName, item: ChecklistItem, ai: AiActClassification | null, status: Map<string, Applicability>): string | null {
+  if (skill === "eu-ai-act" && ai?.tier === "out of scope") return "Not applicable: the AI Act classification found the artifact out of scope.";
   if (skill === "warden" && item.frameworks.length && item.frameworks.every((f) => status.get(f) === "NOT TRIGGERED"))
     return `Not applicable: ${item.frameworks.join(", ")} not triggered by the applicability classifier.`;
   return null;
@@ -509,7 +571,7 @@ function assemble(
     assumptions: [...aiAct.assumptions, ...warden.assumptions],
     warnings: intake.warnings,
     intake: { facts: intake.facts, sensitiveFiles: intake.sensitiveFiles, filesRead: intake.files.map((f) => f.path) },
-    validation: { droppedIds: [...ledger.dropped], reworded: ledger.reworded, index: index.source, indexSize: index.size },
+    validation: { droppedIds: [...ledger.dropped], strippedAiAct: ledger.stripped.size, reworded: ledger.reworded, index: index.source, indexSize: index.size },
     usage,
     disclaimer: `${skills.disclaimer.warden} ${skills.disclaimer["eu-ai-act"]}`,
   };

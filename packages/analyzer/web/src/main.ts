@@ -1,4 +1,5 @@
 import "./styles.css";
+import { mdToHtml } from "./md.js";
 import type { Citation, Finding, ItemStatus, Report, Severity } from "../../src/types.js";
 
 const API = "/api/analyze";
@@ -113,9 +114,9 @@ function renderReport(r: Report, mock = false) {
   ${r.penalties.length ? `<h2>Penalty exposure</h2><div class="tablewrap"><table><thead><tr><th>Framework</th><th>Cap</th><th>Basis</th><th>Source</th></tr></thead><tbody>${r.penalties.map((p) => `<tr><td>${esc(p.framework)}</td><td>${esc(p.cap)}</td><td>${esc(p.basis)}</td><td>${cites(p.citations)}</td></tr>`).join("")}</tbody></table></div>` : ""}
   <h2>Checklist</h2><div class="filters no-print"><select id="cskill"><option value="">Both skills</option><option value="eu-ai-act">EU AI Act</option><option value="warden">warden</option></select><select id="cstatus"><option value="">All statuses</option>${["gap", "unclear", "met", "n/a"].map((x) => `<option>${x}</option>`).join("")}</select></div>
   <div class="tablewrap"><table><thead><tr><th>Item</th><th>Severity</th><th>Status</th><th>Evidence</th></tr></thead><tbody id="ctable"></tbody></table></div>
-  ${r.explainer ? `<h2>In plain language</h2><button class="ghost no-print" id="toggleExp">Show explainer</button><div id="exp" hidden><div class="explainer">${esc(r.explainer.body)}</div><p>Sources: ${cites(r.explainer.sources)}</p></div>` : ""}
+  ${r.explainer ? `<h2>In plain language</h2><button class="ghost no-print" id="toggleExp">Show explainer</button><div id="exp" hidden><div class="explainer">${mdToHtml(r.explainer.body)}</div><p>Sources: ${cites(r.explainer.sources)}</p></div>` : ""}
   ${r.intake.sensitiveFiles.length ? `<p class="handoff">Tracked secret-like files (not opened): ${r.intake.sensitiveFiles.map(esc).join(", ")}</p>` : ""}
-  <p class="disclaimer">${esc(r.disclaimer)} Citations validated against ${r.validation.indexSize} indexed provisions (${r.validation.index}); ${r.validation.droppedIds.length} unverifiable references removed.</p>`);
+  <p class="disclaimer">${esc(r.disclaimer)} Citations validated against ${r.validation.indexSize} indexed provisions (${r.validation.index}); ${r.validation.droppedIds.length} unverifiable references removed${r.validation.strippedAiAct ? `; ${r.validation.strippedAiAct} AI Act references kept out of the warden half by design (see the AI Act section)` : ""}.</p>`);
   const ct = app.querySelector("#ctable")!;
   const drawChecklist = () => {
     const sk = (app.querySelector("#cskill") as HTMLSelectElement).value;

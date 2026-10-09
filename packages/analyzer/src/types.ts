@@ -192,7 +192,7 @@ export interface Report {
   assumptions: string[];
   warnings: string[];
   intake: { facts: string[]; sensitiveFiles: string[]; filesRead: string[] };
-  validation: { droppedIds: string[]; reworded: number; index: "corpus" | "fallback"; indexSize: number };
+  validation: { droppedIds: string[]; strippedAiAct: number; reworded: number; index: "corpus" | "fallback"; indexSize: number };
   usage: { calls: number; promptTokens: number; completionTokens: number };
   disclaimer: string;
 }

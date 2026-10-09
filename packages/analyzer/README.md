@@ -15,7 +15,7 @@ npm test -w packages/analyzer         # mocked Nebius + GitHub
 Open `/analyze/?mock=1` for a full sample report with no server.
 
 Env: `NEBIUS_API_KEY` (required; POST returns 503 naming it when missing), optional
-`ANALYZER_MODEL` (default `moonshotai/Kimi-K3`), `NEBIUS_BASE_URL`, `ANALYZER_TIMEOUT_MS` (default 90 s), `GITHUB_TOKEN` (raises the
+`NEBIUS_MODEL` (default `deepseek-ai/DeepSeek-V4-Pro`), `NEBIUS_FALLBACK_MODEL` (default `moonshotai/Kimi-K3`, used once on a 404/429/5xx, timeout or empty reply), `NEBIUS_BASE_URL`, `ANALYZER_TIMEOUT_MS` (default 90 s), `GITHUB_TOKEN` (raises the
 public API rate limit only), `ANALYZER_CORPUS` (default `<repo>/corpus/provisions.json`),
 `ANALYZER_PORT`, `HOST`.
 
@@ -35,7 +35,7 @@ await app.register(analyzerPlugin, { prefix: "/api/analyze" });
 | `GET /api/analyze/:id` | report JSON (202 while running) |
 
 Reports live in memory for 1 h. Uploads are parsed in memory and never written or logged.
-Per-IP rate limit (default 6 analyses / 10 min).
+Per-IP rate limit (default 40 analyses / 10 min — venue Wi-Fi shares one IP; `ANALYZER_RATE_LIMIT`, `ANALYZER_RATE_WINDOW_MS` or the `rateLimit` plugin option).
 
 ## Pipeline
 

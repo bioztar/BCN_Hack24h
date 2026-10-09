@@ -4646,16 +4646,16 @@
   "droppedIds": [
    "AI Act Art. 999",
    "ai-act-fake-1",
-   "AI Act Art. 6",
    "GDPR Art. 777"
   ],
+  "strippedAiAct": 1,
   "reworded": 2,
   "index": "corpus",
   "indexSize": 526
  },
  "usage": {
   "calls": 11,
-  "promptTokens": 39652,
+  "promptTokens": 39477,
   "completionTokens": 4630
  },
  "disclaimer": "Informational analysis for readiness and education. Not legal advice and not an audit opinion or certification. Verify against the official texts and, for binding obligations, with qualified counsel in the relevant jurisdiction. Informational analysis, not legal advice."

@@ -60,6 +60,14 @@ interface Completion {
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
+export const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Pro";
+export const FALLBACK_MODEL = "moonshotai/Kimi-K3";
+
+function retryable(e: unknown): boolean {
+  if (e instanceof NebiusError) return e.status === null || e.status === 404 || e.status === 408 || e.status === 429 || e.status >= 500;
+  return e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError" || e instanceof TypeError);
+}
+
 export class NebiusLlm implements Llm {
   constructor(
     private readonly env: NodeJS.ProcessEnv = process.env,
@@ -67,20 +75,36 @@ export class NebiusLlm implements Llm {
   ) {}
 
   get model(): string {
-    return this.env.ANALYZER_MODEL || "moonshotai/Kimi-K3";
+    return this.env.NEBIUS_MODEL || this.env.ANALYZER_MODEL || DEFAULT_MODEL;
   }
 
+  get fallbackModel(): string {
+    return this.env.NEBIUS_FALLBACK_MODEL || FALLBACK_MODEL;
+  }
+
+  /** Primary model first; on an HTTP 404/429/5xx, timeout, network error or empty reply, one retry on the fallback. */
   async complete(req: CompleteRequest): Promise<CompleteResult> {
+    requireApiKey(this.env);
+    try {
+      const r = await this.call(req, this.model);
+      if (r.text.trim() || this.fallbackModel === this.model) return r;
+    } catch (e) {
+      if (this.fallbackModel === this.model || !retryable(e)) throw e;
+    }
+    return this.call(req, this.fallbackModel);
+  }
+
+  private async call(req: CompleteRequest, model: string): Promise<CompleteResult> {
     const key = requireApiKey(this.env);
     const base = this.env.NEBIUS_BASE_URL || NEBIUS_BASE_URL;
     const timeout = Number(this.env.ANALYZER_TIMEOUT_MS) > 0 ? Number(this.env.ANALYZER_TIMEOUT_MS) : 90_000;
     const res = await this.fetchImpl(`${base}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify(buildBody(req, this.model)),
+      body: JSON.stringify(buildBody(req, model)),
       signal: AbortSignal.timeout(timeout),
     });
-    if (!res.ok) throw new NebiusError(`nebius ${res.status} on ${this.model} (${req.stage})`, res.status);
+    if (!res.ok) throw new NebiusError(`nebius ${res.status} on ${model} (${req.stage})`, res.status);
     const json = (await res.json()) as Completion;
     return {
       text: json.choices?.[0]?.message?.content ?? "",

@@ -389,7 +389,10 @@ export function citationsIn(text: string, defaultFw: Framework | null, index: Pr
 
 export interface Validated {
   citations: Citation[];
+  /** Ids/references not in the index. */
   dropped: string[];
+  /** Indexed, but of a framework the caller disallows (e.g. AI Act in the warden half). */
+  stripped: string[];
 }
 
 /**
@@ -399,10 +402,12 @@ export interface Validated {
 export function validateProposed(ids: unknown, strings: unknown, defaultFw: Framework | null, index: ProvisionIndex, allow: (fw: string) => boolean): Validated {
   const out: Citation[] = [];
   const dropped: string[] = [];
+  const stripped: string[] = [];
   for (const raw of Array.isArray(ids) ? ids : []) {
     const id = String(raw).trim().toLowerCase();
     const p = index.get(id);
     if (p && allow(p.framework)) out.push({ ...p, display: p.label });
+    else if (p) stripped.push(id);
     else if (id) dropped.push(id);
   }
   for (const raw of Array.isArray(strings) ? strings : []) {
@@ -411,12 +416,16 @@ export function validateProposed(ids: unknown, strings: unknown, defaultFw: Fram
     if (!runs.length && s.trim()) dropped.push(s.trim());
     for (const run of runs)
       for (const r of run.refs) {
-        const c = allow(r.framework) ? resolveRef(r, index) : null;
+        if (!allow(r.framework)) {
+          stripped.push(r.display);
+          continue;
+        }
+        const c = resolveRef(r, index);
         if (c) out.push(c);
         else dropped.push(r.display);
       }
   }
-  return { citations: dedupe(out), dropped };
+  return { citations: dedupe(out), dropped, stripped };
 }
 
 export const REWORD = "the relevant provision";
@@ -425,10 +434,11 @@ export const REWORD = "the relevant provision";
  * Rewrites model prose so every citation it names is indexed and allowed: unknown or disallowed
  * references are replaced; known ones are kept and returned as citations.
  */
-export function cleanProse(text: string, defaultFw: Framework | null, index: ProvisionIndex, allow: (fw: string) => boolean): { text: string; citations: Citation[]; dropped: string[] } {
+export function cleanProse(text: string, defaultFw: Framework | null, index: ProvisionIndex, allow: (fw: string) => boolean): { text: string; citations: Citation[]; dropped: string[]; stripped: string[] } {
   const runs = scanCitations(text, defaultFw, "prose");
   const citations: Citation[] = [];
   const dropped: string[] = [];
+  const stripped: string[] = [];
   let out = "";
   let last = 0;
   for (const run of runs) {
@@ -439,7 +449,7 @@ export function cleanProse(text: string, defaultFw: Framework | null, index: Pro
       if (c) good.push(c);
       else {
         bad = true;
-        dropped.push(r.display);
+        (allow(r.framework) ? dropped : stripped).push(r.display);
       }
     }
     citations.push(...good);
@@ -454,5 +464,5 @@ export function cleanProse(text: string, defaultFw: Framework | null, index: Pro
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\s+([.,;])/g, "$1")
     .trim();
-  return { text: out, citations: dedupe(citations), dropped };
+  return { text: out, citations: dedupe(citations), dropped, stripped };
 }

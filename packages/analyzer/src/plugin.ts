@@ -34,10 +34,10 @@ export interface AnalyzerOptions {
   index?: ProvisionIndex;
   corpusPath?: string;
   store?: ReportStore;
-  /** Analyses per IP per window (default 6 per 10 min). */
+  /** Analyses per IP per window (default 40 per 10 min — venues share one IP; env ANALYZER_RATE_LIMIT / ANALYZER_RATE_WINDOW_MS). */
   rateLimit?: { limit: number; windowMs: number };
   env?: NodeJS.ProcessEnv;
-  deps?: Partial<Pick<Deps, "batchSize" | "concurrency" | "now">>;
+  deps?: Partial<Pick<Deps, "batchSize" | "concurrency" | "now" | "log">>;
 }
 
 const KINDS: IntakeKind[] = ["idea", "document", "repo"];
@@ -79,6 +79,9 @@ async function readRequest(req: FastifyRequest): Promise<AnalyzeRequest> {
   return out;
 }
 
+export const DEFAULT_RATE_LIMIT = 40;
+const envInt = (v: string | undefined) => (v && Number.isInteger(Number(v)) && Number(v) > 0 ? Number(v) : undefined);
+
 const fail = (reply: FastifyReply, status: number, error: string) => reply.code(status).send({ error });
 
 export const analyzerPlugin: FastifyPluginAsync<AnalyzerOptions> = async (app, opts) => {
@@ -88,7 +91,7 @@ export const analyzerPlugin: FastifyPluginAsync<AnalyzerOptions> = async (app, o
   const skills = loadSkills(index);
   const github = opts.github ?? new GitHubIntake({ token: () => env.GITHUB_TOKEN || undefined });
   const store = opts.store ?? new ReportStore();
-  const limiter = new RateLimiter(opts.rateLimit?.limit ?? 6, opts.rateLimit?.windowMs ?? 10 * 60_000);
+  const limiter = new RateLimiter(opts.rateLimit?.limit ?? envInt(env.ANALYZER_RATE_LIMIT) ?? DEFAULT_RATE_LIMIT, opts.rateLimit?.windowMs ?? envInt(env.ANALYZER_RATE_WINDOW_MS) ?? 10 * 60_000);
   if (!opts.store) app.addHook("onClose", async () => store.close());
 
   await app.register(multipart, { limits: { fileSize: MAX_DOCUMENT_BYTES, files: 1, fields: 8, fieldSize: 64 * 1024, parts: 10 } });
@@ -118,7 +121,8 @@ export const analyzerPlugin: FastifyPluginAsync<AnalyzerOptions> = async (app, o
     }
     const job = store.create();
     const emit = (e: ProgressEvent) => store.emit(job, e);
-    const deps: Deps = { llm, index, skills, github, ...opts.deps };
+    const log: Deps["log"] = (e) => req.log.warn({ reportId: job.id, ...e }, "analyzer stage failed");
+    const deps: Deps = { llm, index, skills, github, log, ...opts.deps };
     void analyze(request, deps, emit, job.id).catch((e: unknown) => {
       const message = e instanceof IntakeError ? e.message : e instanceof Error && /NEBIUS_API_KEY|nebius|model/i.test(e.message) ? e.message : "analysis failed";
       // Log the failure class only — never request content.

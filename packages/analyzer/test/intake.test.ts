@@ -53,7 +53,7 @@ describe("nebius client", () => {
     expect(() => requireApiKey({})).toThrow("NEBIUS_API_KEY is not set");
     await expect(new NebiusLlm({}).complete({ stage: "x", messages: [], maxOutputTokens: 10 })).rejects.toThrow("NEBIUS_API_KEY is not set");
   });
-  it("calls Kimi-K3 on the OpenAI-compatible endpoint", async () => {
+  it("calls the default model (DeepSeek-V4-Pro) on the OpenAI-compatible endpoint", async () => {
     let seen: { url: string; body: Record<string, unknown>; auth: string } | null = null;
     const f = (async (url: string, init: RequestInit) => {
       seen = { url, body: JSON.parse(String(init.body)), auth: (init.headers as Record<string, string>).authorization! };
@@ -62,7 +62,7 @@ describe("nebius client", () => {
     const r = await new NebiusLlm({ NEBIUS_API_KEY: "k" }, f).complete({ stage: "x", messages: [{ role: "user", content: "hi" }], maxOutputTokens: 10 });
     expect(r.promptTokens).toBe(5);
     expect(seen!.url).toBe("https://api.studio.nebius.com/v1/chat/completions");
-    expect(seen!.body.model).toBe("moonshotai/Kimi-K3");
+    expect(seen!.body.model).toBe("deepseek-ai/DeepSeek-V4-Pro");
     expect(seen!.auth).toBe("Bearer k");
     expect(buildBody({ stage: "x", messages: [], maxOutputTokens: 1 }, "m").chat_template_kwargs).toEqual({ thinking: false });
   });

@@ -38,6 +38,12 @@ export const HEURISTICS: { tag: string; re: RegExp }[] = [
 const base = (p: string) => p.split("/").pop() ?? p;
 
 /** .env, .env.production, … (templates excluded) and private-key/credential files. */
+/** Filename-only severity for a tracked secret-like file (values are never read): registry configs → medium. */
+export function secretFileSeverity(path: string): "high" | "medium" {
+  const b = path.split("/").pop() ?? path;
+  return /^\.(npmrc|yarnrc(\.yml)?)$/i.test(b) ? "medium" : "high";
+}
+
 export function isSensitive(path: string): boolean {
   const b = base(path);
   if (/^\.env(\..+)?$/i.test(b)) return !/\.(example|sample|template|dist|defaults?)$/i.test(b);
@@ -167,7 +173,7 @@ export class GitHubIntake {
       `Public GitHub repository ${meta.full_name} (default branch ${ref}, primary language ${meta.language ?? "unknown"}, licence ${meta.license?.spdx_id ?? "none"}).`,
       meta.description ? `Description: ${meta.description}` : "",
       `${blobs.length} files in tree; ${files.length} read (README, manifests, CI, and path-selected source files).`,
-      sensitiveFiles.length ? `Tracked secret-like files (contents NOT fetched): ${sensitiveFiles.join(", ")}.` : "No tracked .env or key files found in the tree.",
+      sensitiveFiles.length ? `Tracked secret-like files (contents NOT fetched): ${sensitiveFiles.map((f) => `${f} [${secretFileSeverity(f)}]`).join(", ")}. Severity is by filename only: registry configs (.npmrc, .yarnrc) are medium; .env and key files are high.` : "No tracked .env or key files found in the tree.",
     ].filter(Boolean);
     const text = [
       `## Tree (first 400 paths)\n${treeListing}`,
