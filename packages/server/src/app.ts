@@ -21,6 +21,7 @@ import { IntakeError, type GitHubIntake } from "./repo.js";
 import { Sse } from "./sse.js";
 import { AUDIO_TYPES, type AudioCache, type Stt } from "./voice.js";
 import type { Wall } from "./wall.js";
+import { registerReportRoutes } from "./report/routes.js";
 
 export const ANALYZER_HOST = "warden.pro7ocol.com";
 
@@ -491,6 +492,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       /* read-only filesystem: skipped below */
     }
   }
+  registerReportRoutes(app, { notice: (id) => { const s = cases.get(id); return s ? (s.notice ?? null) : undefined; }, corpus: d.corpus, roster: d.roster, assetsDir: d.assetsDir, log: (msg, meta) => app.log.warn(meta ?? {}, msg) });
   if (d.analyzer) void app.register(d.analyzer.plugin, { ...(d.analyzer.options ?? {}), prefix: "/api/analyze" });
 
   // Static roots; any missing directory is skipped. Only the first registration decorates reply.
