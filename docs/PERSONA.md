@@ -23,7 +23,8 @@ change this file first, then the code. **Draft v1 — names and faces await Vita
    number kills the joke (the joke *is* that the absurdity is real law) and damages the
    authority brand. No match → the line is rewritten without the citation.
 4. **The wall shows the officials' sentence only.** Never the visitor's text, name or id.
-   Every line passes a moderation check before it goes on the wall. (Same rule as Karen.)
+   No moderation filter on the officials' lines (Vitaly, 2026-10-09: "no filtering, it's
+   fine to have them") — the persona prompts carry rule 2, nothing post-filters.
 
 ## The officials
 
@@ -78,8 +79,16 @@ voice, and (budget allowing) a short intro clip or a 3D bust. All fictional, har
 | 9 | `sandbox` | **Baroness Brigitte von Sandbox**, Head of the Regulatory Sandbox | ball gown, tiara, plastic bucket and spade | aristocratic, delighted | runs the sandbox like a posh kindergarten; the sand is not yet harmonised |
 | 10 | `the-cookie` | **The Cookie** — a sentient consent banner | a giant cookie in a tiny three-piece suit | small, wounded, passive-aggressive | cannot be rejected; "Reject all" just brings it back, larger |
 
-Pairings that work as double acts: Formblatt + Annexe (default), Oma Gerda + Kevin,
-Chad + AUDITOR-9000, de Vries + The Trilogue, the Baroness + The Cookie.
+**The pairs (Vitaly, 2026-10-09)** — a visitor is assigned one of three fixed double acts:
+
+| Pair | Officers | Act |
+|---|---|---|
+| `commission` | #1 Formblatt + #2 Annexe-Vandamme | the classic — she drafts the refusal, he rejects her draft |
+| `basement` | #4 Oma Gerda + #6 AUDITOR-9000 | sweet grandma asks consent, the mainframe prints the verdict on 40 m of paper |
+| `raid` | #8 Inspector de Vries + #10 The Cookie | the incident squad kicks the door in; the Cookie cannot be rejected |
+
+#3, #5, #7, #9 stay in the roster as written, unpaired for the demo. Asset budget goes to
+the six paired officers first.
 
 ## Escalation ladder (replaces Karen's rage tiers)
 
