@@ -129,8 +129,18 @@ Persona YAML references them by path. Missing files must not break the UI.
 
 ## Deploy target
 
-`roast.pro7ocol.com`, uk-lon-1, Traefik labels as in `docs/reference/karen/compose.yaml`,
-container bound to `127.0.0.1:8796`, port 8796, SQLite under `/data`. helm deploys.
+One container, two hostnames (Vitaly, 2026-10-09 — DNS for both already points at uk-lon-1):
+
+| Host | Serves |
+|---|---|
+| `eurocrat.pro7ocol.com` | the roast stage at `/`, the pocket PWA at `/pocket/` (the stage links to it — a QR code + "Get your Pocket Eurocrat" button), the wall at `/wall` |
+| `warden.pro7ocol.com` | the analyzer: `/` redirects to `/analyze/`; the roast is not linked from here except a small footer easter egg |
+
+Traefik labels as in `docs/reference/karen/compose.yaml` with a rule
+`Host(\`eurocrat.pro7ocol.com\`) || Host(\`warden.pro7ocol.com\`)`, container bound to
+`127.0.0.1:8796`, port 8796, SQLite under `/data`. The server redirects `/` → `/analyze/`
+when the `Host` header is `warden.pro7ocol.com`. The roast verdict's "Get the real report"
+links to `https://warden.pro7ocol.com/analyze/`. helm deploys.
 
 ## Merge order
 
