@@ -26,6 +26,10 @@ final class Puppet {
 
     /// 0 = listening, 0.5 = nobody speaking, 1 = speaking. Speaker leans in and gets the light.
     var focus: CGFloat = 0.5
+    /// Where the head turns: -1 left ... +1 right (towards the officer who is speaking). 0 = camera.
+    var look: CGFloat = 0
+    /// Scene gravity y (about -1 with the phone upright); drives pitch and light.
+    var gravityY: CGFloat = -1
     var talkTarget: CGFloat = 0
     /// Per-puppet spring so a duo never moves in lockstep.
     var stiffness: CGFloat = 49
@@ -35,6 +39,12 @@ final class Puppet {
     private let figureScene = SCNScene()
     private let figureHolder = SCNNode()
     private let ambient = SCNNode()
+    private let key = SCNNode()
+    private let rim = SCNNode()
+    private var headNode: SCNNode?
+    private var lookNow: CGFloat = 0
+    /// Soft contact shadow on the floor under the bust.
+    private let shadow = SKShapeNode()
     private var figure: SCNNode?
     private let spin = SKNode()   // leans/topples; child of `node`, holds the 3D node
 
@@ -53,6 +63,10 @@ final class Puppet {
     init(persona: Persona) {
         self.persona = persona
         buildFigureScene()
+        shadow.fillColor = .black
+        shadow.strokeColor = .clear
+        shadow.zPosition = -1
+        node.addChild(shadow)
         spin.addChild(view3D)
         node.addChild(spin)
         refreshFigure()
@@ -75,6 +89,7 @@ final class Puppet {
         // Figure is 2.0 units tall inside a 2.2-unit-tall viewport; cut-outs are 3:4.
         view3D.viewportSize = CGSize(width: width * 1.2, height: bustH * 1.1)
         view3D.position = CGPoint(x: 0, y: bustH / 2)   // image bottom edge sits on the pivot
+        shadow.path = CGPath(ellipseIn: CGRect(x: -width * 0.45, y: -14, width: width * 0.9, height: 28), transform: nil)
     }
 
     // MARK: simulation
@@ -122,12 +137,34 @@ final class Puppet {
         spin.zRotation = theta + sin(CGFloat(now) * 14) * 0.03 * talk
         spin.setScale(grow)
         spin.yScale = grow * (1 + 0.04 * talk)
-        // 3D: turn towards the lean (up to ~50° when lying down), nod while talking, faint idle sway.
+        apply3D(now: now, gx: gx)
+    }
+
+    /// The 3D read: the whole figure yaws/pitches with the phone's tilt (parallax), the lights swing with it so
+    /// the face shades, the head turns independently on the neck, and it breathes.
+    private func apply3D(now: TimeInterval, gx: CGFloat) {
+        let t = CGFloat(now)
+        let tiltYaw = min(max(gx * 0.8, -0.7), 0.7)
+        let tiltPitch = min(max((-gravityY - 0.9) * 1.0, -0.3), 0.3)   // phone leaned back/forward
+        let breathe = sin(t * 1.7)
         figureHolder.eulerAngles = SCNVector3(
-            Float(-0.06 * talk),
-            Float(-theta * 0.5 + sin(CGFloat(now) * 0.9) * 0.05),
+            Float(tiltPitch - 0.015 * breathe),
+            Float(tiltYaw - theta * 0.35 + sin(t * 0.9) * 0.08),
             0)
-        ambient.light?.intensity = 450 + 350 * focusNow
+        figureHolder.scale = SCNVector3(1, Float(1 + 0.008 * breathe), 1)
+
+        lookNow += (look - lookNow) * min(1, 0.06)
+        headNode?.eulerAngles = SCNVector3(
+            Float(-0.14 * talk + 0.04 * sin(t * 1.3)),             // nods when talking
+            Float(lookNow * 0.4 - tiltYaw * 0.3 + 0.12 * talk * sin(t * 6)),   // turns to the other officer
+            Float(-theta * 0.15))                                  // head cants a little with the lean
+
+        key.eulerAngles = SCNVector3(Float(-0.5 + (gravityY + 0.9) * 0.6), Float(-0.6 - gx * 1.0), 0)
+        rim.eulerAngles = SCNVector3(-0.2, Float(.pi - 0.5 - gx * 0.8), 0)
+        ambient.light?.intensity = 330 + 300 * focusNow
+        key.light?.intensity = 750 + 400 * focusNow
+        shadow.xScale = 1 + 0.15 * abs(sin(theta))
+        shadow.alpha = 0.18 + 0.2 * focusNow
     }
 
     private func updateStance(now: TimeInterval, gx: CGFloat, tuning t: PuppetTuning) {
@@ -165,6 +202,7 @@ final class Puppet {
         let n = ReliefFigure.node(officer: persona, expression: e)
         figureHolder.addChildNode(n)
         figure = n
+        headNode = n.childNode(withName: "head", recursively: false)
     }
 
     private func buildFigureScene() {
@@ -177,13 +215,18 @@ final class Puppet {
         ambient.light = SCNLight()
         ambient.light?.type = .ambient
         ambient.light?.intensity = 625
-        let key = SCNNode()
         key.light = SCNLight()
         key.light?.type = .directional
         key.light?.intensity = 850
         key.eulerAngles = SCNVector3(-0.5, -0.6, 0)
+        rim.light = SCNLight()
+        rim.light?.type = .directional                        // from behind: rims the silhouette
+        rim.light?.intensity = 700
+        rim.light?.color = UIColor(red: 0.7, green: 0.8, blue: 1, alpha: 1)
+        rim.eulerAngles = SCNVector3(-0.2, .pi - 0.5, 0)
         figureScene.rootNode.addChildNode(ambient)
         figureScene.rootNode.addChildNode(key)
+        figureScene.rootNode.addChildNode(rim)
         view3D.scnScene = figureScene
         view3D.pointOfView = camera
     }

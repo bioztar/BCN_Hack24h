@@ -20,6 +20,7 @@ final class DummyScene: SKScene {
     private var papers: [SKSpriteNode] = []
     private var baseExpression: Expression = .neutral
     private var gx: CGFloat = 0
+    private var gy: CGFloat = -1
     private var lastUpdate: TimeInterval = 0
 
     override init(size: CGSize) {
@@ -68,6 +69,7 @@ final class DummyScene: SKScene {
 
     func setGravity(x: Double, y: Double) {
         gx = CGFloat(x)
+        gy = CGFloat(y)
         physicsWorld.gravity = CGVector(dx: x * 18, dy: y * 18)
     }
 
@@ -79,8 +81,11 @@ final class DummyScene: SKScene {
 
     /// The speaker leans in and gets the light, the other reacts. nil = nobody speaking.
     func setSpeaker(_ id: String?) {
-        for p in puppets {
-            p.focus = id == nil || puppets.count == 1 ? 0.5 : (p.persona.id == id ? 1 : 0)
+        let speaker = puppets.firstIndex { $0.persona.id == id }
+        for (i, p) in puppets.enumerated() {
+            p.focus = speaker == nil || puppets.count == 1 ? 0.5 : (i == speaker ? 1 : 0)
+            // The listener turns its head to the speaker; the speaker faces the camera.
+            p.look = (speaker == nil || i == speaker) ? 0 : (speaker! > i ? 1 : -1)
             if p.persona.id != id { p.talkTarget = 0 }
         }
     }
@@ -110,7 +115,10 @@ final class DummyScene: SKScene {
 
     /// Exposed for tests: advance the dummies by `dt` seconds at time `now`.
     func step(dt: CGFloat, now: TimeInterval) {
-        for p in puppets { p.step(dt: dt, now: now, gx: gx, tuning: tuning, sceneWidth: size.width) }
+        for p in puppets {
+            p.gravityY = gy
+            p.step(dt: dt, now: now, gx: gx, tuning: tuning, sceneWidth: size.width)
+        }
     }
 
     // MARK: layout
