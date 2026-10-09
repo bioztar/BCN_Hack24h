@@ -92,10 +92,10 @@ export function badgeSvg(r: ReportData): string {
   <text x="${mid}" y="${270 + nameSize * 0.82}" text-anchor="middle" font-family="Anton" font-size="${nameSize}" letter-spacing="2" fill="#ffffff">${esc(nameText)}</text>
   <text x="${mid}" y="${270 + nameSize * 0.82 + 44}" text-anchor="middle" font-family="Liberation Serif" font-style="italic" font-size="28" fill="${PALE}">${esc(ellipsize(founder, "serifItalic", 28, inner))}</text>
 
-  <g transform="translate(${mid} 556) rotate(-6)" filter="url(#ink)" opacity="0.95">
-    <rect x="-400" y="-104" width="800" height="208" rx="14" fill="none" stroke="${RED}" stroke-width="12"/>
-    <rect x="-380" y="-84" width="760" height="168" rx="7" fill="none" stroke="${RED}" stroke-width="4"/>
-    <text x="0" y="28" text-anchor="middle" font-family="Anton" font-size="108" letter-spacing="10" fill="${RED}">REFUSÉ</text>
+  <g transform="translate(${mid} 566) rotate(-4)" filter="url(#ink)" opacity="0.95">
+    <rect x="-380" y="-118" width="760" height="222" rx="14" fill="none" stroke="${RED}" stroke-width="12"/>
+    <rect x="-360" y="-98" width="720" height="182" rx="7" fill="none" stroke="${RED}" stroke-width="4"/>
+    <text x="0" y="30" text-anchor="middle" font-family="Anton" font-size="100" letter-spacing="10" fill="${RED}">REFUSÉ</text>
     <text x="0" y="70" text-anchor="middle" font-family="Anton" font-size="34" letter-spacing="12" fill="${RED}">BANNED IN THE EU</text>
   </g>
 

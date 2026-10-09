@@ -179,16 +179,23 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
   doc.font("serif").fontSize(10).fillColor(INK).text(`The Directorate has examined the submission of ${r.startupName} against Union law and has identified the following ${r.findings.length === 1 ? "infringement" : `${r.findings.length} infringements`}. Each finding is grounded in a real provision; the officials are fictional, the law is not.`, { width: CW, align: "justify" });
   doc.moveDown(0.8);
   const assessments = [...ASSESSMENTS];
+  const usable = doc.page.height - TOP - BOTTOM;
+  const paraH = (label: string, body: string) => doc.font("serif").fontSize(10).heightOfString(`${label} ${body}`, { width: CW, align: "justify" }) + 6;
   r.findings.forEach((f, i) => {
-    ensure(150);
     const fw = frameworkOf(f.provision);
-    doc.font("serifBold").fontSize(12).fillColor(NAVY).text(`${i + 1}. ${f.provision.label} — ${f.provision.title}`, M, doc.y, { width: CW });
+    const law = excerpt(lawText?.(f.provision.id));
+    const a = assessments.length ? assessments.splice(Math.floor(rand() * assessments.length), 1)[0]! : pick(ASSESSMENTS, rand);
+    const title = `${i + 1}. ${f.provision.label} — ${f.provision.title}`;
+    const blockH =
+      doc.font("serifBold").fontSize(12).heightOfString(title, { width: CW }) + 16 +
+      paraH("Finding of fact.", f.text) + (law ? paraH("The law.", `“${law}”`) : 0) +
+      paraH("Assessment of the Directorate.", a) + paraH("Exposure.", fw.penalty) + paraH("Remedy.", remedyFor(f.provision)) + 24;
+    ensure(Math.min(blockH, usable * 0.6));
+    doc.font("serifBold").fontSize(12).fillColor(NAVY).text(title, M, doc.y, { width: CW });
     doc.font("sans").fontSize(7.5).fillColor(GREY).text(fw.name, { width: CW });
     doc.moveDown(0.3);
     para("Finding of fact.", f.text);
-    const law = excerpt(lawText?.(f.provision.id));
     if (law) para("The law.", `“${law}”`, "serifItalic");
-    const a = assessments.length ? assessments.splice(Math.floor(rand() * assessments.length), 1)[0]! : pick(ASSESSMENTS, rand);
     para("Assessment of the Directorate.", a);
     para("Exposure.", fw.penalty);
     para("Remedy.", remedyFor(f.provision));
