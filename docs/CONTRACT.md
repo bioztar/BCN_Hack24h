@@ -197,3 +197,29 @@ Art. 83: €20M/4%, €10M/2%; DSA Art. 52: 6%; DMA Art. 30: 10%; NIS2 Art. 34: 
 €15M/2.5%; Data Act; ePrivacy national), scaled up for comedy as the tier rises. `jailMonths`
 comes from real national criminal provisions where they exist (e.g. DE BDSG §42 up to 3 years,
 FR Code pénal art. 226-16 up to 5 years) else 0; `caption` is the gag line. Totals are monotonic.
+
+### Meanwhile — "while you were being processed" (Vitaly, 2026-10-10 01:50)
+
+The running joke of the whole product: while the applicant sits in the EU queue and gets
+roasted, the rest of the world ships. Every case carries a live **Meanwhile** counter:
+
+> *While you were being processed (4 min 12 s): **China** built 11 new AI models — one of
+> them achieved superintelligence. **The US** built 3 and raised $40 bn. **Europe** adopted
+> 27 new regulations and 412 forms you now have to fill in to start your startup.*
+
+- **Server (server-v2)** computes it from elapsed seconds since the applicant registered
+  (or the case was created): deterministic per caseId, monotonic, absurd rates (China ≫ US;
+  EU counts regulations + forms, forms ≫ regulations). Emits `{ type: "meanwhile" }`
+  roughly every 5 s while a round streams and once right before `verdict`; puts the final
+  value in `NoticeV2.meanwhile`. Rotating `note` quips per country (a small list, seeded by
+  caseId). The tier-5 verdict prompt gets the final numbers so an officer can deliver it as
+  the closing line ("Meanwhile, Monsieur, China built eleven models. We built you a form.").
+  Leaderboard entries may carry it too (optional).
+- **Stage (stage-v2)**: a persistent three-column "MEANWHILE" scoreboard (🇨🇳 models · 🇺🇸
+  models · 🇪🇺 regulations + forms) ticking on the live-case view; a global version (sum
+  across all cases today) on the QR intro and leaderboard views.
+- **PWA (pwa-v2)**: the same three counters small at the top during queue + roast; full
+  "While you were being processed…" card at the verdict, above Share.
+- **Report + badge (report-badge)**: one line on the badge under the fine ("Meanwhile: 🇨🇳 11
+  AI models · 🇺🇸 3 · 🇪🇺 27 regulations + 412 forms"), a boxed paragraph on the PDF TL;DR page.
+- Flags as emoji or plain text only — no official EU emblem.

@@ -32,6 +32,7 @@ export type RoastEvent =
   | { type: "verdict"; notice: Notice }
   | { type: "audio"; id: string; audioUrl: string }                      // late TTS for an already-sent line (same id)
   | { type: "awaiting"; prompt: string }                                  // pitcher may argue back
+  | { type: "meanwhile"; meanwhile: Meanwhile }                           // v2: live counter tick (≈ every 5 s during a round) + final value before verdict
   | { type: "error"; message: string };
 
 export interface Notice {
@@ -88,6 +89,15 @@ export interface NoticeV2 extends Notice {
   recommendations: { text: string; provision?: Provision }[];
   reportUrl: string;                            // /api/case/:caseId/report.pdf
   badgeUrl: string;                             // /api/case/:caseId/badge.png  (1080×1080, shareable)
+  meanwhile?: Meanwhile;                        // "While you were being processed…" — see CONTRACT v2 "Meanwhile"
+}
+
+/** "While you were being processed": the global race, scaled to how long this case took. */
+export interface Meanwhile {
+  elapsedSec: number;                           // case start (applicant registered or case created) → verdict
+  china: { models: number; note: string };      // e.g. 11, "one of them achieved superintelligence"
+  us: { models: number; note: string };         // e.g. 3, "and raised $40 bn"
+  eu: { regulations: number; forms: number; note: string };  // e.g. 27, 412, "you need all of them to open a bank account"
 }
 
 export interface LeaderboardEntry {
