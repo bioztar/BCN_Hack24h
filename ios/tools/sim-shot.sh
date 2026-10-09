@@ -17,7 +17,7 @@ xcodebuild -project PocketEurocrat.xcodeproj -scheme PocketEurocrat \
 xcrun simctl boot "$sim" 2>/dev/null || true
 xcrun simctl terminate booted "$bundle" 2>/dev/null || true
 xcrun simctl install booted build/Build/Products/Debug-iphonesimulator/PocketEurocrat.app
-xcrun simctl launch booted "$bundle" >/dev/null
+xcrun simctl launch booted "$bundle" ${=SHOT_ARGS:-} >/dev/null   # e.g. SHOT_ARGS=-focus-input
 sleep "${SHOT_DELAY:-4}"
 xcrun simctl io booted screenshot "$out/$name.png" 2>/dev/null
 echo "$out/$name.png"

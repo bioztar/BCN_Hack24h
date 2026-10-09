@@ -8,10 +8,15 @@ struct PocketView: View {
 
     var body: some View {
         ZStack {
+            // The scene fills the whole screen and ignores the keyboard: it never resizes or shifts.
+            SpriteView(scene: model.puppet, preferredFramesPerSecond: 60)
+                .ignoresSafeArea(.all)
+                .onTapGesture { typing = false; model.wake() }
+
+            // Only this overlay rides up with the keyboard.
             VStack(spacing: 0) {
                 officerPicker
-                SpriteView(scene: model.puppet, preferredFramesPerSecond: 60)
-                    .onTapGesture { typing = false; model.wake() }
+                Spacer()
                 if let line = model.subtitle { SubtitleBar(line: line, tier: model.tierName) }
                 controls
             }
@@ -20,6 +25,19 @@ struct PocketView: View {
             if let stamp = model.stamp { StampView(text: stamp) }
         }
         .animation(.easeInOut(duration: 0.25), value: model.isAsleep)
+        .task {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-focus-input") {   // screenshot aid (tools/sim-shot.sh)
+                try? await Task.sleep(for: .seconds(1.5))
+                typing = true
+            }
+            #endif
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { note in
+            guard let end = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
+            let height = max(0, UIScreen.main.bounds.height - end.minY)
+            model.puppet.frameFace(keyboardHeight: height > 50 ? height + 110 : nil)   // + input bar
+        }
         .alert("Hmm.", isPresented: .init(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(model.errorMessage ?? "") }

@@ -22,6 +22,10 @@ final class DummyScene: SKScene {
 
     /// Pivot at the base of the bust; everything physical (lean, topple, talk bob) is applied here.
     private let pivot = SKNode()
+    /// Camera-ish transform for the whole figure (zoom onto the face while the keyboard is up).
+    private let figureRoot = SKNode()
+    /// Height of the SwiftUI control bar the scene sits behind; the floor is just above it.
+    var bottomInset: CGFloat = 150 { didSet { if pivot.parent != nil { layout() } } }
     /// The photo-relief figure rendered by SceneKit inside the SpriteKit scene.
     private let view3D = SK3DNode(viewportSize: CGSize(width: 100, height: 100))
     private let figureScene = SCNScene()
@@ -46,9 +50,10 @@ final class DummyScene: SKScene {
         backgroundColor = UIColor(red: 0.07, green: 0.08, blue: 0.12, alpha: 1)
         scaleMode = .resizeFill
         buildFigureScene()
-        pivot.zPosition = 1
+        figureRoot.zPosition = 1
         pivot.addChild(view3D)
-        addChild(pivot)
+        figureRoot.addChild(pivot)
+        addChild(figureRoot)
         buildPapers()
         refreshFigure()
         layout()
@@ -164,7 +169,7 @@ final class DummyScene: SKScene {
     private var fallShift: CGFloat { max(0, bustH - size.width / 2 + size.width * 0.1) }
 
     private func layout() {
-        let floorY = size.height * 0.1
+        let floorY = bottomInset + 10
         pivot.position = CGPoint(x: size.width / 2 + shift, y: floorY)
         physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(x: 0, y: floorY - 4, width: size.width, height: size.height))
         physicsBody?.friction = 0.6
@@ -173,6 +178,29 @@ final class DummyScene: SKScene {
         bustH = w * 4 / 3
         view3D.viewportSize = CGSize(width: w * 1.1, height: bustH * 1.1)
         view3D.position = CGPoint(x: 0, y: bustH / 2)   // image bottom edge sits on the pivot
+    }
+
+    /// Keyboard up: zoom/pan so head + shoulders sit in the free area above `keyboardHeight`
+    /// (points from the bottom of the screen, controls bar included). nil = back to the full view.
+    func frameFace(keyboardHeight: CGFloat?) {
+        let scale: CGFloat, offset: CGPoint
+        if let kb = keyboardHeight {
+            let top: CGFloat = 120                                   // status bar + officer picker
+            let free = max(size.height - kb - top, 100)
+            let bandH = bustH * 0.5                                  // head + shoulders
+            scale = min(max(free * 0.92 / bandH, 1), 1.5)
+            let faceY = bottomInset + 10 + bustH * 0.76
+            let target = kb + free / 2
+            offset = CGPoint(x: size.width / 2 * (1 - scale), y: target - scale * faceY)
+        } else {
+            scale = 1; offset = .zero
+        }
+        figureRoot.removeAction(forKey: "frame")
+        let zoom = SKAction.scale(to: scale, duration: 0.3)
+        let pan = SKAction.move(to: offset, duration: 0.3)
+        zoom.timingMode = .easeInEaseOut
+        pan.timingMode = .easeInEaseOut
+        figureRoot.run(.group([zoom, pan]), withKey: "frame")
     }
 
     private func buildFigureScene() {
