@@ -21,12 +21,12 @@ targets:
     sources: [PocketEurocrat]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.pro7ocol.dgroast
+        PRODUCT_BUNDLE_IDENTIFIER: com.pro7ocol.eurocrat
         TARGETED_DEVICE_FAMILY: "1"
     info:
       path: PocketEurocrat/Info.plist
       properties:
-        CFBundleDisplayName: Pocket Eurocrat
+        CFBundleDisplayName: Eurocrat
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSMicrophoneUsageDescription: Hold the button to dictate your pitch to the Eurocrat.
@@ -42,4 +42,4 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.pro7ocol.dgroast.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.pro7ocol.eurocrat.tests

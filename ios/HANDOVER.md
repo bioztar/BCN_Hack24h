@@ -1,7 +1,7 @@
 # HANDOVER — BCN_Hack24h/ios — 2026-10-09 21:05
 ## State: phase 1 (no-server) complete; simulator build + 3 tests green.
 ## Done this session
-- `ios/` SwiftUI app via XcodeGen (`cd ios && xcodegen generate`), bundle com.pro7ocol.dgroast, team H6MBTUJ4TQ.
+- `ios/` SwiftUI app via XcodeGen (`cd ios && xcodegen generate`), bundle com.pro7ocol.eurocrat, display name Eurocrat, team H6MBTUJ4TQ.
 - SceneKit box + CoreMotion gravity + shake→REFUSÉ + Core Haptics + idle sleep + dictate/text → roast stream → verdict card/share.
 - Mock vs live backend behind `RoastBackend` (`ROAST_BACKEND` in project.yml, or launch arg `-RoastBackend live`).
 ## In flight / partially done
