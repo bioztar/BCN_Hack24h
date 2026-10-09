@@ -59,7 +59,7 @@ states.
 
 | Voice | Model | Id | Why |
 |---|---|---|---|
-| Zeus | `slng/deepgram/aura:2-en` | `aura-2-zeus-en` | deep, flat, IVR-like; Aura is $0.005/min |
+| Zeus | `deepgram/aura:2` | `aura-2-zeus-en` | deep, flat, IVR-like; Aura is $0.005/min |
 
 Delivery: neutral speed, no emotion tags. Post-process (optional, runtime): a light
 telephone band-pass and a 40 ms slap delay ("the room is very large and nobody is in it").

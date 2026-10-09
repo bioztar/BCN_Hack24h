@@ -51,8 +51,8 @@ spend should come in at or below the estimate.
 | silent clips | `minimax/h3-max-turbo/image-to-video` @ 768P | $0.04 / s (promo $0.024 until 15 Oct) | cheapest decent I2V; float `duration` (3–5 s here). `minimax/h3-max/image-to-video` is $0.08/s |
 | speaking clips | `fal-ai/sync-lipsync/v3/image-to-video` | $0.1333 / output s | image + audio → lip-synced video, no min. length. `minimax/h3-max/lip-sync/image-to-video` is $0.08/s but needs ≥5 s audio |
 | TTS (Formblatt, Annexe) | `slng/fish/tts:s2.1-pro` via `POST https://eu-west.api.slng.ai/v1/tts/<model>` | $0.005 / min | stock `reference_id` voices, `prosody.speed`, inline `[sigh]` cues |
-| TTS (alternates) | `cartesia/sonic:3` | $0.035 / min | elderly/mature stock voices for auditions |
-| TTS (Council) | `slng/deepgram/aura:2-en` (`aura-2-zeus-en`) | $0.005 / min | flat IVR-like voice |
+| TTS (alternates) | `cartesia/sonic:3` | $0.035 / min | elderly/mature stock voices for auditions. **Broken over HTTP:** SLNG serves Cartesia by WebSocket only (POST /v1/tts/cartesia/sonic:3 → 405); needs a WS client or a different voice |
+| TTS (Council) | `deepgram/aura:2` (`aura-2-zeus-en`, `encoding: mp3`) | $0.005 / min | flat IVR-like voice. Not `slng/deepgram/aura:2-en`: that one is US-hosted only and 503s on the eu-west gateway |
 
 fal is called through the queue API (`POST https://queue.fal.run/<model>` with `Authorization: Key …`,
 poll `status_url`, `GET response_url`, download the output URL). Generated inputs (stills, line

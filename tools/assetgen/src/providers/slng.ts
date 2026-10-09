@@ -16,7 +16,8 @@ export function ttsBody(model: string, voiceId: string, text: string, opts: TtsO
       ...(opts.speed ? { prosody: { speed: opts.speed } } : {}),
     };
   }
-  if (model.includes("deepgram/aura")) return { text, model: voiceId };
+  // Aura over HTTP defaults to linear16 WAV; ask for MP3 so the .mp3 output path is honest.
+  if (model.includes("deepgram/aura")) return { text, model: voiceId, encoding: opts.format ?? "mp3" };
   return { text, voice: voiceId };
 }
 
