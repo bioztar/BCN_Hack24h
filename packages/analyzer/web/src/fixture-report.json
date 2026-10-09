@@ -1,0 +1,4662 @@
+{
+ "id": "fixture",
+ "createdAt": "2026-10-10T09:00:00.000Z",
+ "kind": "document",
+ "title": "HireRank design v0.3.docx",
+ "checklists": {
+  "eu-ai-act": "design-doc",
+  "warden": "design-doc"
+ },
+ "summary": {
+  "aiAct": {
+   "tier": "high-risk (Annex III)",
+   "roles": [
+    "provider"
+   ],
+   "confidence": "medium",
+   "headline": "High-risk (Annex III) · provider · → not EU-market-ready"
+  },
+  "wardenVerdict": "Not ready",
+  "frameworksTriggered": [
+   {
+    "framework": "GDPR",
+    "status": "APPLIES"
+   },
+   {
+    "framework": "ISO/IEC 27001",
+    "status": "APPLIES"
+   },
+   {
+    "framework": "ISO/IEC 42001",
+    "status": "RECOMMENDED"
+   },
+   {
+    "framework": "SOC 2",
+    "status": "RECOMMENDED"
+   },
+   {
+    "framework": "NIST AI RMF",
+    "status": "RECOMMENDED"
+   },
+   {
+    "framework": "OWASP LLM Top 10",
+    "status": "APPLIES"
+   }
+  ],
+  "counts": {
+   "critical": 4,
+   "high": 10,
+   "medium": 11,
+   "low": 2
+  },
+  "headlinePenalty": {
+   "framework": "GDPR",
+   "cap": "€10 M / 2% (Art. 83(4)); €20 M / 4% (Art. 83(5)–(6)) of worldwide annual turnover, higher of",
+   "basis": "Max administrative fine",
+   "citations": [
+    {
+     "id": "gdpr-83",
+     "label": "GDPR Art. 83",
+     "title": "General conditions for imposing administrative fines",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_83",
+     "framework": "GDPR",
+     "display": "GDPR Art. 83(4)"
+    },
+    {
+     "id": "gdpr-83",
+     "label": "GDPR Art. 83",
+     "title": "General conditions for imposing administrative fines",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_83",
+     "framework": "GDPR",
+     "display": "GDPR Art. 83(5)–(6)"
+    }
+   ]
+  }
+ },
+ "aiAct": {
+  "isAiSystem": true,
+  "tier": "high-risk (Annex III)",
+  "roles": [
+   "provider"
+  ],
+  "confidence": "medium",
+  "decisions": [
+   {
+    "step": "Scope (Art. 3(1), Art. 2)",
+    "verdict": "AI system with EU nexus",
+    "reasoning": "An LLM ranks candidates for EU employers, which meets AI Act Art. 3(1) and Art. 2(1)(a).",
+    "evidence": "\"ranks applicants for hiring managers\"",
+    "citations": [
+     {
+      "id": "ai-act-3",
+      "label": "AI Act Art. 3",
+      "title": "Definitions",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_3",
+      "framework": "AI Act",
+      "display": "AI Act Art. 3(1)"
+     },
+     {
+      "id": "ai-act-2",
+      "label": "AI Act Art. 2",
+      "title": "Scope",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_2",
+      "framework": "AI Act",
+      "display": "AI Act Art. 2(1)(a)"
+     }
+    ]
+   },
+   {
+    "step": "Prohibited practices (Art. 5)",
+    "verdict": "No prohibited practice",
+    "reasoning": "No emotion inference or social scoring observed (Art. 5(1)).",
+    "evidence": "none",
+    "citations": [
+     {
+      "id": "ai-act-5",
+      "label": "AI Act Art. 5",
+      "title": "Prohibited AI practices",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_5",
+      "framework": "AI Act",
+      "display": "AI Act Art. 5"
+     },
+     {
+      "id": "ai-act-5",
+      "label": "AI Act Art. 5",
+      "title": "Prohibited AI practices",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_5",
+      "framework": "AI Act",
+      "display": "AI Act Art. 5(1)"
+     }
+    ]
+   },
+   {
+    "step": "Annex III path (Art. 6(2))",
+    "verdict": "High-risk: employment",
+    "reasoning": "Recruitment and selection is listed in Annex III point 4; the Art. 6(3) derogation fails because candidates are profiled. See also the relevant provision.",
+    "evidence": "\"scores CVs\"",
+    "citations": [
+     {
+      "id": "ai-act-6",
+      "label": "AI Act Art. 6",
+      "title": "Classification rules for high-risk AI systems",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_6",
+      "framework": "AI Act",
+      "display": "AI Act Art. 6"
+     },
+     {
+      "id": "ai-act-annex-iii",
+      "label": "AI Act Annex III",
+      "title": "High-risk AI systems referred to in Article 6(2)",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+      "framework": "AI Act",
+      "display": "AI Act Annex III point 4"
+     },
+     {
+      "id": "ai-act-6",
+      "label": "AI Act Art. 6",
+      "title": "Classification rules for high-risk AI systems",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_6",
+      "framework": "AI Act",
+      "display": "AI Act Art. 6(2)"
+     },
+     {
+      "id": "ai-act-6",
+      "label": "AI Act Art. 6",
+      "title": "Classification rules for high-risk AI systems",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_6",
+      "framework": "AI Act",
+      "display": "AI Act Art. 6(3)"
+     }
+    ]
+   },
+   {
+    "step": "Transparency (Art. 50)",
+    "verdict": "Chat assistant triggers Art. 50(1)",
+    "reasoning": "Candidates talk to an assistant.",
+    "citations": [
+     {
+      "id": "ai-act-50",
+      "label": "AI Act Art. 50",
+      "title": "Transparency obligations for providers and deployers of certain AI systems",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_50",
+      "framework": "AI Act",
+      "display": "AI Act Art. 50(1)"
+     }
+    ]
+   }
+  ],
+  "assumptions": [
+   "ASSUMED: deployed to EU employers from day one."
+  ]
+ },
+ "warden": {
+  "frameworks": [
+   {
+    "framework": "GDPR",
+    "status": "APPLIES",
+    "role": "processor",
+    "basis": "Processes CVs of EU applicants (GDPR Art. 3(1)).",
+    "citations": [
+     {
+      "id": "gdpr-3",
+      "label": "GDPR Art. 3",
+      "title": "Territorial scope",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_3",
+      "framework": "GDPR",
+      "display": "GDPR Art. 3(1)"
+     }
+    ]
+   },
+   {
+    "framework": "NIS2",
+    "status": "NOT TRIGGERED",
+    "role": "n/a",
+    "basis": "Not an Annex I/II sector.",
+    "citations": [
+     {
+      "id": "nis2-annex-i",
+      "label": "NIS2 Annex I",
+      "title": "SECTORS OF HIGH CRITICALITY",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#anx_I",
+      "framework": "NIS2",
+      "display": "NIS2 Annex I"
+     }
+    ]
+   },
+   {
+    "framework": "DORA",
+    "status": "NOT TRIGGERED",
+    "role": "n/a",
+    "basis": "Not a financial entity.",
+    "citations": []
+   },
+   {
+    "framework": "ISO/IEC 27001",
+    "status": "APPLIES",
+    "role": "supplier",
+    "basis": "Enterprise buyers ask for certification.",
+    "citations": []
+   },
+   {
+    "framework": "ISO/IEC 42001",
+    "status": "RECOMMENDED",
+    "role": "AI provider",
+    "basis": "AI management system.",
+    "citations": []
+   },
+   {
+    "framework": "SOC 2",
+    "status": "RECOMMENDED",
+    "role": "service org",
+    "basis": "US customers.",
+    "citations": []
+   },
+   {
+    "framework": "NIST AI RMF",
+    "status": "RECOMMENDED",
+    "role": "AI actor",
+    "basis": "Voluntary.",
+    "citations": []
+   },
+   {
+    "framework": "OWASP LLM Top 10",
+    "status": "APPLIES",
+    "role": "LLM app",
+    "basis": "LLM features in production (OWASP LLM01).",
+    "citations": [
+     {
+      "id": "owasp-llm01",
+      "label": "OWASP LLM01:2025",
+      "title": "Prompt Injection",
+      "url": "https://genai.owasp.org/llm-top-10/",
+      "framework": "OWASP LLM Top 10",
+      "display": "OWASP LLM01:2025"
+     }
+    ]
+   }
+  ],
+  "decisions": [
+   {
+    "step": "Personal data",
+    "verdict": "Yes",
+    "reasoning": "CVs are personal data; this is high-risk under the relevant provision.",
+    "evidence": "\"upload your CV\"",
+    "citations": [
+     {
+      "id": "gdpr-4",
+      "label": "GDPR Art. 4",
+      "title": "Definitions",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_4",
+      "framework": "GDPR",
+      "display": "GDPR Art. 4"
+     }
+    ]
+   }
+  ],
+  "aiActHandoff": {
+   "relevant": true,
+   "triggers": [
+    "model scores job applicants",
+    "chatbot talks to candidates"
+   ]
+  },
+  "assumptions": []
+ },
+ "findings": [
+  {
+   "id": "AI-C4",
+   "skill": "eu-ai-act",
+   "severity": "critical",
+   "status": "gap",
+   "title": "Compliance timeline acknowledged",
+   "what": "The HireRank design document does not evidence \"compliance timeline acknowledged\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-111",
+     "label": "AI Act Art. 111",
+     "title": "AI systems already placed on the market or put into service and general-purpose AI models already placed on the marked",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_111",
+     "framework": "AI Act",
+     "display": "AI Act Art. 111"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#C4"
+  },
+  {
+   "id": "AI-C1",
+   "skill": "eu-ai-act",
+   "severity": "critical",
+   "status": "gap",
+   "title": "Intended purpose defined precisely",
+   "what": "The HireRank design document does not evidence \"intended purpose defined precisely\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-3",
+     "label": "AI Act Art. 3",
+     "title": "Definitions",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_3",
+     "framework": "AI Act",
+     "display": "AI Act Art. 3(12)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#C1"
+  },
+  {
+   "id": "W-D4",
+   "skill": "warden",
+   "severity": "critical",
+   "status": "gap",
+   "title": "Is a DPIA needed (profiling, large-scale special data, systematic monitoring, new tech)? Planned?",
+   "what": "Not covered in the document: is a dpia needed (profiling, large-scale special data, systematic monitoring, new tech)? planned?.",
+   "why": "CVs are personal data; GDPR Art. 5(1)(e) requires defined retention.",
+   "fix": "Set a retention period (e.g. 6 months after the hiring decision) and automate deletion.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-35",
+     "label": "GDPR Art. 35",
+     "title": "Data protection impact assessment",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_35",
+     "framework": "GDPR",
+     "display": "GDPR Art. 35"
+    },
+    {
+     "id": "gdpr-5",
+     "label": "GDPR Art. 5",
+     "title": "Principles relating to processing of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+     "framework": "GDPR",
+     "display": "GDPR Art. 5(1)(e)"
+    }
+   ],
+   "overlap": [
+    "O2",
+    "O3",
+    "O7",
+    "O18",
+    "O19",
+    "O23"
+   ],
+   "sourceItem": "warden/design-doc#D4"
+  },
+  {
+   "id": "AI-C3",
+   "skill": "eu-ai-act",
+   "severity": "critical",
+   "status": "unclear",
+   "title": "Role map",
+   "what": "The HireRank design document does not evidence \"role map\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-25",
+     "label": "AI Act Art. 25",
+     "title": "Responsibilities along the AI value chain",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_25",
+     "framework": "AI Act",
+     "display": "AI Act Art. 25(1)"
+    },
+    {
+     "id": "ai-act-22",
+     "label": "AI Act Art. 22",
+     "title": "Authorised representatives of providers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_22",
+     "framework": "AI Act",
+     "display": "AI Act Art. 22(1)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#C3"
+  },
+  {
+   "id": "AI-H5",
+   "skill": "eu-ai-act",
+   "severity": "high",
+   "status": "gap",
+   "title": "Change-management policy",
+   "what": "The HireRank design document does not evidence \"change-management policy\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-43",
+     "label": "AI Act Art. 43",
+     "title": "Conformity assessment",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_43",
+     "framework": "AI Act",
+     "display": "AI Act Art. 43(4)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#H5"
+  },
+  {
+   "id": "AI-H4",
+   "skill": "eu-ai-act",
+   "severity": "high",
+   "status": "gap",
+   "title": "Accuracy/robustness/cybersecurity targets",
+   "what": "The HireRank design document does not evidence \"accuracy/robustness/cybersecurity targets\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-15",
+     "label": "AI Act Art. 15",
+     "title": "Accuracy, robustness and cybersecurity",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_15",
+     "framework": "AI Act",
+     "display": "AI Act Art. 15"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#H4"
+  },
+  {
+   "id": "AI-H1",
+   "skill": "eu-ai-act",
+   "severity": "high",
+   "status": "gap",
+   "title": "Data governance plan",
+   "what": "The HireRank design document does not evidence \"data governance plan\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-10",
+     "label": "AI Act Art. 10",
+     "title": "Data and data governance",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_10",
+     "framework": "AI Act",
+     "display": "AI Act Art. 10"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#H1"
+  },
+  {
+   "id": "W-D14",
+   "skill": "warden",
+   "severity": "high",
+   "status": "gap",
+   "title": "AI: data provenance for training / fine-tuning / RAG",
+   "what": "Not covered in the document: ai: data provenance for training / fine-tuning / rag.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "iso42001-a.7",
+     "label": "ISO/IEC 42001 A.7",
+     "title": "Data for AI systems",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.7"
+    },
+    {
+     "id": "nist-rmf-map-4.1",
+     "label": "NIST AI RMF MAP 4.1",
+     "title": "Approaches for mapping AI technology and legal risks of its components – including the use of third-party data or software – are in place, followed, and…",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 4.1"
+    },
+    {
+     "id": "gdpr-6",
+     "label": "GDPR Art. 6",
+     "title": "Lawfulness of processing",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_6",
+     "framework": "GDPR",
+     "display": "GDPR Art. 6"
+    }
+   ],
+   "overlap": [
+    "O2",
+    "O18",
+    "O19"
+   ],
+   "sourceItem": "warden/design-doc#D14"
+  },
+  {
+   "id": "W-D11",
+   "skill": "warden",
+   "severity": "high",
+   "status": "gap",
+   "title": "Data-subject rights handling designed (export, delete propagation incl. backups & vendors)",
+   "what": "Not covered in the document: data-subject rights handling designed (export, delete propagation incl. backups & vendors).",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-15",
+     "label": "GDPR Art. 15",
+     "title": "Right of access by the data subject",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_15",
+     "framework": "GDPR",
+     "display": "GDPR Arts. 15–21"
+    }
+   ],
+   "overlap": [
+    "O21"
+   ],
+   "sourceItem": "warden/design-doc#D11"
+  },
+  {
+   "id": "W-D5",
+   "skill": "warden",
+   "severity": "high",
+   "status": "gap",
+   "title": "Threat model / security risk assessment with treatment decisions",
+   "what": "Not covered in the document: threat model / security risk assessment with treatment decisions.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(a)"
+    },
+    {
+     "id": "dora-6",
+     "label": "DORA Art. 6",
+     "title": "ICT risk management framework",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_6",
+     "framework": "DORA",
+     "display": "DORA Art. 6"
+    },
+    {
+     "id": "soc2-cc3",
+     "label": "SOC 2 CC3.1–3.4",
+     "title": "Risk assessment",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 CC3.2"
+    }
+   ],
+   "overlap": [
+    "O2"
+   ],
+   "sourceItem": "warden/design-doc#D5"
+  },
+  {
+   "id": "W-D1",
+   "skill": "warden",
+   "severity": "high",
+   "status": "gap",
+   "title": "What personal data, whose, which categories (incl. special categories), for which purposes and lawful basis?",
+   "what": "Not covered in the document: what personal data, whose, which categories (incl. special categories), for which purposes and lawful basis?.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-5",
+     "label": "GDPR Art. 5",
+     "title": "Principles relating to processing of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+     "framework": "GDPR",
+     "display": "GDPR Art. 5"
+    },
+    {
+     "id": "gdpr-6",
+     "label": "GDPR Art. 6",
+     "title": "Lawfulness of processing",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_6",
+     "framework": "GDPR",
+     "display": "GDPR Art. 6"
+    },
+    {
+     "id": "gdpr-9",
+     "label": "GDPR Art. 9",
+     "title": "Processing of special categories of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_9",
+     "framework": "GDPR",
+     "display": "GDPR Art. 9"
+    },
+    {
+     "id": "gdpr-30",
+     "label": "GDPR Art. 30",
+     "title": "Records of processing activities",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_30",
+     "framework": "GDPR",
+     "display": "GDPR Art. 30"
+    }
+   ],
+   "overlap": [
+    "O4",
+    "O7",
+    "O18",
+    "O19",
+    "O23"
+   ],
+   "sourceItem": "warden/design-doc#D1"
+  },
+  {
+   "id": "AI-H3",
+   "skill": "eu-ai-act",
+   "severity": "high",
+   "status": "unclear",
+   "title": "Human oversight design",
+   "what": "The HireRank design document does not evidence \"human oversight design\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14(3)"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14(5)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#H3"
+  },
+  {
+   "id": "W-D3",
+   "skill": "warden",
+   "severity": "high",
+   "status": "unclear",
+   "title": "Privacy by design/default: minimisation, retention periods, pseudonymisation",
+   "what": "Not covered in the document: privacy by design/default: minimisation, retention periods, pseudonymisation.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-25",
+     "label": "GDPR Art. 25",
+     "title": "Data protection by design and by default",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_25",
+     "framework": "GDPR",
+     "display": "GDPR Art. 25"
+    },
+    {
+     "id": "gdpr-5",
+     "label": "GDPR Art. 5",
+     "title": "Principles relating to processing of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+     "framework": "GDPR",
+     "display": "GDPR Art. 5(1)(c),(e)"
+    }
+   ],
+   "overlap": [
+    "O7",
+    "O11",
+    "O18",
+    "O19",
+    "O23"
+   ],
+   "sourceItem": "warden/design-doc#D3"
+  },
+  {
+   "id": "W-D13",
+   "skill": "warden",
+   "severity": "high",
+   "status": "unclear",
+   "title": "AI: intended purpose, users, affected people, foreseeable misuse",
+   "what": "Not covered in the document: ai: intended purpose, users, affected people, foreseeable misuse.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nist-rmf-map-1.1",
+     "label": "NIST AI RMF MAP 1.1",
+     "title": "Intended purposes, potentially beneficial uses, contextspecific laws, norms and expectations, and prospective settings in which the AI system will be deployed…",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 1.1"
+    },
+    {
+     "id": "nist-rmf-map-3.3",
+     "label": "NIST AI RMF MAP 3.3",
+     "title": "Targeted application scope is specified and documented based on the system’s capability, established context, and AI system categorization",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 3.3"
+    },
+    {
+     "id": "iso42001-6.1.4",
+     "label": "ISO/IEC 42001 cl. 6.1.4",
+     "title": "AI system impact assessment: consequences for individuals, groups and societies across intended use and foreseeable misuse",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 cl. 6.1.4"
+    },
+    {
+     "id": "iso42001-a.5",
+     "label": "ISO/IEC 42001 A.5",
+     "title": "Assessing impacts of AI systems",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.5"
+    }
+   ],
+   "overlap": [
+    "O3",
+    "O23"
+   ],
+   "sourceItem": "warden/design-doc#D13"
+  },
+  {
+   "id": "AI-M5",
+   "skill": "eu-ai-act",
+   "severity": "medium",
+   "status": "gap",
+   "title": "Supplier dependency list",
+   "what": "The HireRank design document does not evidence \"supplier dependency list\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-25",
+     "label": "AI Act Art. 25",
+     "title": "Responsibilities along the AI value chain",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_25",
+     "framework": "AI Act",
+     "display": "AI Act Art. 25(4)"
+    },
+    {
+     "id": "ai-act-annex-xii",
+     "label": "AI Act Annex XII",
+     "title": "Transparency information referred to in Article 53(1), point (b) — technical documentation for providers of general-purpose AI models to downstream providers that integrate the model into their AI system",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_XII",
+     "framework": "AI Act",
+     "display": "AI Act Annex XII"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#M5"
+  },
+  {
+   "id": "AI-M4",
+   "skill": "eu-ai-act",
+   "severity": "medium",
+   "status": "gap",
+   "title": "Registration data fields identified",
+   "what": "The HireRank design document does not evidence \"registration data fields identified\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-annex-viii",
+     "label": "AI Act Annex VIII",
+     "title": "Information to be submitted upon the registration of high-risk AI systems in accordance with Article 49",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_VIII",
+     "framework": "AI Act",
+     "display": "AI Act Annex VIII"
+    },
+    {
+     "id": "ai-act-49",
+     "label": "AI Act Art. 49",
+     "title": "Registration",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_49",
+     "framework": "AI Act",
+     "display": "AI Act Art. 49"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#M4"
+  },
+  {
+   "id": "AI-M1",
+   "skill": "eu-ai-act",
+   "severity": "medium",
+   "status": "gap",
+   "title": "Instructions-for-use outline",
+   "what": "The HireRank design document does not evidence \"instructions-for-use outline\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-13",
+     "label": "AI Act Art. 13",
+     "title": "Transparency and provision of information to deployers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_13",
+     "framework": "AI Act",
+     "display": "AI Act Art. 13(3)(a)–(f)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#M1"
+  },
+  {
+   "id": "W-D18",
+   "skill": "warden",
+   "severity": "medium",
+   "status": "gap",
+   "title": "Vendor selection criteria & exit plan for critical vendors (incl. model providers)",
+   "what": "Not covered in the document: vendor selection criteria & exit plan for critical vendors (incl. model providers).",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "dora-28",
+     "label": "DORA Art. 28",
+     "title": "General principles",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_28",
+     "framework": "DORA",
+     "display": "DORA Art. 28(8)"
+    },
+    {
+     "id": "dora-29",
+     "label": "DORA Art. 29",
+     "title": "Preliminary assessment of ICT concentration risk at entity level",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_29",
+     "framework": "DORA",
+     "display": "DORA Art. 29"
+    },
+    {
+     "id": "gdpr-28",
+     "label": "GDPR Art. 28",
+     "title": "Processor",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+     "framework": "GDPR",
+     "display": "GDPR Art. 28(1)"
+    },
+    {
+     "id": "iso42001-a.10",
+     "label": "ISO/IEC 42001 A.10",
+     "title": "Third-party and customer relationships",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.10"
+    }
+   ],
+   "overlap": [
+    "O14",
+    "O15",
+    "O16",
+    "O26"
+   ],
+   "sourceItem": "warden/design-doc#D18"
+  },
+  {
+   "id": "W-D15",
+   "skill": "warden",
+   "severity": "medium",
+   "status": "gap",
+   "title": "AI: evaluation plan and acceptance criteria before launch",
+   "what": "Not covered in the document: ai: evaluation plan and acceptance criteria before launch.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nist-rmf-measure-2.3",
+     "label": "NIST AI RMF MEASURE 2.3",
+     "title": "AI system performance or assurance criteria are measured qualitatively or quantitatively and demonstrated for conditions similar to deployment setting(s)",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MEASURE 2.3–2.11"
+    },
+    {
+     "id": "iso42001-a.6",
+     "label": "ISO/IEC 42001 A.6",
+     "title": "AI system life cycle",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.6"
+    }
+   ],
+   "overlap": [
+    "O7",
+    "O11",
+    "O12",
+    "O13",
+    "O22",
+    "O23",
+    "O26"
+   ],
+   "sourceItem": "warden/design-doc#D15"
+  },
+  {
+   "id": "W-D9",
+   "skill": "warden",
+   "severity": "medium",
+   "status": "gap",
+   "title": "Availability targets, RTO/RPO, backup & DR, capacity",
+   "what": "Not covered in the document: availability targets, rto/rpo, backup & dr, capacity.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(c)"
+    },
+    {
+     "id": "dora-11",
+     "label": "DORA Art. 11",
+     "title": "Response and recovery",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_11",
+     "framework": "DORA",
+     "display": "DORA Arts. 11–12"
+    },
+    {
+     "id": "soc2-a1",
+     "label": "SOC 2 A1.1–1.3",
+     "title": "Availability",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 A1"
+    }
+   ],
+   "overlap": [
+    "O10"
+   ],
+   "sourceItem": "warden/design-doc#D9"
+  },
+  {
+   "id": "W-D8",
+   "skill": "warden",
+   "severity": "medium",
+   "status": "gap",
+   "title": "Logging & monitoring design (what's logged, where, retention, who sees it)",
+   "what": "Not covered in the document: logging & monitoring design (what's logged, where, retention, who sees it).",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(b)"
+    },
+    {
+     "id": "dora-10",
+     "label": "DORA Art. 10",
+     "title": "Detection",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_10",
+     "framework": "DORA",
+     "display": "DORA Art. 10"
+    },
+    {
+     "id": "iso27001-a8.15",
+     "label": "ISO/IEC 27001 A.8.15",
+     "title": "Logging; monitoring activities; clock synchronisation",
+     "url": "https://www.iso.org/standard/27001",
+     "framework": "ISO/IEC 27001",
+     "display": "ISO/IEC 27001 A.8.15–8.16"
+    },
+    {
+     "id": "soc2-cc7",
+     "label": "SOC 2 CC7.1–7.5",
+     "title": "System operations",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 CC7.2"
+    }
+   ],
+   "overlap": [
+    "O7",
+    "O8",
+    "O11",
+    "O13"
+   ],
+   "sourceItem": "warden/design-doc#D8"
+  },
+  {
+   "id": "AI-M3",
+   "skill": "eu-ai-act",
+   "severity": "medium",
+   "status": "unclear",
+   "title": "Post-market monitoring concept",
+   "what": "The HireRank design document does not evidence \"post-market monitoring concept\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-9",
+     "label": "AI Act Art. 9",
+     "title": "Risk management system",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_9",
+     "framework": "AI Act",
+     "display": "AI Act Art. 9(2)(c)"
+    },
+    {
+     "id": "ai-act-20",
+     "label": "AI Act Art. 20",
+     "title": "Corrective actions and duty of information",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_20",
+     "framework": "AI Act",
+     "display": "AI Act Art. 20"
+    },
+    {
+     "id": "ai-act-72",
+     "label": "AI Act Art. 72",
+     "title": "Post-market monitoring by providers and post-market monitoring plan for high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_72",
+     "framework": "AI Act",
+     "display": "AI Act Art. 72"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#M3"
+  },
+  {
+   "id": "AI-M7",
+   "skill": "eu-ai-act",
+   "severity": "medium",
+   "status": "unclear",
+   "title": "Deployer duty support",
+   "what": "The HireRank design document does not evidence \"deployer duty support\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-13",
+     "label": "AI Act Art. 13",
+     "title": "Transparency and provision of information to deployers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_13",
+     "framework": "AI Act",
+     "display": "AI Act Art. 13"
+    },
+    {
+     "id": "ai-act-26",
+     "label": "AI Act Art. 26",
+     "title": "Obligations of deployers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_26",
+     "framework": "AI Act",
+     "display": "AI Act Art. 26(9)"
+    },
+    {
+     "id": "ai-act-26",
+     "label": "AI Act Art. 26",
+     "title": "Obligations of deployers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_26",
+     "framework": "AI Act",
+     "display": "AI Act Art. 26(11)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#M7"
+  },
+  {
+   "id": "W-D7",
+   "skill": "warden",
+   "severity": "medium",
+   "status": "unclear",
+   "title": "Encryption & key-management design",
+   "what": "Not covered in the document: encryption & key-management design.",
+   "why": "Enterprise buyers and supervisory authorities will ask for this evidence.",
+   "fix": "Document the control, assign an owner, and keep evidence that it runs.",
+   "effort": "L",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-32",
+     "label": "GDPR Art. 32",
+     "title": "Security of processing",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+     "framework": "GDPR",
+     "display": "GDPR Art. 32(1)(a)"
+    },
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(h)"
+    },
+    {
+     "id": "iso27001-a8.24",
+     "label": "ISO/IEC 27001 A.8.24",
+     "title": "Cryptography",
+     "url": "https://www.iso.org/standard/27001",
+     "framework": "ISO/IEC 27001",
+     "display": "ISO/IEC 27001 A.8.24"
+    }
+   ],
+   "overlap": [
+    "O2",
+    "O5",
+    "O6",
+    "O7",
+    "O10",
+    "O13"
+   ],
+   "sourceItem": "warden/design-doc#D7"
+  },
+  {
+   "id": "W-D17",
+   "skill": "warden",
+   "severity": "medium",
+   "status": "unclear",
+   "title": "LLM: threat model against OWASP LLM01–LLM10",
+   "what": "Not covered in the document: llm: threat model against owasp llm01–llm10.",
+   "why": "CVs are personal data; GDPR Art. 5(1)(e) requires defined retention.",
+   "fix": "Set a retention period (e.g. 6 months after the hiring decision) and automate deletion.",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nist-rmf-measure-2.7",
+     "label": "NIST AI RMF MEASURE 2.7",
+     "title": "AI system security and resilience – as identified in the MAP function – are evaluated and documented",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MEASURE 2.7"
+    },
+    {
+     "id": "gdpr-5",
+     "label": "GDPR Art. 5",
+     "title": "Principles relating to processing of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+     "framework": "GDPR",
+     "display": "GDPR Art. 5(1)(e)"
+    }
+   ],
+   "overlap": [
+    "O5",
+    "O6",
+    "O7",
+    "O11",
+    "O18",
+    "O19",
+    "O23"
+   ],
+   "sourceItem": "warden/design-doc#D17"
+  },
+  {
+   "id": "AI-L2",
+   "skill": "eu-ai-act",
+   "severity": "low",
+   "status": "gap",
+   "title": "Environmental/resource notes",
+   "what": "The HireRank design document does not evidence \"environmental/resource notes\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Insert a human review step before any rejection and log reviewer decisions (AI Act Art. 14).",
+   "effort": "S",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-13",
+     "label": "AI Act Art. 13",
+     "title": "Transparency and provision of information to deployers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_13",
+     "framework": "AI Act",
+     "display": "AI Act Art. 13(3)(e)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#L2"
+  },
+  {
+   "id": "AI-L1",
+   "skill": "eu-ai-act",
+   "severity": "low",
+   "status": "gap",
+   "title": "Accessibility conformance stated",
+   "what": "The HireRank design document does not evidence \"accessibility conformance stated\" — it describes an LLM that scores CVs with no human review before rejection emails.",
+   "why": "CV screening is listed in AI Act Annex III point 4, so provider obligations apply from 2 Aug 2026 under AI Act Art. 113.",
+   "fix": "Add a section to the design doc with the decision, an owner and the evidence you will keep.",
+   "effort": "M",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-16",
+     "label": "AI Act Art. 16",
+     "title": "Obligations of providers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_16",
+     "framework": "AI Act",
+     "display": "AI Act Art. 16(l)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III point 4"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ],
+   "overlap": [],
+   "sourceItem": "eu-ai-act/design-doc#L1"
+  }
+ ],
+ "checklist": [
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "C1",
+   "title": "Intended purpose defined precisely",
+   "severity": "critical",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-3",
+     "label": "AI Act Art. 3",
+     "title": "Definitions",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_3",
+     "framework": "AI Act",
+     "display": "AI Act Art. 3(12)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "C2",
+   "title": "Risk-tier classification section exists",
+   "severity": "critical",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "ai-act-5",
+     "label": "AI Act Art. 5",
+     "title": "Prohibited AI practices",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_5",
+     "framework": "AI Act",
+     "display": "AI Act Art. 5"
+    },
+    {
+     "id": "ai-act-annex-i",
+     "label": "AI Act Annex I",
+     "title": "List of Union harmonisation legislation",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_I",
+     "framework": "AI Act",
+     "display": "AI Act Annex I"
+    },
+    {
+     "id": "ai-act-6",
+     "label": "AI Act Art. 6",
+     "title": "Classification rules for high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_6",
+     "framework": "AI Act",
+     "display": "AI Act Art. 6(1)"
+    },
+    {
+     "id": "ai-act-annex-iii",
+     "label": "AI Act Annex III",
+     "title": "High-risk AI systems referred to in Article 6(2)",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_III",
+     "framework": "AI Act",
+     "display": "AI Act Annex III"
+    },
+    {
+     "id": "ai-act-6",
+     "label": "AI Act Art. 6",
+     "title": "Classification rules for high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_6",
+     "framework": "AI Act",
+     "display": "AI Act Art. 6(2)"
+    },
+    {
+     "id": "ai-act-6",
+     "label": "AI Act Art. 6",
+     "title": "Classification rules for high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_6",
+     "framework": "AI Act",
+     "display": "AI Act Art. 6(3)"
+    },
+    {
+     "id": "ai-act-51",
+     "label": "AI Act Art. 51",
+     "title": "Classification of general-purpose AI models as general-purpose AI models with systemic risk",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_51",
+     "framework": "AI Act",
+     "display": "AI Act Art. 51"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "C3",
+   "title": "Role map",
+   "severity": "critical",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-25",
+     "label": "AI Act Art. 25",
+     "title": "Responsibilities along the AI value chain",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_25",
+     "framework": "AI Act",
+     "display": "AI Act Art. 25(1)"
+    },
+    {
+     "id": "ai-act-22",
+     "label": "AI Act Art. 22",
+     "title": "Authorised representatives of providers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_22",
+     "framework": "AI Act",
+     "display": "AI Act Art. 22(1)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "C4",
+   "title": "Compliance timeline acknowledged",
+   "severity": "critical",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-111",
+     "label": "AI Act Art. 111",
+     "title": "AI systems already placed on the market or put into service and general-purpose AI models already placed on the marked",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_111",
+     "framework": "AI Act",
+     "display": "AI Act Art. 111"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "H1",
+   "title": "Data governance plan",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-10",
+     "label": "AI Act Art. 10",
+     "title": "Data and data governance",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_10",
+     "framework": "AI Act",
+     "display": "AI Act Art. 10"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "H2",
+   "title": "Logging architecture",
+   "severity": "high",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "ai-act-12",
+     "label": "AI Act Art. 12",
+     "title": "Record-keeping",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_12",
+     "framework": "AI Act",
+     "display": "AI Act Art. 12(2)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "H3",
+   "title": "Human oversight design",
+   "severity": "high",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14(3)"
+    },
+    {
+     "id": "ai-act-14",
+     "label": "AI Act Art. 14",
+     "title": "Human oversight",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+     "framework": "AI Act",
+     "display": "AI Act Art. 14(5)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "H4",
+   "title": "Accuracy/robustness/cybersecurity targets",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-15",
+     "label": "AI Act Art. 15",
+     "title": "Accuracy, robustness and cybersecurity",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_15",
+     "framework": "AI Act",
+     "display": "AI Act Art. 15"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "H5",
+   "title": "Change-management policy",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-43",
+     "label": "AI Act Art. 43",
+     "title": "Conformity assessment",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_43",
+     "framework": "AI Act",
+     "display": "AI Act Art. 43(4)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "H6",
+   "title": "Transparency UX spec",
+   "severity": "high",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "ai-act-50",
+     "label": "AI Act Art. 50",
+     "title": "Transparency obligations for providers and deployers of certain AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_50",
+     "framework": "AI Act",
+     "display": "AI Act Art. 50"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M1",
+   "title": "Instructions-for-use outline",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-13",
+     "label": "AI Act Art. 13",
+     "title": "Transparency and provision of information to deployers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_13",
+     "framework": "AI Act",
+     "display": "AI Act Art. 13(3)(a)–(f)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M2",
+   "title": "Conformity-assessment route chosen",
+   "severity": "medium",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "ai-act-annex-vi",
+     "label": "AI Act Annex VI",
+     "title": "Conformity assessment procedure based on internal control",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_VI",
+     "framework": "AI Act",
+     "display": "AI Act Annex VI"
+    },
+    {
+     "id": "ai-act-annex-i",
+     "label": "AI Act Annex I",
+     "title": "List of Union harmonisation legislation",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_I",
+     "framework": "AI Act",
+     "display": "AI Act Annex I"
+    },
+    {
+     "id": "ai-act-43",
+     "label": "AI Act Art. 43",
+     "title": "Conformity assessment",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_43",
+     "framework": "AI Act",
+     "display": "AI Act Art. 43"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M3",
+   "title": "Post-market monitoring concept",
+   "severity": "medium",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-9",
+     "label": "AI Act Art. 9",
+     "title": "Risk management system",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_9",
+     "framework": "AI Act",
+     "display": "AI Act Art. 9(2)(c)"
+    },
+    {
+     "id": "ai-act-20",
+     "label": "AI Act Art. 20",
+     "title": "Corrective actions and duty of information",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_20",
+     "framework": "AI Act",
+     "display": "AI Act Art. 20"
+    },
+    {
+     "id": "ai-act-72",
+     "label": "AI Act Art. 72",
+     "title": "Post-market monitoring by providers and post-market monitoring plan for high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_72",
+     "framework": "AI Act",
+     "display": "AI Act Art. 72"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M4",
+   "title": "Registration data fields identified",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-annex-viii",
+     "label": "AI Act Annex VIII",
+     "title": "Information to be submitted upon the registration of high-risk AI systems in accordance with Article 49",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_VIII",
+     "framework": "AI Act",
+     "display": "AI Act Annex VIII"
+    },
+    {
+     "id": "ai-act-49",
+     "label": "AI Act Art. 49",
+     "title": "Registration",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_49",
+     "framework": "AI Act",
+     "display": "AI Act Art. 49"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M5",
+   "title": "Supplier dependency list",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-25",
+     "label": "AI Act Art. 25",
+     "title": "Responsibilities along the AI value chain",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_25",
+     "framework": "AI Act",
+     "display": "AI Act Art. 25(4)"
+    },
+    {
+     "id": "ai-act-annex-xii",
+     "label": "AI Act Annex XII",
+     "title": "Transparency information referred to in Article 53(1), point (b) — technical documentation for providers of general-purpose AI models to downstream providers that integrate the model into their AI system",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#anx_XII",
+     "framework": "AI Act",
+     "display": "AI Act Annex XII"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M6",
+   "title": "Fundamental-rights impact assessment trigger check",
+   "severity": "medium",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "ai-act-27",
+     "label": "AI Act Art. 27",
+     "title": "Fundamental rights impact assessment for high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_27",
+     "framework": "AI Act",
+     "display": "AI Act Art. 27"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "M7",
+   "title": "Deployer duty support",
+   "severity": "medium",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-13",
+     "label": "AI Act Art. 13",
+     "title": "Transparency and provision of information to deployers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_13",
+     "framework": "AI Act",
+     "display": "AI Act Art. 13"
+    },
+    {
+     "id": "ai-act-26",
+     "label": "AI Act Art. 26",
+     "title": "Obligations of deployers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_26",
+     "framework": "AI Act",
+     "display": "AI Act Art. 26(9)"
+    },
+    {
+     "id": "ai-act-26",
+     "label": "AI Act Art. 26",
+     "title": "Obligations of deployers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_26",
+     "framework": "AI Act",
+     "display": "AI Act Art. 26(11)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "L1",
+   "title": "Accessibility conformance stated",
+   "severity": "low",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-16",
+     "label": "AI Act Art. 16",
+     "title": "Obligations of providers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_16",
+     "framework": "AI Act",
+     "display": "AI Act Art. 16(l)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "L2",
+   "title": "Environmental/resource notes",
+   "severity": "low",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "ai-act-13",
+     "label": "AI Act Art. 13",
+     "title": "Transparency and provision of information to deployers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_13",
+     "framework": "AI Act",
+     "display": "AI Act Art. 13(3)(e)"
+    }
+   ]
+  },
+  {
+   "skill": "eu-ai-act",
+   "checklist": "design-doc",
+   "itemId": "L3",
+   "title": "Voluntary code-of-conduct alignment noted",
+   "severity": "low",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "ai-act-95",
+     "label": "AI Act Art. 95",
+     "title": "Codes of conduct for voluntary application of specific requirements",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_95",
+     "framework": "AI Act",
+     "display": "AI Act Art. 95"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D1",
+   "title": "What personal data, whose, which categories (incl. special categories), for which purposes and lawful basis?",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-5",
+     "label": "GDPR Art. 5",
+     "title": "Principles relating to processing of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+     "framework": "GDPR",
+     "display": "GDPR Art. 5"
+    },
+    {
+     "id": "gdpr-6",
+     "label": "GDPR Art. 6",
+     "title": "Lawfulness of processing",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_6",
+     "framework": "GDPR",
+     "display": "GDPR Art. 6"
+    },
+    {
+     "id": "gdpr-9",
+     "label": "GDPR Art. 9",
+     "title": "Processing of special categories of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_9",
+     "framework": "GDPR",
+     "display": "GDPR Art. 9"
+    },
+    {
+     "id": "gdpr-30",
+     "label": "GDPR Art. 30",
+     "title": "Records of processing activities",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_30",
+     "framework": "GDPR",
+     "display": "GDPR Art. 30"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D2",
+   "title": "Data flow diagram incl. every third party and hosting region",
+   "severity": "high",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "gdpr-28",
+     "label": "GDPR Art. 28",
+     "title": "Processor",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+     "framework": "GDPR",
+     "display": "GDPR Art. 28"
+    },
+    {
+     "id": "gdpr-44",
+     "label": "GDPR Art. 44",
+     "title": "General principle for transfers",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_44",
+     "framework": "GDPR",
+     "display": "GDPR Arts. 44–49"
+    },
+    {
+     "id": "dora-28",
+     "label": "DORA Art. 28",
+     "title": "General principles",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_28",
+     "framework": "DORA",
+     "display": "DORA Art. 28(3)"
+    },
+    {
+     "id": "dora-30",
+     "label": "DORA Art. 30",
+     "title": "Key contractual provisions",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_30",
+     "framework": "DORA",
+     "display": "DORA Art. 30(2)(b)"
+    },
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(d)"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D3",
+   "title": "Privacy by design/default: minimisation, retention periods, pseudonymisation",
+   "severity": "high",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-25",
+     "label": "GDPR Art. 25",
+     "title": "Data protection by design and by default",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_25",
+     "framework": "GDPR",
+     "display": "GDPR Art. 25"
+    },
+    {
+     "id": "gdpr-5",
+     "label": "GDPR Art. 5",
+     "title": "Principles relating to processing of personal data",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+     "framework": "GDPR",
+     "display": "GDPR Art. 5(1)(c),(e)"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D4",
+   "title": "Is a DPIA needed (profiling, large-scale special data, systematic monitoring, new tech)? Planned?",
+   "severity": "critical",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-35",
+     "label": "GDPR Art. 35",
+     "title": "Data protection impact assessment",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_35",
+     "framework": "GDPR",
+     "display": "GDPR Art. 35"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D5",
+   "title": "Threat model / security risk assessment with treatment decisions",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(a)"
+    },
+    {
+     "id": "dora-6",
+     "label": "DORA Art. 6",
+     "title": "ICT risk management framework",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_6",
+     "framework": "DORA",
+     "display": "DORA Art. 6"
+    },
+    {
+     "id": "soc2-cc3",
+     "label": "SOC 2 CC3.1–3.4",
+     "title": "Risk assessment",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 CC3.2"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D6",
+   "title": "Identity & access model: roles, MFA, privileged access, tenant isolation",
+   "severity": "high",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(i)–(j)"
+    },
+    {
+     "id": "iso27001-a5.15",
+     "label": "ISO/IEC 27001 A.5.15",
+     "title": "Access control, identity management, authentication information, access rights",
+     "url": "https://www.iso.org/standard/27001",
+     "framework": "ISO/IEC 27001",
+     "display": "ISO/IEC 27001 A.5.15–5.18"
+    },
+    {
+     "id": "soc2-cc6",
+     "label": "SOC 2 CC6.1–6.8",
+     "title": "Logical & physical access",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 CC6.1–6.3"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D7",
+   "title": "Encryption & key-management design",
+   "severity": "medium",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-32",
+     "label": "GDPR Art. 32",
+     "title": "Security of processing",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+     "framework": "GDPR",
+     "display": "GDPR Art. 32(1)(a)"
+    },
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(h)"
+    },
+    {
+     "id": "iso27001-a8.24",
+     "label": "ISO/IEC 27001 A.8.24",
+     "title": "Cryptography",
+     "url": "https://www.iso.org/standard/27001",
+     "framework": "ISO/IEC 27001",
+     "display": "ISO/IEC 27001 A.8.24"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D8",
+   "title": "Logging & monitoring design (what's logged, where, retention, who sees it)",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(b)"
+    },
+    {
+     "id": "dora-10",
+     "label": "DORA Art. 10",
+     "title": "Detection",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_10",
+     "framework": "DORA",
+     "display": "DORA Art. 10"
+    },
+    {
+     "id": "iso27001-a8.15",
+     "label": "ISO/IEC 27001 A.8.15",
+     "title": "Logging; monitoring activities; clock synchronisation",
+     "url": "https://www.iso.org/standard/27001",
+     "framework": "ISO/IEC 27001",
+     "display": "ISO/IEC 27001 A.8.15–8.16"
+    },
+    {
+     "id": "soc2-cc7",
+     "label": "SOC 2 CC7.1–7.5",
+     "title": "System operations",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 CC7.2"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D9",
+   "title": "Availability targets, RTO/RPO, backup & DR, capacity",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nis2-21",
+     "label": "NIS2 Art. 21",
+     "title": "Cybersecurity risk-management measures",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 21(2)(c)"
+    },
+    {
+     "id": "dora-11",
+     "label": "DORA Art. 11",
+     "title": "Response and recovery",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_11",
+     "framework": "DORA",
+     "display": "DORA Arts. 11–12"
+    },
+    {
+     "id": "soc2-a1",
+     "label": "SOC 2 A1.1–1.3",
+     "title": "Availability",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 A1"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D10",
+   "title": "Incident detection → regulatory notification path & owners",
+   "severity": "high",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "gdpr-33",
+     "label": "GDPR Art. 33",
+     "title": "Notification of a personal data breach to the supervisory authority",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
+     "framework": "GDPR",
+     "display": "GDPR Arts. 33–34"
+    },
+    {
+     "id": "nis2-23",
+     "label": "NIS2 Art. 23",
+     "title": "Reporting obligations",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_23",
+     "framework": "NIS2",
+     "display": "NIS2 Art. 23"
+    },
+    {
+     "id": "dora-17",
+     "label": "DORA Art. 17",
+     "title": "ICT-related incident management process",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_17",
+     "framework": "DORA",
+     "display": "DORA Arts. 17–19"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D11",
+   "title": "Data-subject rights handling designed (export, delete propagation incl. backups & vendors)",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "gdpr-15",
+     "label": "GDPR Art. 15",
+     "title": "Right of access by the data subject",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_15",
+     "framework": "GDPR",
+     "display": "GDPR Arts. 15–21"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D12",
+   "title": "Change & release process (environments, approvals, rollback)",
+   "severity": "medium",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "dora-9",
+     "label": "DORA Art. 9",
+     "title": "Protection and prevention",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_9",
+     "framework": "DORA",
+     "display": "DORA Art. 9(4)(e)"
+    },
+    {
+     "id": "iso27001-a8.32",
+     "label": "ISO/IEC 27001 A.8.32",
+     "title": "Secure development life cycle; application security requirements; secure architecture; secure coding; security testing; outsourced development; environment separation; change management; test information; audit-testing protection",
+     "url": "https://www.iso.org/standard/27001",
+     "framework": "ISO/IEC 27001",
+     "display": "ISO/IEC 27001 A.8.32"
+    },
+    {
+     "id": "soc2-cc8",
+     "label": "SOC 2 CC8.1",
+     "title": "Change management",
+     "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+     "framework": "SOC 2",
+     "display": "SOC 2 CC8.1"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D13",
+   "title": "AI: intended purpose, users, affected people, foreseeable misuse",
+   "severity": "high",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nist-rmf-map-1.1",
+     "label": "NIST AI RMF MAP 1.1",
+     "title": "Intended purposes, potentially beneficial uses, contextspecific laws, norms and expectations, and prospective settings in which the AI system will be deployed…",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 1.1"
+    },
+    {
+     "id": "nist-rmf-map-3.3",
+     "label": "NIST AI RMF MAP 3.3",
+     "title": "Targeted application scope is specified and documented based on the system’s capability, established context, and AI system categorization",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 3.3"
+    },
+    {
+     "id": "iso42001-6.1.4",
+     "label": "ISO/IEC 42001 cl. 6.1.4",
+     "title": "AI system impact assessment: consequences for individuals, groups and societies across intended use and foreseeable misuse",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 cl. 6.1.4"
+    },
+    {
+     "id": "iso42001-a.5",
+     "label": "ISO/IEC 42001 A.5",
+     "title": "Assessing impacts of AI systems",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.5"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D14",
+   "title": "AI: data provenance for training / fine-tuning / RAG",
+   "severity": "high",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "iso42001-a.7",
+     "label": "ISO/IEC 42001 A.7",
+     "title": "Data for AI systems",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.7"
+    },
+    {
+     "id": "nist-rmf-map-4.1",
+     "label": "NIST AI RMF MAP 4.1",
+     "title": "Approaches for mapping AI technology and legal risks of its components – including the use of third-party data or software – are in place, followed, and…",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 4.1"
+    },
+    {
+     "id": "gdpr-6",
+     "label": "GDPR Art. 6",
+     "title": "Lawfulness of processing",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_6",
+     "framework": "GDPR",
+     "display": "GDPR Art. 6"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D15",
+   "title": "AI: evaluation plan and acceptance criteria before launch",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nist-rmf-measure-2.3",
+     "label": "NIST AI RMF MEASURE 2.3",
+     "title": "AI system performance or assurance criteria are measured qualitatively or quantitatively and demonstrated for conditions similar to deployment setting(s)",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MEASURE 2.3–2.11"
+    },
+    {
+     "id": "iso42001-a.6",
+     "label": "ISO/IEC 42001 A.6",
+     "title": "AI system life cycle",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.6"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D16",
+   "title": "AI: human oversight design, override, decommissioning",
+   "severity": "high",
+   "status": "met",
+   "verdict": "PASS",
+   "evidence": "README.md: \"TLS everywhere\"",
+   "citations": [
+    {
+     "id": "gdpr-22",
+     "label": "GDPR Art. 22",
+     "title": "Automated individual decision-making, including profiling",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_22",
+     "framework": "GDPR",
+     "display": "GDPR Art. 22"
+    },
+    {
+     "id": "nist-rmf-map-3.5",
+     "label": "NIST AI RMF MAP 3.5",
+     "title": "Processes for human oversight are defined, assessed, and documented in accordance with organizational policies from the GOVERN function",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MAP 3.5"
+    },
+    {
+     "id": "nist-rmf-manage-2.4",
+     "label": "NIST AI RMF MANAGE 2.4",
+     "title": "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede, disengage, or deactivate AI systems that demonstrate…",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MANAGE 2.4"
+    },
+    {
+     "id": "nist-rmf-govern-1.7",
+     "label": "NIST AI RMF GOVERN 1.7",
+     "title": "Processes and procedures are in place for decommissioning and phasing out AI systems safely and in a manner that does not increase risks or decrease the…",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF GOVERN 1.7"
+    },
+    {
+     "id": "iso42001-a.9",
+     "label": "ISO/IEC 42001 A.9",
+     "title": "Use of AI systems",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.9"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D17",
+   "title": "LLM: threat model against OWASP LLM01–LLM10",
+   "severity": "medium",
+   "status": "unclear",
+   "verdict": "UNKNOWN",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "nist-rmf-measure-2.7",
+     "label": "NIST AI RMF MEASURE 2.7",
+     "title": "AI system security and resilience – as identified in the MAP function – are evaluated and documented",
+     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+     "framework": "NIST AI RMF",
+     "display": "NIST AI RMF MEASURE 2.7"
+    }
+   ]
+  },
+  {
+   "skill": "warden",
+   "checklist": "design-doc",
+   "itemId": "D18",
+   "title": "Vendor selection criteria & exit plan for critical vendors (incl. model providers)",
+   "severity": "medium",
+   "status": "gap",
+   "verdict": "FAIL",
+   "evidence": "No evidence in the artifact.",
+   "citations": [
+    {
+     "id": "dora-28",
+     "label": "DORA Art. 28",
+     "title": "General principles",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_28",
+     "framework": "DORA",
+     "display": "DORA Art. 28(8)"
+    },
+    {
+     "id": "dora-29",
+     "label": "DORA Art. 29",
+     "title": "Preliminary assessment of ICT concentration risk at entity level",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_29",
+     "framework": "DORA",
+     "display": "DORA Art. 29"
+    },
+    {
+     "id": "gdpr-28",
+     "label": "GDPR Art. 28",
+     "title": "Processor",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+     "framework": "GDPR",
+     "display": "GDPR Art. 28(1)"
+    },
+    {
+     "id": "iso42001-a.10",
+     "label": "ISO/IEC 42001 A.10",
+     "title": "Third-party and customer relationships",
+     "url": "https://www.iso.org/standard/42001",
+     "framework": "ISO/IEC 42001",
+     "display": "ISO/IEC 42001 A.10"
+    }
+   ]
+  }
+ ],
+ "overlap": [
+  {
+   "id": "O2",
+   "theme": "Risk assessment & treatment",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-32",
+       "label": "GDPR Art. 32",
+       "title": "Security of processing",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+       "framework": "GDPR",
+       "display": "GDPR Art. 32(1)–(2)"
+      },
+      {
+       "id": "gdpr-35",
+       "label": "GDPR Art. 35",
+       "title": "Data protection impact assessment",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_35",
+       "framework": "GDPR",
+       "display": "GDPR Art. 35"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-6.1.1",
+       "label": "ISO/IEC 42001 cl. 6.1.1–6.1.2",
+       "title": "Actions for risks and opportunities",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 6.1.2–6.1.3"
+      },
+      {
+       "id": "iso42001-8.1",
+       "label": "ISO/IEC 42001 cl. 8.1–8.4",
+       "title": "Operational planning and control",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 8.2–8.3"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc3",
+       "label": "SOC 2 CC3.1–3.4",
+       "title": "Risk assessment",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC3.1–3.4"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-map-1.5",
+       "label": "NIST AI RMF MAP 1.5",
+       "title": "Organizational risk tolerances are determined and documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 1.5"
+      },
+      {
+       "id": "nist-rmf-map-4.1",
+       "label": "NIST AI RMF MAP 4.1",
+       "title": "Approaches for mapping AI technology and legal risks of its components – including the use of third-party data or software – are in place, followed, and…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 4.1"
+      },
+      {
+       "id": "nist-rmf-map-5.1",
+       "label": "NIST AI RMF MAP 5.1",
+       "title": "Likelihood and magnitude of each identified impact (both potentially beneficial and harmful) based on expected use, past uses of AI systems in similar…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 5.1"
+      },
+      {
+       "id": "nist-rmf-manage-1.1",
+       "label": "NIST AI RMF MANAGE 1.1",
+       "title": "A determination is made as to whether the AI system achieves its intended purposes and stated objectives and whether its development or deployment should…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 1.1–1.4"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D4",
+    "W-D14",
+    "W-D5",
+    "W-D7"
+   ]
+  },
+  {
+   "id": "O3",
+   "theme": "Impact assessment on people",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-35",
+       "label": "GDPR Art. 35",
+       "title": "Data protection impact assessment",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_35",
+       "framework": "GDPR",
+       "display": "GDPR Art. 35"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-6.1.4",
+       "label": "ISO/IEC 42001 cl. 6.1.4",
+       "title": "AI system impact assessment: consequences for individuals, groups and societies across intended use and foreseeable misuse",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 6.1.4"
+      },
+      {
+       "id": "iso42001-8.1",
+       "label": "ISO/IEC 42001 cl. 8.1–8.4",
+       "title": "Operational planning and control",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 8.4"
+      },
+      {
+       "id": "iso42001-a.5",
+       "label": "ISO/IEC 42001 A.5",
+       "title": "Assessing impacts of AI systems",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.5"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-map-5.1",
+       "label": "NIST AI RMF MAP 5.1",
+       "title": "Likelihood and magnitude of each identified impact (both potentially beneficial and harmful) based on expected use, past uses of AI systems in similar…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 5.1–5.2"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D4",
+    "W-D13"
+   ]
+  },
+  {
+   "id": "O4",
+   "theme": "Asset & data inventory / records",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-30",
+       "label": "GDPR Art. 30",
+       "title": "Records of processing activities",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_30",
+       "framework": "GDPR",
+       "display": "GDPR Art. 30"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.9",
+       "label": "ISO/IEC 27001 A.5.9",
+       "title": "Asset inventory, acceptable use, classification, labelling",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.9–5.12"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-4.1",
+       "label": "ISO/IEC 42001 cl. 4.1–4.4",
+       "title": "Context, interested parties, AI roles, scope of the AIMS",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 4.3"
+      },
+      {
+       "id": "iso42001-a.4",
+       "label": "ISO/IEC 42001 A.4",
+       "title": "Resources for AI systems",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.4"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc6",
+       "label": "SOC 2 CC6.1–6.8",
+       "title": "Logical & physical access",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC6.1"
+      },
+      {
+       "id": "soc2-c1",
+       "label": "SOC 2 C1.1–1.2",
+       "title": "Confidentiality",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 C1.1"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-govern-1.6",
+       "label": "NIST AI RMF GOVERN 1.6",
+       "title": "Mechanisms are in place to inventory AI systems and are resourced according to organizational risk priorities",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF GOVERN 1.6"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D1"
+   ]
+  },
+  {
+   "id": "O5",
+   "theme": "Access control, MFA, privileged access",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-32",
+       "label": "GDPR Art. 32",
+       "title": "Security of processing",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+       "framework": "GDPR",
+       "display": "GDPR Art. 32(1)(b)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.15",
+       "label": "ISO/IEC 27001 A.5.15",
+       "title": "Access control, identity management, authentication information, access rights",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.15–5.18"
+      },
+      {
+       "id": "iso27001-a8.2",
+       "label": "ISO/IEC 27001 A.8.2",
+       "title": "Endpoint devices; privileged access; information-access restriction; source-code access; secure authentication",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.2–8.5"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc6",
+       "label": "SOC 2 CC6.1–6.8",
+       "title": "Logical & physical access",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC6.1–6.3"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-2.7",
+       "label": "NIST AI RMF MEASURE 2.7",
+       "title": "AI system security and resilience – as identified in the MAP function – are evaluated and documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.7"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D7",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O6",
+   "theme": "Encryption & key management",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-32",
+       "label": "GDPR Art. 32",
+       "title": "Security of processing",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+       "framework": "GDPR",
+       "display": "GDPR Art. 32(1)(a)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a8.24",
+       "label": "ISO/IEC 27001 A.8.24",
+       "title": "Cryptography",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.24"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc6",
+       "label": "SOC 2 CC6.1–6.8",
+       "title": "Logical & physical access",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC6.1"
+      },
+      {
+       "id": "soc2-cc6",
+       "label": "SOC 2 CC6.1–6.8",
+       "title": "Logical & physical access",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC6.7"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-2.7",
+       "label": "NIST AI RMF MEASURE 2.7",
+       "title": "AI system security and resilience – as identified in the MAP function – are evaluated and documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.7"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D7",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O7",
+   "theme": "Logging & monitoring",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-32",
+       "label": "GDPR Art. 32",
+       "title": "Security of processing",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+       "framework": "GDPR",
+       "display": "GDPR Art. 32(1)(d)"
+      },
+      {
+       "id": "gdpr-5",
+       "label": "GDPR Art. 5",
+       "title": "Principles relating to processing of personal data",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+       "framework": "GDPR",
+       "display": "GDPR Art. 5(2)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a8.15",
+       "label": "ISO/IEC 27001 A.8.15",
+       "title": "Logging; monitoring activities; clock synchronisation",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.15–8.17"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc7",
+       "label": "SOC 2 CC7.1–7.5",
+       "title": "System operations",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC7.2–7.3"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-3.1",
+       "label": "NIST AI RMF MEASURE 3.1",
+       "title": "Approaches, personnel, and documentation are in place to regularly identify and track existing, unanticipated, and emergent AI risks based on factors such as…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 3.1"
+      },
+      {
+       "id": "nist-rmf-manage-4.1",
+       "label": "NIST AI RMF MANAGE 4.1",
+       "title": "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and evaluating input from users and other relevant AI actors,…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 4.1"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D4",
+    "W-D1",
+    "W-D3",
+    "W-D15",
+    "W-D8",
+    "W-D7",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O8",
+   "theme": "Incident response process",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-33",
+       "label": "GDPR Art. 33",
+       "title": "Notification of a personal data breach to the supervisory authority",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
+       "framework": "GDPR",
+       "display": "GDPR Art. 33(5)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.24",
+       "label": "ISO/IEC 27001 A.5.24",
+       "title": "Incident management: planning, assessment, response, learning, evidence collection",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.24–5.28"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.8",
+       "label": "ISO/IEC 42001 A.8",
+       "title": "Information for interested parties",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.8"
+      },
+      {
+       "id": "iso42001-10.1",
+       "label": "ISO/IEC 42001 cl. 10.1–10.2",
+       "title": "Continual improvement",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 10.2"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc7",
+       "label": "SOC 2 CC7.1–7.5",
+       "title": "System operations",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC7.3–7.5"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-manage-2.3",
+       "label": "NIST AI RMF MANAGE 2.3",
+       "title": "Procedures are followed to respond to and recover from a previously unknown risk when it is identified",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 2.3"
+      },
+      {
+       "id": "nist-rmf-manage-4.3",
+       "label": "NIST AI RMF MANAGE 4.3",
+       "title": "Incidents and errors are communicated to relevant AI actors, including affected communities",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 4.3"
+      },
+      {
+       "id": "nist-rmf-govern-4.3",
+       "label": "NIST AI RMF GOVERN 4.3",
+       "title": "Organizational practices are in place to enable AI testing, identification of incidents, and information sharing",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF GOVERN 4.3"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D8"
+   ]
+  },
+  {
+   "id": "O10",
+   "theme": "Business continuity, backup & DR",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-32",
+       "label": "GDPR Art. 32",
+       "title": "Security of processing",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+       "framework": "GDPR",
+       "display": "GDPR Art. 32(1)(b)–(c)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.29",
+       "label": "ISO/IEC 27001 A.5.29",
+       "title": "Security during disruption; ICT readiness for business continuity",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.29–5.30"
+      },
+      {
+       "id": "iso27001-a8.13",
+       "label": "ISO/IEC 27001 A.8.13",
+       "title": "Information deletion; data masking; data-leakage prevention; backup; redundancy",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.13–8.14"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-a1",
+       "label": "SOC 2 A1.1–1.3",
+       "title": "Availability",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 A1.2–1.3"
+      },
+      {
+       "id": "soc2-cc9",
+       "label": "SOC 2 CC9.1–9.2",
+       "title": "Risk mitigation",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC9.1"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-govern-6.2",
+       "label": "NIST AI RMF GOVERN 6.2",
+       "title": "Contingency processes are in place to handle failures or incidents in third-party data or AI systems deemed to be high-risk",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF GOVERN 6.2"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D9",
+    "W-D7"
+   ]
+  },
+  {
+   "id": "O11",
+   "theme": "Secure SDLC & vulnerability management",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-25",
+       "label": "GDPR Art. 25",
+       "title": "Data protection by design and by default",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_25",
+       "framework": "GDPR",
+       "display": "GDPR Art. 25"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a8.8",
+       "label": "ISO/IEC 27001 A.8.8",
+       "title": "Capacity; malware; technical vulnerabilities; configuration management",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.8"
+      },
+      {
+       "id": "iso27001-a8.25",
+       "label": "ISO/IEC 27001 A.8.25",
+       "title": "Secure development life cycle; application security requirements; secure architecture; secure coding; security testing; outsourced development; environment separation; change management; test information; audit-testing protection",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.25–8.29"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc7",
+       "label": "SOC 2 CC7.1–7.5",
+       "title": "System operations",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC7.1"
+      },
+      {
+       "id": "soc2-cc8",
+       "label": "SOC 2 CC8.1",
+       "title": "Change management",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC8.1"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-2.7",
+       "label": "NIST AI RMF MEASURE 2.7",
+       "title": "AI system security and resilience – as identified in the MAP function – are evaluated and documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.7"
+      },
+      {
+       "id": "owasp-llm01",
+       "label": "OWASP LLM01:2025",
+       "title": "Prompt Injection",
+       "url": "https://genai.owasp.org/llm-top-10/",
+       "framework": "OWASP LLM Top 10",
+       "display": "OWASP LLM01:2025"
+      }
+     ]
+    },
+    {
+     "framework": "OWASP LLM Top 10",
+     "citations": [
+      {
+       "id": "owasp-llm01",
+       "label": "OWASP LLM01:2025",
+       "title": "Prompt Injection",
+       "url": "https://genai.owasp.org/llm-top-10/",
+       "framework": "OWASP LLM Top 10",
+       "display": "OWASP LLM01:2025"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D3",
+    "W-D15",
+    "W-D8",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O12",
+   "theme": "Change management",
+   "cells": [
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a8.32",
+       "label": "ISO/IEC 27001 A.8.32",
+       "title": "Secure development life cycle; application security requirements; secure architecture; secure coding; security testing; outsourced development; environment separation; change management; test information; audit-testing protection",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.32"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-6.2",
+       "label": "ISO/IEC 42001 cl. 6.2–6.3",
+       "title": "AI objectives",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 cl. 6.3"
+      },
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc8",
+       "label": "SOC 2 CC8.1",
+       "title": "Change management",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC8.1"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-manage-4.2",
+       "label": "NIST AI RMF MANAGE 4.2",
+       "title": "Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 4.2"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D15"
+   ]
+  },
+  {
+   "id": "O13",
+   "theme": "Security & resilience testing",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-32",
+       "label": "GDPR Art. 32",
+       "title": "Security of processing",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_32",
+       "framework": "GDPR",
+       "display": "GDPR Art. 32(1)(d)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a8.29",
+       "label": "ISO/IEC 27001 A.8.29",
+       "title": "Secure development life cycle; application security requirements; secure architecture; secure coding; security testing; outsourced development; environment separation; change management; test information; audit-testing protection",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.29"
+      },
+      {
+       "id": "iso27001-a5.35",
+       "label": "ISO/IEC 27001 A.5.35",
+       "title": "Independent review; compliance with policies; documented operating procedures",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.35"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc4",
+       "label": "SOC 2 CC4.1–4.2",
+       "title": "Monitoring activities",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC4.1"
+      },
+      {
+       "id": "soc2-cc7",
+       "label": "SOC 2 CC7.1–7.5",
+       "title": "System operations",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC7.1"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-1.3",
+       "label": "NIST AI RMF MEASURE 1.3",
+       "title": "Internal experts who did not serve as front-line developers for the system and/or independent assessors are involved in regular assessments and updates",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 1.3"
+      },
+      {
+       "id": "nist-rmf-measure-2.5",
+       "label": "NIST AI RMF MEASURE 2.5",
+       "title": "The AI system to be deployed is demonstrated to be valid and reliable",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.5–2.7"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D15",
+    "W-D8",
+    "W-D7"
+   ]
+  },
+  {
+   "id": "O14",
+   "theme": "Vendor / supply-chain risk",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-28",
+       "label": "GDPR Art. 28",
+       "title": "Processor",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+       "framework": "GDPR",
+       "display": "GDPR Art. 28(1)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.19",
+       "label": "ISO/IEC 27001 A.5.19",
+       "title": "Supplier relationships, supplier agreements, ICT supply chain, supplier monitoring, cloud services",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.19–5.22"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.10",
+       "label": "ISO/IEC 42001 A.10",
+       "title": "Third-party and customer relationships",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.10"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc9",
+       "label": "SOC 2 CC9.1–9.2",
+       "title": "Risk mitigation",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC9.2"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-govern-6.1",
+       "label": "NIST AI RMF GOVERN 6.1",
+       "title": "Policies and procedures are in place that address AI risks associated with third-party entities, including risks of infringement of a third-party’s…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF GOVERN 6.1"
+      },
+      {
+       "id": "nist-rmf-manage-3.1",
+       "label": "NIST AI RMF MANAGE 3.1",
+       "title": "AI risks and benefits from third-party resources are regularly monitored, and risk controls are applied and documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 3.1"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D18"
+   ]
+  },
+  {
+   "id": "O15",
+   "theme": "Mandatory contract terms with vendors",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-28",
+       "label": "GDPR Art. 28",
+       "title": "Processor",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+       "framework": "GDPR",
+       "display": "GDPR Art. 28(3)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.20",
+       "label": "ISO/IEC 27001 A.5.20",
+       "title": "Supplier relationships, supplier agreements, ICT supply chain, supplier monitoring, cloud services",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.20"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.10",
+       "label": "ISO/IEC 42001 A.10",
+       "title": "Third-party and customer relationships",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.10"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc9",
+       "label": "SOC 2 CC9.1–9.2",
+       "title": "Risk mitigation",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC9.2"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-govern-6.1",
+       "label": "NIST AI RMF GOVERN 6.1",
+       "title": "Policies and procedures are in place that address AI risks associated with third-party entities, including risks of infringement of a third-party’s…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF GOVERN 6.1"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D18"
+   ]
+  },
+  {
+   "id": "O16",
+   "theme": "Cloud-service security",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-28",
+       "label": "GDPR Art. 28",
+       "title": "Processor",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+       "framework": "GDPR",
+       "display": "GDPR Art. 28"
+      },
+      {
+       "id": "gdpr-44",
+       "label": "GDPR Art. 44",
+       "title": "General principle for transfers",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_44",
+       "framework": "GDPR",
+       "display": "GDPR Arts. 44–46"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.23",
+       "label": "ISO/IEC 27001 A.5.23",
+       "title": "Supplier relationships, supplier agreements, ICT supply chain, supplier monitoring, cloud services",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.23"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.10",
+       "label": "ISO/IEC 42001 A.10",
+       "title": "Third-party and customer relationships",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.10"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc9",
+       "label": "SOC 2 CC9.1–9.2",
+       "title": "Risk mitigation",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC9.2"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D18"
+   ]
+  },
+  {
+   "id": "O18",
+   "theme": "Data minimisation, retention & deletion",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-5",
+       "label": "GDPR Art. 5",
+       "title": "Principles relating to processing of personal data",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+       "framework": "GDPR",
+       "display": "GDPR Art. 5(1)(c),(e)"
+      },
+      {
+       "id": "gdpr-17",
+       "label": "GDPR Art. 17",
+       "title": "Right to erasure (‘right to be forgotten’)",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_17",
+       "framework": "GDPR",
+       "display": "GDPR Art. 17"
+      },
+      {
+       "id": "gdpr-25",
+       "label": "GDPR Art. 25",
+       "title": "Data protection by design and by default",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_25",
+       "framework": "GDPR",
+       "display": "GDPR Art. 25"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a8.10",
+       "label": "ISO/IEC 27001 A.8.10",
+       "title": "Information deletion; data masking; data-leakage prevention; backup; redundancy",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.8.10–8.11"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.7",
+       "label": "ISO/IEC 42001 A.7",
+       "title": "Data for AI systems",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.7"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-c1",
+       "label": "SOC 2 C1.1–1.2",
+       "title": "Confidentiality",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 C1.2"
+      },
+      {
+       "id": "soc2-p1",
+       "label": "SOC 2 P1–P8",
+       "title": "Privacy",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 P4"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-2.10",
+       "label": "NIST AI RMF MEASURE 2.10",
+       "title": "Privacy risk of the AI system – as identified in the MAP function – is examined and documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.10"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D4",
+    "W-D14",
+    "W-D1",
+    "W-D3",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O19",
+   "theme": "Data quality & provenance (incl. AI training data)",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-5",
+       "label": "GDPR Art. 5",
+       "title": "Principles relating to processing of personal data",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+       "framework": "GDPR",
+       "display": "GDPR Art. 5(1)(d)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.7",
+       "label": "ISO/IEC 42001 A.7",
+       "title": "Data for AI systems",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.7"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-pi1",
+       "label": "SOC 2 PI1.1–1.5",
+       "title": "Processing integrity",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 PI1.1–1.2"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-map-2.1",
+       "label": "NIST AI RMF MAP 2.1",
+       "title": "The specific tasks and methods used to implement the tasks that the AI system will support are defined (e.g., classifiers, generative models, recommenders)",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 2.1"
+      },
+      {
+       "id": "nist-rmf-map-4.1",
+       "label": "NIST AI RMF MAP 4.1",
+       "title": "Approaches for mapping AI technology and legal risks of its components – including the use of third-party data or software – are in place, followed, and…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 4.1"
+      },
+      {
+       "id": "nist-rmf-measure-2.1",
+       "label": "NIST AI RMF MEASURE 2.1",
+       "title": "Test sets, metrics, and details about the tools used during TEVV are documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.1"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D4",
+    "W-D14",
+    "W-D1",
+    "W-D3",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O21",
+   "theme": "Data-subject / user rights & contest channel",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-15",
+       "label": "GDPR Art. 15",
+       "title": "Right of access by the data subject",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_15",
+       "framework": "GDPR",
+       "display": "GDPR Arts. 15–22"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.34",
+       "label": "ISO/IEC 27001 A.5.34",
+       "title": "Legal/statutory/regulatory/contractual requirements; IP; records; privacy and PII protection",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.34"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.8",
+       "label": "ISO/IEC 42001 A.8",
+       "title": "Information for interested parties",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.8"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-p1",
+       "label": "SOC 2 P1–P8",
+       "title": "Privacy",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 P5"
+      },
+      {
+       "id": "soc2-p1",
+       "label": "SOC 2 P1–P8",
+       "title": "Privacy",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 P8"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-3.3",
+       "label": "NIST AI RMF MEASURE 3.3",
+       "title": "Feedback processes for end users and impacted communities to report problems and appeal system outcomes are established and integrated into AI system…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 3.3"
+      },
+      {
+       "id": "nist-rmf-manage-4.1",
+       "label": "NIST AI RMF MANAGE 4.1",
+       "title": "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and evaluating input from users and other relevant AI actors,…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 4.1"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D11"
+   ]
+  },
+  {
+   "id": "O22",
+   "theme": "Human oversight / override / kill switch",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-22",
+       "label": "GDPR Art. 22",
+       "title": "Automated individual decision-making, including profiling",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_22",
+       "framework": "GDPR",
+       "display": "GDPR Art. 22(3)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.9",
+       "label": "ISO/IEC 42001 A.9",
+       "title": "Use of AI systems",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.9"
+      },
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-pi1",
+       "label": "SOC 2 PI1.1–1.5",
+       "title": "Processing integrity",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 PI1.3"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-map-3.5",
+       "label": "NIST AI RMF MAP 3.5",
+       "title": "Processes for human oversight are defined, assessed, and documented in accordance with organizational policies from the GOVERN function",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MAP 3.5"
+      },
+      {
+       "id": "nist-rmf-manage-2.4",
+       "label": "NIST AI RMF MANAGE 2.4",
+       "title": "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede, disengage, or deactivate AI systems that demonstrate…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MANAGE 2.4"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D15"
+   ]
+  },
+  {
+   "id": "O23",
+   "theme": "Bias / fairness evaluation",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-5",
+       "label": "GDPR Art. 5",
+       "title": "Principles relating to processing of personal data",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_5",
+       "framework": "GDPR",
+       "display": "GDPR Art. 5(1)(a)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.5",
+       "label": "ISO/IEC 42001 A.5",
+       "title": "Assessing impacts of AI systems",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.5"
+      },
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-measure-2.11",
+       "label": "NIST AI RMF MEASURE 2.11",
+       "title": "Fairness and bias – as identified in the MAP function – are evaluated and results are documented",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF MEASURE 2.11"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D4",
+    "W-D1",
+    "W-D3",
+    "W-D13",
+    "W-D15",
+    "W-D17"
+   ]
+  },
+  {
+   "id": "O26",
+   "theme": "Decommissioning / exit",
+   "cells": [
+    {
+     "framework": "GDPR",
+     "citations": [
+      {
+       "id": "gdpr-28",
+       "label": "GDPR Art. 28",
+       "title": "Processor",
+       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_28",
+       "framework": "GDPR",
+       "display": "GDPR Art. 28(3)(g)"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 27001",
+     "citations": [
+      {
+       "id": "iso27001-a5.11",
+       "label": "ISO/IEC 27001 A.5.11",
+       "title": "Asset inventory, acceptable use, classification, labelling",
+       "url": "https://www.iso.org/standard/27001",
+       "framework": "ISO/IEC 27001",
+       "display": "ISO/IEC 27001 A.5.11"
+      }
+     ]
+    },
+    {
+     "framework": "ISO/IEC 42001",
+     "citations": [
+      {
+       "id": "iso42001-a.6",
+       "label": "ISO/IEC 42001 A.6",
+       "title": "AI system life cycle",
+       "url": "https://www.iso.org/standard/42001",
+       "framework": "ISO/IEC 42001",
+       "display": "ISO/IEC 42001 A.6"
+      }
+     ]
+    },
+    {
+     "framework": "SOC 2",
+     "citations": [
+      {
+       "id": "soc2-cc6",
+       "label": "SOC 2 CC6.1–6.8",
+       "title": "Logical & physical access",
+       "url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+       "framework": "SOC 2",
+       "display": "SOC 2 CC6.5"
+      }
+     ]
+    },
+    {
+     "framework": "NIST AI RMF",
+     "citations": [
+      {
+       "id": "nist-rmf-govern-1.7",
+       "label": "NIST AI RMF GOVERN 1.7",
+       "title": "Processes and procedures are in place for decommissioning and phasing out AI systems safely and in a manner that does not increase risks or decrease the…",
+       "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+       "framework": "NIST AI RMF",
+       "display": "NIST AI RMF GOVERN 1.7"
+      }
+     ]
+    }
+   ],
+   "findings": [
+    "W-D18",
+    "W-D15"
+   ]
+  }
+ ],
+ "deadlines": [
+  {
+   "date": "2 Feb 2025",
+   "framework": "AI Act",
+   "event": "Chapters I–II apply: AI-system definitions in force; prohibited practices ban enforceable; AI literacy duty on providers & deployers",
+   "citations": [
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113(a)"
+    }
+   ]
+  },
+  {
+   "date": "2 Aug 2026",
+   "framework": "AI Act",
+   "event": "General application date: Chapter III high-risk regime (Annex III path) + all provider/deployer/importer/distributor obligations; Chapter IV transparency (Art. 50); EU database registration duties; Art. 101…",
+   "citations": [
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113"
+    },
+    {
+     "id": "ai-act-113",
+     "label": "AI Act Art. 113",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+     "framework": "AI Act",
+     "display": "AI Act Art. 113(b)"
+    }
+   ]
+  },
+  {
+   "date": "15 days",
+   "framework": "AI Act",
+   "event": "Serious-incident report after causal link established / awareness",
+   "citations": [
+    {
+     "id": "ai-act-73",
+     "label": "AI Act Art. 73",
+     "title": "Reporting of serious incidents",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_73",
+     "framework": "AI Act",
+     "display": "AI Act Art. 73(2)"
+    }
+   ]
+  },
+  {
+   "date": "≥6 months",
+   "framework": "AI Act",
+   "event": "Log retention (providers + deployers, where under control)",
+   "citations": [
+    {
+     "id": "ai-act-19",
+     "label": "AI Act Art. 19",
+     "title": "Automatically generated logs",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_19",
+     "framework": "AI Act",
+     "display": "AI Act Art. 19(1)"
+    },
+    {
+     "id": "ai-act-26",
+     "label": "AI Act Art. 26",
+     "title": "Obligations of deployers of high-risk AI systems",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_26",
+     "framework": "AI Act",
+     "display": "AI Act Art. 26(6)"
+    }
+   ]
+  },
+  {
+   "date": "25 May 2018",
+   "framework": "GDPR",
+   "event": "Applies",
+   "citations": [
+    {
+     "id": "gdpr-99",
+     "label": "GDPR Art. 99",
+     "title": "Entry into force and application",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_99",
+     "framework": "GDPR",
+     "display": "GDPR Art. 99(2)"
+    }
+   ]
+  },
+  {
+   "date": "31 Oct 2025",
+   "framework": "ISO/IEC 27001",
+   "event": "2013-edition certificates expire (transition end)",
+   "citations": []
+  },
+  {
+   "date": "≤ 72 h",
+   "framework": "GDPR",
+   "event": "Breach notification to SA from awareness (where feasible)",
+   "citations": [
+    {
+     "id": "gdpr-33",
+     "label": "GDPR Art. 33",
+     "title": "Notification of a personal data breach to the supervisory authority",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
+     "framework": "GDPR",
+     "display": "GDPR Art. 33(1)"
+    }
+   ]
+  },
+  {
+   "date": "Without undue delay",
+   "framework": "GDPR",
+   "event": "Processor → controller breach notice",
+   "citations": [
+    {
+     "id": "gdpr-33",
+     "label": "GDPR Art. 33",
+     "title": "Notification of a personal data breach to the supervisory authority",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
+     "framework": "GDPR",
+     "display": "GDPR Art. 33(2)"
+    }
+   ]
+  },
+  {
+   "date": "Without undue delay",
+   "framework": "GDPR",
+   "event": "Communication to data subjects (high risk)",
+   "citations": [
+    {
+     "id": "gdpr-34",
+     "label": "GDPR Art. 34",
+     "title": "Communication of a personal data breach to the data subject",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_34",
+     "framework": "GDPR",
+     "display": "GDPR Art. 34(1)"
+    }
+   ]
+  },
+  {
+   "date": "1 month (+2)",
+   "framework": "GDPR",
+   "event": "Data-subject request response",
+   "citations": [
+    {
+     "id": "gdpr-12",
+     "label": "GDPR Art. 12",
+     "title": "Transparent information, communication and modalities for the exercise of the rights of the data subject",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_12",
+     "framework": "GDPR",
+     "display": "GDPR Art. 12(3)"
+    }
+   ]
+  }
+ ],
+ "penalties": [
+  {
+   "framework": "AI Act",
+   "cap": "€15M or 3%",
+   "basis": "Provider/authorised-rep/importer/distributor/deployer obligations (Arts. 16, 22, 23, 24, 26); notified-body obligations (31, 33(1),(3),(4), 34); transparency (50)",
+   "citations": [
+    {
+     "id": "ai-act-99",
+     "label": "AI Act Art. 99",
+     "title": "Penalties",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_99",
+     "framework": "AI Act",
+     "display": "AI Act Art. 99(4)"
+    }
+   ]
+  },
+  {
+   "framework": "GDPR",
+   "cap": "€10 M / 2% (Art. 83(4)); €20 M / 4% (Art. 83(5)–(6)) of worldwide annual turnover, higher of",
+   "basis": "Max administrative fine",
+   "citations": [
+    {
+     "id": "gdpr-83",
+     "label": "GDPR Art. 83",
+     "title": "General conditions for imposing administrative fines",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_83",
+     "framework": "GDPR",
+     "display": "GDPR Art. 83(4)"
+    },
+    {
+     "id": "gdpr-83",
+     "label": "GDPR Art. 83",
+     "title": "General conditions for imposing administrative fines",
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_83",
+     "framework": "GDPR",
+     "display": "GDPR Art. 83(5)–(6)"
+    }
+   ]
+  },
+  {
+   "framework": "ISO/IEC 27001",
+   "cap": "No statutory fine",
+   "basis": "Major nonconformity → certificate withheld, suspended or withdrawn by the certification body; contractual breach if certification is a covenant",
+   "citations": []
+  },
+  {
+   "framework": "OWASP LLM Top 10",
+   "cap": "No statutory fine",
+   "basis": "None; used as security requirements in contracts and pentests",
+   "citations": []
+  }
+ ],
+ "explainer": {
+  "body": "If your hiring tool leaks a CV on Friday, the regulator expects to hear from you by Monday night.\n\n- Write down what data you hold.\n- Keep a breach runbook.",
+  "sources": [
+   {
+    "id": "gdpr-33",
+    "label": "GDPR Art. 33",
+    "title": "Notification of a personal data breach to the supervisory authority",
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
+    "framework": "GDPR",
+    "display": "GDPR Art. 33(1)"
+   }
+  ]
+ },
+ "handoff": "EU AI Act — LIKELY RELEVANT. Trigger facts: model scores job applicants; chatbot talks to candidates. Risk tier, role and obligations come from the eu-ai-act-compliance stage of this analysis (see \"EU AI Act\" above), not from warden.",
+ "assumptions": [
+  "ASSUMED: deployed to EU employers from day one."
+ ],
+ "warnings": [],
+ "intake": {
+  "facts": [
+   "Design document \"HireRank design v0.3.docx\" (DOCX, 1,918 bytes, 543 characters of text)."
+  ],
+  "sensitiveFiles": [],
+  "filesRead": []
+ },
+ "validation": {
+  "droppedIds": [
+   "AI Act Art. 999",
+   "ai-act-fake-1",
+   "GDPR Art. 777"
+  ],
+  "strippedAiAct": 1,
+  "reworded": 2,
+  "index": "corpus",
+  "indexSize": 526
+ },
+ "usage": {
+  "calls": 11,
+  "promptTokens": 39477,
+  "completionTokens": 4630
+ },
+ "disclaimer": "Informational analysis for readiness and education. Not legal advice and not an audit opinion or certification. Verify against the official texts and, for binding obligations, with qualified counsel in the relevant jurisdiction. Informational analysis, not legal advice."
+}

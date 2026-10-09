@@ -1,6 +1,7 @@
 /** Production wiring: real providers, env-driven config. Keys are read lazily at call time. */
 import path from "node:path";
 import { paths, port, profiles, rateLimitPerHour, slngConfig } from "./config.js";
+import { analyzerPlugin, WEB_DIST as ANALYZER_WEB } from "@dg-roast/analyzer";
 import { buildApp } from "./app.js";
 import { Corpus } from "./corpus.js";
 import { openDb } from "./db.js";
@@ -38,6 +39,7 @@ const app = buildApp({
   webDir: paths.web(),
   pocketDir: paths.pocket(),
   assetsDir: paths.assets(),
+  analyzer: { plugin: analyzerPlugin, options: { corpusPath: paths.corpus() }, webDir: ANALYZER_WEB },
   logger: true,
 });
 

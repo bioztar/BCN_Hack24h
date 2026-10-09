@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { existsSync, mkdirSync } from "node:fs";
 import fastifyStatic from "@fastify/static";
-import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
 import { TIER_NAMES, type Case, type PersonaId, type RoastEvent, type Submission, type Tier } from "@dg-roast/shared";
 import type { Corpus } from "./corpus.js";
 import { nextCounter, type Db } from "./db.js";
@@ -32,6 +32,9 @@ export interface AppDeps {
   webDir?: string;
   pocketDir?: string;
   assetsDir?: string;
+  /** Lane D analyzer: plugin mounted at /api/analyze, its built UI served at /analyze/. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  analyzer?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDir?: string };
   /** Max wait for TTS before a line goes out with `audioUrl: null` (a later `audio` event follows). */
   ttsBudgetMs?: number;
   /** Before `awaiting`/`verdict`, wait at most this long for late audio. */
@@ -338,10 +341,13 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       /* read-only filesystem: skipped below */
     }
   }
+  if (d.analyzer) void app.register(d.analyzer.plugin, { ...(d.analyzer.options ?? {}), prefix: "/api/analyze" });
+
   // Static roots; any missing directory is skipped. Only the first registration decorates reply.
   const roots = [
     { root: d.assetsDir, prefix: "/assets/generated/", spa: false },
     { root: d.pocketDir, prefix: "/pocket/", spa: true },
+    { root: d.analyzer?.webDir, prefix: "/analyze/", spa: true },
     { root: d.webDir, prefix: "/", spa: true },
   ].filter((r): r is { root: string; prefix: string; spa: boolean } => Boolean(r.root && existsSync(r.root)));
   roots.forEach((r, i) => void app.register(fastifyStatic, { root: r.root, prefix: r.prefix, decorateReply: i === 0, index: r.spa ? ["index.html"] : false, wildcard: true }));
