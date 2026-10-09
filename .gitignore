@@ -8,3 +8,9 @@ dist/
 
 # assetgen outputs — helm commits approved media deliberately
 assets/generated/
+
+# tools/3d spike: venv, cloned model repo, weights, scratch inputs
+tools/3d/.venv/
+tools/3d/h3d/
+tools/3d/weights/
+tools/3d/work/
