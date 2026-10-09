@@ -13,6 +13,7 @@ Change it only through helm. Demo is **2026-10-10** — favour working over perf
 | `packages/server/`, `corpus/`, `Dockerfile`, `compose.yaml`, `.env.example` | **Lane B** | |
 | `packages/web/` | **Lane A** | built by Vite, served by the server as static files from `packages/web/dist` at `/` |
 | `packages/pocket/` | **Lane C** | the phone app (PWA) — built by Vite, served from `packages/pocket/dist` at `/pocket/` |
+| `packages/analyzer/` | **Lane D** | the real compliance analyzer: engine + vendored skills + Fastify plugin + its own UI at `/analyze/` |
 | `docs/` | helm | |
 
 Root: npm workspaces (`"workspaces": ["packages/*"]`), Node ≥ 22, TypeScript, ESM, vitest.
@@ -104,6 +105,22 @@ Errors: JSON `{ error: string }` with a proper status; 429 from the rate limiter
 - Shows subtitles for every line; plays `audioUrl` when present; queues lines, never overlaps audio.
 - Develops against fixtures matching the types above until Lane B's server is up; no
   dependency on Lane B being merged first.
+
+## The analyzer (Lane D) — serious mode
+
+The roast is the hook; the analyzer is the real tool. It productionises the two skills
+(`bioztar/EU-AI-Act` → `eu-ai-act-compliance`, `bioztar/warden` → `warden-compliance`) as
+a web app. Lane D owns its own types inside `packages/analyzer/` (not `packages/shared`).
+
+- `packages/analyzer` exports `analyzerPlugin` (Fastify plugin). helm registers it in the
+  server at merge: `app.register(analyzerPlugin, { prefix: "/api/analyze" })`, and serves
+  `packages/analyzer/web/dist` at `/analyze/`.
+- `POST /api/analyze` (multipart or JSON): `{ kind: "idea" | "document" | "repo", text?, repoUrl?, file? }`
+  → `{ reportId }`; `GET /api/analyze/:reportId/stream` SSE progress + final report;
+  `GET /api/analyze/:reportId.md` Markdown export.
+- Reads `corpus/provisions.json` (Lane B builds it) for citation validation when present;
+  never writes `corpus/`.
+- The roast's verdict screen links to `/analyze/` ("Get the real report") — helm wires it.
 
 ## Assets
 

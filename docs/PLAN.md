@@ -162,3 +162,7 @@ Hours count from kickoff (T0). Demo at T24 unless B1 says otherwise.
   filter** on the officials' lines; new **Lane C — pocket Eurocrat**, a phone app (PWA at
   `/pocket/`): a mini 3D official that slides and tumbles as you tilt the phone, shake to
   get stamped, dictate a pitch to get roasted.
+- 2026-10-09 19:50 — v1.4 (Vitaly): **native iPhone app** is built later by helm on the Mac
+  (mission `20261009-dgroast-ios-native`, queued) — the PWA stays too. New **Lane D — the
+  analyzer**: a functional compliance tool (idea / document / repo against the EU AI Act
+  + warden frameworks), the two skills productionised as a web app at `/analyze/`.
