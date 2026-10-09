@@ -148,3 +148,52 @@ links to `https://warden.pro7ocol.com/analyze/`. helm deploys.
 ## Merge order
 
 Lane B (shared + server) → Lane A (web) → A0 (tools/content). helm resolves conflicts.
+
+---
+
+## v2 — applicant flow, fines meter, leaderboard (2026-10-10, Vitaly)
+
+Additive to v1. Types in `packages/shared/src/index.ts` (section "v2"). The **same flow** runs on
+the iPhone app (`ios/`), the PWA (`packages/pocket`, reached by the QR code shown at the start of
+the talk) and is mirrored on the stage (`packages/web`, big screen: QR intro + live leaderboard).
+
+### Flow (all clients)
+
+1. **Register** — cringe "Register your startup and build a real business in the EU!" →
+   `POST /api/applicants` `ApplicantInput` → `QueueTicket`. Optional selfie.
+2. **Queue** — show ticket, `etaText`, animate `position` → 0 over `countdownSec` (30–60 s).
+   Button **"But we're making the world a better place"** → cause tiles →
+   `POST /api/applicants/:id/better-place {cause}` → `BetterPlaceResult` → jump to front.
+3. **Pitch** — voice (`/api/stt`), text, or GitHub URL. `POST /api/case` body gains optional
+   `applicantId`. Repo pitches stream `analyzing` events (loading screen with officers holding
+   their heads / throwing papers) before the roast.
+4. **Roast mini-game** — v1 `line`/`tier`/`audio` events plus `fine` events: the meter (€ and jail
+   months) runs up fast. Crossing `MELTDOWN_EUR` or `MELTDOWN_JAIL_MONTHS` emits `meltdown` once →
+   both officers burn (you "win").
+5. **Verdict** — `verdict.notice` is a `NoticeV2`: TL;DR per law + recommendations + `badgeUrl`
+   (shareable 1080² stamp: "EUROCRAT — REFUSÉ — €X fines, Y years" with startup name) + `reportUrl`
+   (branded PDF: TL;DR page, then detailed non-compliance analysis + how to adjust the idea).
+6. **Leaderboard** — public, synced across app/web/stage.
+
+### Routes
+
+| Route | Body / query | Response |
+|---|---|---|
+| `POST /api/applicants` | `ApplicantInput` (JSON) | `QueueTicket` |
+| `POST /api/applicants/:id/better-place` | `{ cause: BetterPlaceCause }` | `BetterPlaceResult` |
+| `POST /api/case` | v1 body + `applicantId?` | v1 |
+| `GET /api/leaderboard` | `?sort=fines\|jail\|recent&limit=50&cursor=` | `{ entries: LeaderboardEntry[], next: string \| null }` |
+| `GET /api/leaderboard/stream` | SSE | `LeaderboardEntry` per new verdict; on connect top 20 by fines |
+| `GET /api/leaderboard/:caseId` | — | `{ entry: LeaderboardEntry, findings: Notice["findings"] }` (no full report) |
+| `GET /api/case/:caseId/report.pdf` | — | `application/pdf` |
+| `GET /api/case/:caseId/badge.png` | — | `image/png` 1080×1080 |
+| `GET /api/photos/:id.jpg` | — | applicant selfie (server re-encodes to 512 px JPEG, EXIF stripped) |
+
+### Fines model (server)
+
+Each cited provision yields one `fine` event. `amountEur` is a deterministic share (seeded by
+caseId) of the **real statutory maximum** (AI Act Art. 99: €35M/7%, €15M/3%, €7.5M/1%; GDPR
+Art. 83: €20M/4%, €10M/2%; DSA Art. 52: 6%; DMA Art. 30: 10%; NIS2 Art. 34: €10M/2%; CRA Art. 64:
+€15M/2.5%; Data Act; ePrivacy national), scaled up for comedy as the tier rises. `jailMonths`
+comes from real national criminal provisions where they exist (e.g. DE BDSG §42 up to 3 years,
+FR Code pénal art. 226-16 up to 5 years) else 0; `caption` is the gag line. Totals are monotonic.

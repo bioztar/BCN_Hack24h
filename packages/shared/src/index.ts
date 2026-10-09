@@ -45,3 +45,61 @@ export interface Notice {
 }
 
 export interface WallEntry { speaker: PersonaId; text: string; at: string; }  // officials' lines ONLY
+
+// ───────────────────────── v2 — 2026-10-10 (Vitaly): applicant flow, fines meter, leaderboard ─────────────────────────
+// See docs/CONTRACT.md "v2". Additive only: every v1 type/route keeps working.
+
+export interface ApplicantInput {
+  startupName: string;          // "48K", required, ≤ 60 chars
+  founderName: string;          // required, ≤ 60 chars
+  oneLiner?: string;            // optional pitch teaser shown on the leaderboard
+  photo?: string;               // optional data URL (image/jpeg|png), ≤ 400 KB after client downscale to 512 px
+}
+export interface QueueTicket {
+  applicantId: string;
+  ticket: number;               // e.g. 48213 — random 5–6 digits
+  position: number;             // starts huge (e.g. 2_417_906), client animates it to 0
+  etaText: string;              // "Estimated decision: Q3 2031"
+  countdownSec: number;         // random 30–60: client counts position → 0 over this many seconds
+}
+export type BetterPlaceCause =
+  | "climate" | "lgbtq" | "refugees" | "homeless" | "ukraine" | "rare-diseases"
+  | "gender-equality" | "animal-welfare" | "accessibility" | "ai-safety";
+export interface BetterPlaceResult { position: 1; skipped: number; cause: BetterPlaceCause; quip: string; }
+
+// New RoastEvents (the union above is extended by these; clients ignore unknown types)
+export type RoastEventV2 =
+  | { type: "fine"; id: string; provision: Provision; amountEur: number; jailMonths: number;
+      totalEur: number; totalJailMonths: number; caption: string }   // one per violation cited; drives the meter
+  | { type: "meltdown"; totalEur: number; totalJailMonths: number }   // threshold crossed → both officers burn
+  | { type: "analyzing"; stage: string; progress: number };           // repo intake progress 0..1 for the loading screen
+
+export const MELTDOWN_EUR = 1_000_000_000;      // €1 bn …
+export const MELTDOWN_JAIL_MONTHS = 1_200;      // … or 100 years — whichever first
+
+export interface NoticeV2 extends Notice {
+  applicantId: string | null;
+  startupName: string;
+  founderName: string | null;
+  totalEur: number;
+  totalJailMonths: number;
+  meltdown: boolean;
+  tldr: { law: string; oneLine: string }[];     // one row per regulation violated — the TL;DR page
+  recommendations: { text: string; provision?: Provision }[];
+  reportUrl: string;                            // /api/case/:caseId/report.pdf
+  badgeUrl: string;                             // /api/case/:caseId/badge.png  (1080×1080, shareable)
+}
+
+export interface LeaderboardEntry {
+  caseId: string;
+  startupName: string;
+  founderName: string | null;
+  oneLiner: string | null;
+  photoUrl: string | null;                      // /api/photos/:id.jpg
+  totalEur: number;
+  totalJailMonths: number;
+  meltdown: boolean;
+  topLaws: string[];                            // up to 3 short labels, e.g. ["AI Act", "GDPR"]
+  issuedAt: string;
+}
+export type LeaderboardSort = "fines" | "jail" | "recent";
