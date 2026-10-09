@@ -10,6 +10,7 @@ final class DummyTests: XCTestCase {
 
     func testToppleThenRecover() {
         let s = DummyScene(size: CGSize(width: 390, height: 700))
+        s.setDuo([Roster.officers[0]])
         var impacts = 0
         s.onImpact = { _ in impacts += 1 }
 

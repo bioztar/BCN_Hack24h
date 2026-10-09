@@ -10,7 +10,8 @@ final class PocketModel {
     static let sleepAfter: TimeInterval = 8
 
     var officers: [Persona] = Roster.officers
-    var selectedID = "formblatt"
+    var pairs: [Pair] = Roster.pairs
+    var pairID = Roster.pairs[0].id
     var phase: Phase = .idle
     var isAsleep = false
     var stamp: String?
@@ -34,8 +35,11 @@ final class PocketModel {
     @ObservationIgnored private var lateAudio: [String: String] = [:]
     @ObservationIgnored private var started = false
     @ObservationIgnored private var stampTask: Task<Void, Never>?
+    @ObservationIgnored private var stampBy: String?
 
-    var selected: Persona { officers.first { $0.id == selectedID } ?? Roster.officers[0] }
+    var pair: Pair { pairs.first { $0.id == pairID } ?? Roster.pairs[0] }
+    /// The two officers of the selected pair, in on-screen order (left, right).
+    var duo: [Persona] { pair.officers.compactMap { id in officers.first { $0.id == id } } }
     var motionAvailable: Bool { motion.isAvailable }
 
     init(backend: RoastBackend = BackendFactory.make()) {
@@ -45,7 +49,7 @@ final class PocketModel {
     func start() {
         guard !started else { return }
         started = true
-        puppet.setOfficer(selected)
+        puppet.setDuo(duo)
         puppet.onImpact = { [weak self] strength in
             DispatchQueue.main.async { self?.haptics.bump(strength: strength); self?.wake() }
         }
@@ -64,9 +68,9 @@ final class PocketModel {
 
     @ObservationIgnored private var lastGravity: (x: Double, y: Double) = (0, -1)
 
-    func select(_ id: String) {
-        selectedID = id
-        puppet.setOfficer(selected)
+    func select(pair id: String) {
+        pairID = id
+        puppet.setDuo(duo)
         wake()
     }
 
@@ -77,7 +81,8 @@ final class PocketModel {
 
     /// Face priority: asleep > stamping > smug > neutral (the scene itself overrides with "appalled" while toppled).
     private func refreshExpression() {
-        puppet.setExpression(isAsleep ? .asleep : stamp != nil ? .stamping : smug ? .smug : .neutral)
+        puppet.setExpression(isAsleep ? .asleep : smug ? .smug : .neutral)
+        if stamp != nil, !isAsleep { puppet.setExpression(.stamping, for: stampBy) }   // stampBy nil = both
     }
 
     // MARK: shake -> stamp
@@ -85,12 +90,14 @@ final class PocketModel {
     func shake() {
         wake()
         puppet.shake()
-        showStamp("REFUSÉ")
+        showStamp("REFUSÉ", by: nil)
     }
 
-    private func showStamp(_ text: String) {
+    /// `by`: the officer holding the stamp (a roast line's speaker); nil = both (shake).
+    private func showStamp(_ text: String, by: String?) {
         haptics.stamp()
         stamp = text
+        stampBy = by
         refreshExpression()
         stampTask?.cancel()
         stampTask = Task {
@@ -110,13 +117,13 @@ final class PocketModel {
     }
 
     /// No audio clip: fake a speaking level for `seconds` so the bust still talks.
-    private func talkFor(_ seconds: Double) async {
+    private func talkFor(_ seconds: Double, speaker: String) async {
         let end = Date().addingTimeInterval(seconds)
         while Date() < end, !Task.isCancelled {
-            puppet.setTalk(.random(in: 0.25...0.9))
+            puppet.setTalk(.random(in: 0.25...0.9), speaker: speaker)
             try? await Task.sleep(for: .milliseconds(90))
         }
-        puppet.setTalk(0)
+        puppet.setTalk(0, speaker: speaker)
     }
 
     private func idleLoop() async {
@@ -130,13 +137,17 @@ final class PocketModel {
     }
 
     private func loadRoster() async {
-        // Live roster wins when reachable; the six paired ids keep their order.
-        guard let live = try? await backend.personas() else { return }
-        let paired = Roster.officers.compactMap { local in live.first { $0.id == local.id } }
-        if paired.count == Roster.officers.count {
-            officers = paired
-            puppet.setOfficer(selected)
+        // Live roster/pairs win when reachable; only officers we have cut-outs for are used.
+        if let live = try? await backend.personas() {
+            let paired = Roster.officers.compactMap { local in live.first { $0.id == local.id } }
+            if paired.count == Roster.officers.count { officers = paired }
         }
+        if let live = try? await backend.pairs(), !live.isEmpty,
+           live.allSatisfy({ $0.officers.count == 2 && $0.officers.allSatisfy { id in Roster.officers.contains { $0.id == id } } }) {
+            pairs = live
+            if !live.contains(where: { $0.id == pairID }) { pairID = live[0].id }
+        }
+        puppet.setDuo(duo)
     }
 
     // MARK: dictation
@@ -179,7 +190,7 @@ final class PocketModel {
                 id = existing
             } else {
                 let sub: Submission = dictated ? .dictation(pitch) : .text(pitch)
-                id = try await backend.createCase(sub, officers: Roster.pair(containing: selectedID).officers).caseId
+                id = try await backend.createCase(sub, officers: pair.officers).caseId
                 caseID = id
             }
             phase = .roasting
@@ -208,6 +219,7 @@ final class PocketModel {
         }
         push.finish()
         await player.value
+        puppet.setSpeaker(nil)
     }
 
     private func audioPath(for line: RoastLine) async -> String? {
@@ -224,12 +236,13 @@ final class PocketModel {
         case .tier(_, let name): tierName = name
         case .line(let line):
             subtitle = line
-            if let s = line.stamp { showStamp(s) }
+            puppet.setSpeaker(line.speaker)
+            if let s = line.stamp { showStamp(s, by: line.speaker) }
             var played = false
             if let path = await audioPath(for: line), let url = backend.resolve(path) {
-                played = await audio.play(url) { [puppet] in puppet.setTalk($0) }
+                played = await audio.play(url) { [puppet] in puppet.setTalk($0, speaker: line.speaker) }
             }
-            if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6)) }
+            if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6), speaker: line.speaker) }
         case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle

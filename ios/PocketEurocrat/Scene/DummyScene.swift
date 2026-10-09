@@ -1,93 +1,98 @@
-import SceneKit
 import SpriteKit
 import UIKit
 
-/// The toy: a head-and-shoulders cut-out of the officer standing on a weighted pivot (bobblehead /
-/// punching-clown). Tilt leans it with a spring; past `toppleThreshold` it falls sideways, lies there
-/// (appalled), then rights itself. The dummy is a hand-integrated spring (not SpriteKit physics) so the
-/// feel is tunable; only the loose papers use the SpriteKit physics world.
+/// The toy: the case officers (a duo) as photo-relief busts on weighted pivots, plus loose papers.
+/// The dummies are hand-integrated springs (see `Puppet`); only the papers use SpriteKit physics.
 final class DummyScene: SKScene {
     enum Expression: String, CaseIterable { case neutral, stamping, smug, appalled, asleep }
-    private enum Stance: Equatable { case upright, down(dir: CGFloat) }   // dir +1 = fell to the right
 
     var onImpact: ((Float) -> Void)?
-
-    // Calibration knobs (real-device feel).
-    var leanGain: CGFloat = 0.9            // rad of lean per 1 g of sideways gravity
-    var toppleThreshold: CGFloat = 0.55    // |gravity.x| that tips it over (~33° of tilt)
-    var recoverThreshold: CGFloat = 0.3
-    var recoverDelay: TimeInterval = 1.4   // lies down at least this long
-
-    private(set) var isDown = false
-
-    /// Pivot at the base of the bust; everything physical (lean, topple, talk bob) is applied here.
-    private let pivot = SKNode()
-    /// Camera-ish transform for the whole figure (zoom onto the face while the keyboard is up).
-    private let figureRoot = SKNode()
+    /// Calibration knobs (real-device feel).
+    var tuning = PuppetTuning()
     /// Height of the SwiftUI control bar the scene sits behind; the floor is just above it.
-    var bottomInset: CGFloat = 150 { didSet { if pivot.parent != nil { layout() } } }
-    /// The photo-relief figure rendered by SceneKit inside the SpriteKit scene.
-    private let view3D = SK3DNode(viewportSize: CGSize(width: 100, height: 100))
-    private let figureScene = SCNScene()
-    private let figureHolder = SCNNode()   // yawed as the dummy leans, so it turns in 3D
-    private var figure: SCNNode?
-    private var bustH: CGFloat = 0
+    var bottomInset: CGFloat = 150 { didSet { if figureRoot.parent != nil { layout() } } }
+
+    /// True while any officer is lying on its side.
+    var isDown: Bool { puppets.contains { $0.isDown } }
+
+    private let figureRoot = SKNode()   // camera-ish transform (zoom onto the faces while the keyboard is up)
+    private var puppets: [Puppet] = []
     private var papers: [SKSpriteNode] = []
-    private var officer = Roster.officers[0]
-    private var expression: Expression = .neutral
-    private var stance: Stance = .upright
+    private var baseExpression: Expression = .neutral
     private var gx: CGFloat = 0
-    private var theta: CGFloat = 0
-    private var omega: CGFloat = 0
-    private var shift: CGFloat = 0
-    private var downSince: TimeInterval = 0
-    private var impacted = false
-    private var talk: CGFloat = 0
-    private var talkTarget: CGFloat = 0
     private var lastUpdate: TimeInterval = 0
+
+    override init(size: CGSize) {
+        super.init(size: size)
+        setDuo(Array(Roster.officers.prefix(2)))
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
 
     override func didMove(to view: SKView) {
         backgroundColor = UIColor(red: 0.07, green: 0.08, blue: 0.12, alpha: 1)
         scaleMode = .resizeFill
-        buildFigureScene()
         figureRoot.zPosition = 1
-        pivot.addChild(view3D)
-        figureRoot.addChild(pivot)
         addChild(figureRoot)
         buildPapers()
-        refreshFigure()
+        puppets.forEach { figureRoot.addChild($0.node) }
         layout()
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
-        guard pivot.parent != nil else { return }
+        guard figureRoot.parent != nil else { return }
         layout()
     }
 
     // MARK: control
+
+    /// Show these officers side by side (1 or 2). Keeps existing puppets when the ids match.
+    func setDuo(_ personas: [Persona]) {
+        let wanted = Array(personas.prefix(2))
+        for (i, p) in wanted.enumerated() {
+            if i < puppets.count {
+                puppets[i].setPersona(p)
+            } else {
+                let puppet = Puppet(persona: p)
+                puppet.stiffness = 49 - CGFloat(i) * 7
+                puppet.toppleBias = CGFloat(i) * 0.05
+                puppet.expression = baseExpression
+                puppet.onImpact = { [weak self] s in self?.onImpact?(s) }
+                puppets.append(puppet)
+                if figureRoot.parent != nil { figureRoot.addChild(puppet.node) }
+            }
+        }
+        while puppets.count > wanted.count { puppets.removeLast().node.removeFromParent() }
+        if figureRoot.parent != nil { layout() }
+    }
 
     func setGravity(x: Double, y: Double) {
         gx = CGFloat(x)
         physicsWorld.gravity = CGVector(dx: x * 18, dy: y * 18)
     }
 
-    func setOfficer(_ persona: Persona) {
-        officer = persona
-        refreshFigure()
+    /// `id == nil`: everyone; otherwise only that officer (e.g. the speaker stamping).
+    func setExpression(_ e: Expression, for id: String? = nil) {
+        if id == nil { baseExpression = e }
+        for p in puppets where id == nil || p.persona.id == id { p.expression = e }
     }
 
-    func setExpression(_ e: Expression) {
-        expression = e
-        refreshFigure()
+    /// The speaker leans in and gets the light, the other reacts. nil = nobody speaking.
+    func setSpeaker(_ id: String?) {
+        for p in puppets {
+            p.focus = id == nil || puppets.count == 1 ? 0.5 : (p.persona.id == id ? 1 : 0)
+            if p.persona.id != id { p.talkTarget = 0 }
+        }
     }
 
-    /// 0...1 mouth/voice level; bobs the head while the officer speaks.
-    func setTalk(_ level: Double) { talkTarget = CGFloat(min(max(level, 0), 1)) }
+    /// 0...1 voice level of the current speaker; bobs their head.
+    func setTalk(_ level: Double, speaker id: String? = nil) {
+        let l = CGFloat(min(max(level, 0), 1))
+        for p in puppets { p.talkTarget = (id == nil || p.persona.id == id) ? l : 0 }
+    }
 
     func shake() {
-        omega += CGFloat.random(in: -6...6)
-        stance = .upright
-        syncDown()
+        puppets.forEach { $0.kick() }
         for p in papers {
             p.physicsBody?.applyImpulse(CGVector(dx: .random(in: -25...25), dy: .random(in: 25...70)))
             p.physicsBody?.applyAngularImpulse(.random(in: -0.05...0.05))
@@ -103,93 +108,37 @@ final class DummyScene: SKScene {
         step(dt: dt, now: t)
     }
 
-    /// Exposed for tests: advance the dummy by `dt` seconds at time `now`.
+    /// Exposed for tests: advance the dummies by `dt` seconds at time `now`.
     func step(dt: CGFloat, now: TimeInterval) {
-        updateStance(now: now)
-
-        let target: CGFloat, k: CGFloat, zeta: CGFloat
-        switch stance {
-        case .upright: target = -min(max(gx * leanGain, -0.55), 0.55); k = 49; zeta = 0.22
-        case .down(let d): target = -d * 1.5; k = 40; zeta = 0.15
-        }
-        let c = 2 * zeta * k.squareRoot()
-        for _ in 0..<2 {
-            let h = dt / 2
-            omega += (-k * (theta - target) - c * omega) * h
-            theta += omega * h
-            if abs(theta) > 1.5 { theta = 1.5 * (theta < 0 ? -1 : 1); omega *= -0.3 }   // floor
-        }
-        if case .down = stance, !impacted, abs(theta) > 1.35 {
-            impacted = true
-            onImpact?(0.9)
-        }
-
-        let shiftTarget: CGFloat
-        if case .down(let d) = stance { shiftTarget = -d * fallShift } else { shiftTarget = 0 }
-        shift += (shiftTarget - shift) * min(1, dt * 6)
-        talk += (talkTarget - talk) * min(1, dt * 20)
-
-        pivot.position.x = size.width / 2 + shift
-        pivot.zRotation = theta + sin(CGFloat(now) * 14) * 0.03 * talk
-        pivot.yScale = 1 + 0.04 * talk
-        // 3D: turn towards the lean (up to ~50° when lying down), nod while talking, faint idle sway.
-        figureHolder.eulerAngles = SCNVector3(
-            Float(-0.06 * talk),
-            Float(-theta * 0.5 + sin(CGFloat(now) * 0.9) * 0.05),
-            0)
+        for p in puppets { p.step(dt: dt, now: now, gx: gx, tuning: tuning, sceneWidth: size.width) }
     }
 
-    private func updateStance(now: TimeInterval) {
-        switch stance {
-        case .upright:
-            if abs(gx) > toppleThreshold { fall(dir: gx > 0 ? 1 : -1, now: now) }
-        case .down(let d):
-            if gx * d < 0, abs(gx) > toppleThreshold { fall(dir: -d, now: now) }   // rolled to the other side
-            else if abs(gx) < recoverThreshold, now - downSince > recoverDelay { stance = .upright; syncDown() }
-        }
-    }
+    // MARK: layout
 
-    private func fall(dir: CGFloat, now: TimeInterval) {
-        stance = .down(dir: dir)
-        downSince = now
-        impacted = false
-        omega += -dir * 1.5   // initial shove
-        syncDown()
-    }
-
-    private func syncDown() {
-        let down = stance != .upright
-        guard down != isDown else { return }
-        isDown = down
-        refreshFigure()
-    }
-
-    // MARK: visuals
-
-    private var fallShift: CGFloat { max(0, bustH - size.width / 2 + size.width * 0.1) }
+    private var floorY: CGFloat { bottomInset + 10 }
+    private var bustH: CGFloat { puppets.first?.bustH ?? 0 }
 
     private func layout() {
-        let floorY = bottomInset + 10
-        pivot.position = CGPoint(x: size.width / 2 + shift, y: floorY)
         physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(x: 0, y: floorY - 4, width: size.width, height: size.height))
         physicsBody?.friction = 0.6
-        // Figure is 2.0 units tall inside a 2.2-unit-tall viewport; cut-outs are 3:4.
-        let w = size.width * 0.9
-        bustH = w * 4 / 3
-        view3D.viewportSize = CGSize(width: w * 1.1, height: bustH * 1.1)
-        view3D.position = CGPoint(x: 0, y: bustH / 2)   // image bottom edge sits on the pivot
+        let duo = puppets.count > 1
+        let width = size.width * (duo ? 0.64 : 0.9)
+        for (i, p) in puppets.enumerated() {
+            let cx = duo ? size.width * (i == 0 ? 0.31 : 0.69) : size.width / 2
+            p.layout(centerX: cx, floorY: floorY, width: width)
+        }
     }
 
-    /// Keyboard up: zoom/pan so head + shoulders sit in the free area above `keyboardHeight`
+    /// Keyboard up: zoom/pan so the faces sit in the free area above `keyboardHeight`
     /// (points from the bottom of the screen, controls bar included). nil = back to the full view.
     func frameFace(keyboardHeight: CGFloat?) {
         let scale: CGFloat, offset: CGPoint
-        if let kb = keyboardHeight {
+        if let kb = keyboardHeight, bustH > 0 {
             let top: CGFloat = 120                                   // status bar + officer picker
             let free = max(size.height - kb - top, 100)
             let bandH = bustH * 0.5                                  // head + shoulders
             scale = min(max(free * 0.92 / bandH, 1), 1.5)
-            let faceY = bottomInset + 10 + bustH * 0.76
+            let faceY = floorY + bustH * 0.76
             let target = kb + free / 2
             offset = CGPoint(x: size.width / 2 * (1 - scale), y: target - scale * faceY)
         } else {
@@ -203,42 +152,11 @@ final class DummyScene: SKScene {
         figureRoot.run(.group([zoom, pan]), withKey: "frame")
     }
 
-    private func buildFigureScene() {
-        figureScene.rootNode.addChildNode(figureHolder)
-        let camera = SCNNode()
-        camera.camera = SCNCamera()
-        camera.camera?.fieldOfView = 25
-        camera.position = SCNVector3(0, 0, 5)
-        figureScene.rootNode.addChildNode(camera)
-        let ambient = SCNNode()
-        ambient.light = SCNLight()
-        ambient.light?.type = .ambient
-        ambient.light?.intensity = 750
-        let key = SCNNode()
-        key.light = SCNLight()
-        key.light?.type = .directional
-        key.light?.intensity = 850
-        key.eulerAngles = SCNVector3(-0.5, -0.6, 0)
-        figureScene.rootNode.addChildNode(ambient)
-        figureScene.rootNode.addChildNode(key)
-        view3D.scnScene = figureScene
-        view3D.pointOfView = camera
-    }
-
-    private func refreshFigure() {
-        guard pivot.parent != nil else { return }
-        let e: Expression = isDown ? .appalled : expression
-        figure?.removeFromParentNode()
-        let node = ReliefFigure.node(officer: officer, expression: e)
-        figureHolder.addChildNode(node)
-        figure = node
-    }
-
     private func buildPapers() {
         for i in 0..<6 {
             let sheet = SKSpriteNode(color: UIColor(white: 0.96, alpha: 1), size: CGSize(width: 46, height: 62))
-            sheet.zPosition = 0.5   // behind the bust
-            sheet.position = CGPoint(x: 60 + CGFloat(i) * 55, y: size.height * 0.1 + 40)
+            sheet.zPosition = 0.5   // behind the busts
+            sheet.position = CGPoint(x: 60 + CGFloat(i) * 55, y: floorY + 40)
             sheet.zRotation = .random(in: -0.5...0.5)
             sheet.physicsBody = SKPhysicsBody(rectangleOf: sheet.size)
             sheet.physicsBody?.mass = 0.05

@@ -47,15 +47,23 @@ struct PocketView: View {
         }
     }
 
+    /// "Formblatt & Annexe-Vandamme": last name of each officer (the persona name minus title/first name).
+    private func pairLabel(_ pair: Pair) -> String {
+        pair.officers.map { id in
+            let name = Roster.name(id)
+            return name.split(separator: " ").last.map(String.init) ?? name
+        }.joined(separator: " & ")
+    }
+
     private var officerPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(model.officers) { p in
-                    Button { model.select(p.id) } label: {
-                        Text(p.name.split(separator: " ").prefix(2).joined(separator: " "))
+                ForEach(model.pairs, id: \.id) { pair in
+                    Button { model.select(pair: pair.id) } label: {
+                        Text(pairLabel(pair))
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(Capsule().fill(Color(UIColor(hex: p.color)).opacity(p.id == model.selectedID ? 1 : 0.35)))
+                            .background(Capsule().fill(Color.accentColor.opacity(pair.id == model.pairID ? 1 : 0.3)))
                             .foregroundStyle(.white)
                     }
                 }
