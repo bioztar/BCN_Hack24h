@@ -1,0 +1,40 @@
+# One service. Traefik is not in this file: uk-lon-1 already runs a shared Traefik on the
+# external `traefik-public` network; we join it and attach labels (same pattern as Karen).
+services:
+  roast:
+    build: .
+    image: dg-roast:latest
+    container_name: dg-roast
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8796"
+      DATA_DIR: /data
+    volumes:
+      - roast-data:/data
+      - ./assets/generated:/app/assets/generated:ro
+    # Bound to loopback, never 0.0.0.0. Traefik is the only route in.
+    ports:
+      - "127.0.0.1:8806:8796"
+    networks:
+      - traefik-public
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: traefik-public
+      traefik.http.routers.roast.rule: Host(`eurocrat.pro7ocol.com`) || Host(`warden.pro7ocol.com`)
+      traefik.http.routers.roast.entrypoints: websecure
+      traefik.http.routers.roast.tls.certresolver: mytlschallenge
+      traefik.http.services.roast.loadbalancer.server.port: "8796"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8796/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  traefik-public:
+    external: true
+
+volumes:
+  roast-data:
