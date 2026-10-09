@@ -1,0 +1,1544 @@
+# DG ROAST gag bank — owned by A0 (tools/assetgen). Lane B's persona engine may draw on these.
+# Every `provision` was checked by `assetgen check-gags --write` against the corpus named in `source`:
+#   AI Act: bioztar/EU-AI-Act corpus/act/regulation-eu-2024-1689.md
+#   GDPR / NIS2 / DORA: bioztar/warden main corpus/eu-law/*.md
+#   ISO/IEC 27001, ISO/IEC 42001, SOC 2: control ids only, checked against warden's pointer files. These standards are copyrighted, so no text from them is quoted here.
+# `verified: true` means the article/paragraph/point (or control id) exists in that file and the `checked` heading was
+# reviewed against the joke. `verified: false` means it could not be found, so do not cite it on stage.
+# Lines are spoken by TTS: [sigh] / [pause] are delivery cues; 'Formblatt:' / 'Annexe:' prefixes split `both` lines.
+gags:
+  - id: aiact-001
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "Before we begin: is it an AI system? Article 3, point 1. Varying levels of autonomy. Your pitch deck has one level. It is called 'next slide'."
+    provision: "AI-Act Art. 3(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L501
+    checked: Art. 3 — Definitions
+  - id: aiact-002
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Article 4 requires AI literacy of your staff. I have read your pitch. Let us begin with literacy, and see how far we get."
+    provision: "AI-Act Art. 4"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L681
+    checked: Art. 4 — AI literacy
+  - id: aiact-003
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "The Regulation entered into force in August 2024. [sigh] Your startup entered into force in a co-working space. Only one of these has transitional provisions."
+    provision: "AI-Act Art. 113"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3863
+    checked: Art. 113 — Entry into force and application
+  - id: aiact-004
+    tier: 1
+    trigger: dictation
+    speaker: annexe
+    line: "You are speaking to an AI system. Article 50(1) obliges me to tell you. Nothing obliges me to listen."
+    provision: "AI-Act Art. 50(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2073
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: aiact-005
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "You say it is not high-risk. Article 6, paragraph 3. A derogation. We love a derogation. You must document it. You have not documented it. It is now high-risk in spirit."
+    provision: "AI-Act Art. 6(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L801
+    checked: Art. 6 — Classification rules for high-risk AI systems
+  - id: aiact-006
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Codes of conduct are voluntary under Article 95. So, apparently, is your business model."
+    provision: "AI-Act Art. 95"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3407
+    checked: Art. 95 — Codes of conduct for voluntary application of specific requirements
+  - id: aiact-007
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "Article 62. Measures for start-ups. Priority access to the sandbox. [pause] Priority. Like a queue. Take a number. Your number is four thousand three hundred and eighteen."
+    provision: "AI-Act Art. 62"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2583
+    checked: Art. 62 — Measures for providers and deployers, in particular SMEs, including start-ups
+  - id: aiact-008
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Every Member State must have a regulatory sandbox by the second of August 2026. Article 57. Yours is a Notion page called 'Ethics TBD'."
+    provision: "AI-Act Art. 57(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2295
+    checked: Art. 57 — AI regulatory sandboxes
+  - id: aiact-009
+    tier: 1
+    trigger: any
+    speaker: both
+    line: "Formblatt: The AI Office will want to know. Annexe: The AI Office already knows, Heinrich. It has a shared inbox. Nobody opens it."
+    provision: "AI-Act Art. 64"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2641
+    checked: Art. 64 — AI Office
+  - id: aiact-010
+    tier: 1
+    trigger: dictation
+    speaker: formblatt
+    line: "Is this recording a deep fake? Article 3, point 60. [sigh] No. Nobody would fake this."
+    provision: "AI-Act Art. 3(60)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L643
+    checked: Art. 3 — Definitions
+  - id: aiact-011
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Article 13 wants deployers able to interpret the system's output. Your one-pager says 'synergy' four times. I could not interpret it, and I interpret for a living."
+    provision: "AI-Act Art. 13(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1105
+    checked: Art. 13 — Transparency and provision of information to deployers
+  - id: aiact-012
+    tier: 1
+    trigger: repo
+    finding: llm-sdk
+    speaker: formblatt
+    line: "I see an LLM SDK in package.json. So: an AI system. Article 3, point 1. Congratulations. You now have obligations. Many. Alphabetised."
+    provision: "AI-Act Art. 3(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L501
+    checked: Art. 3 — Definitions
+  - id: aiact-013
+    tier: 1
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "You wrap someone else's model and put your logo on it. Article 25: rebrand a high-risk system and you inherit the provider's obligations. You wanted to be a platform. You are now a liability."
+    provision: "AI-Act Art. 25(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1495
+    checked: Art. 25 — Responsibilities along the AI value chain
+  - id: aiact-014
+    tier: 1
+    trigger: repo
+    finding: no-license
+    speaker: formblatt
+    line: "No LICENSE file. [sigh] Model providers need a copyright policy, Article 53(1)(c). You are not one. But you could at least have a licence. Even an apology would do."
+    provision: "AI-Act Art. 53(1)(c)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2159
+    checked: Art. 53 — Obligations for providers of general-purpose AI models
+  - id: aiact-015
+    tier: 1
+    trigger: text
+    speaker: formblatt
+    line: "You say it is just research. Article 2(6) excludes AI developed for the sole purpose of scientific research. Sole. You have a pricing page. Research does not have a pricing page."
+    provision: "AI-Act Art. 2(6)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L481
+    checked: Art. 2 — Scope
+  - id: aiact-016
+    tier: 1
+    trigger: dictation
+    speaker: formblatt
+    line: "AI literacy, Article 4. You said 'the model just knows'. [sigh] The model does not know. The model has weights. You have a pitch."
+    provision: "AI-Act Art. 4"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L681
+    checked: Art. 4 — AI literacy
+  - id: aiact-017
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Emotion recognition in the workplace. Article 5, paragraph 1, point f. Prohibited. You call it an employee mood dashboard. We call it a fine with a dashboard."
+    provision: "AI-Act Art. 5(1)(f)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L725
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-018
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "A score for people based on their social behaviour. Point c. Prohibited. You call it a trust score. I call it a form. The form is REFUSÉ."
+    provision: "AI-Act Art. 5(1)(c)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L705
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-019
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "You scraped faces from the internet to bootstrap the dataset. Article 5(1)(e). Untargeted scraping of facial images. Prohibited. The bootstrap is now evidence."
+    provision: "AI-Act Art. 5(1)(e)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L721
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-020
+    tier: 2
+    trigger: dictation
+    speaker: formblatt
+    line: "You said 'nudge' eleven times. Article 5(1)(a). Techniques beyond a person's consciousness, materially distorting behaviour. [pause] I am materially distorted. I want to buy nothing."
+    provision: "AI-Act Art. 5(1)(a)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L697
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-021
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "An app that finds people in financial distress and offers them opportunities. Point b: exploiting a vulnerability from someone's economic situation. It is not a growth hack. It is a prohibited practice with a referral code."
+    provision: "AI-Act Art. 5(1)(b)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L701
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-022
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Predicting who will commit a crime from their profile. Article 5(1)(d). Prohibited. It is not a product roadmap. It is the plot of a film everybody walked out of."
+    provision: "AI-Act Art. 5(1)(d)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L717
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-023
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Inferring political opinions from selfies. Point g. Biometric categorisation. Prohibited. The investors, I notice, inferred nothing either."
+    provision: "AI-Act Art. 5(1)(g)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L729
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-024
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "Article 9. A risk management system shall be established, implemented, documented and maintained. Four verbs. You have done zero verbs. You have done one noun: MVP."
+    provision: "AI-Act Art. 9(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L927
+    checked: Art. 9 — Risk management system
+  - id: aiact-025
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Your training data is 'mostly Reddit'. Article 10(3): relevant, sufficiently representative, and as free of errors as possible. Reddit is relevant to nothing, representative of no one, and free of nothing."
+    provision: "AI-Act Art. 10(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1019
+    checked: Art. 10 — Data and data governance
+  - id: aiact-026
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "Technical documentation, Article 11, drawn up before the system is placed on the market. Before. [sigh] Your README says 'docs coming soon'. Soon is not a legal concept."
+    provision: "AI-Act Art. 11(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1055
+    checked: Art. 11 — Technical documentation
+  - id: aiact-027
+    tier: 2
+    trigger: repo
+    finding: no-security-md
+    speaker: annexe
+    line: "No SECURITY.md. Article 15 asks for an appropriate level of cybersecurity. You have an appropriate level of optimism."
+    provision: "AI-Act Art. 15(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1211
+    checked: Art. 15 — Accuracy, robustness and cybersecurity
+  - id: aiact-028
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "Article 12. Automatic recording of events over the lifetime of the system. Your logging strategy is console.log('here'). And then console.log('here2')."
+    provision: "AI-Act Art. 12(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1067
+    checked: Art. 12 — Record-keeping
+  - id: aiact-029
+    tier: 2
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "The model writes the content. Article 50(2): outputs marked, machine-readable, as artificially generated. Your watermark is the em dash."
+    provision: "AI-Act Art. 50(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2075
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: aiact-030
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Human oversight. Article 14, paragraph 4, point e: a human can interrupt the system with a stop button. Where is the stop button? [pause] The founder is the stop button. The founder is on a podcast."
+    provision: "AI-Act Art. 14(4)(e)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1199
+    checked: Art. 14 — Human oversight
+  - id: aiact-031
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "CV screening with AI. Annex III, point 4. Employment. High-risk. You described it as 'Tinder for recruiters'. I have described it as a conformity assessment."
+    provision: "AI-Act Annex III(4)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4075
+    checked: Annex III — High-risk AI systems referred to in Article 6(2) · 4.
+  - id: aiact-032
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Credit scoring. Annex III, point 5. High-risk. You disrupt lending. I disrupt you. With paragraph numbers."
+    provision: "AI-Act Annex III(5)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4087
+    checked: Annex III — High-risk AI systems referred to in Article 6(2) · 5.
+  - id: aiact-033
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "AI that grades exams. Annex III, point 3. Education. High-risk. Your own pitch, I have graded: incomplet."
+    provision: "AI-Act Annex III(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4055
+    checked: Annex III — High-risk AI systems referred to in Article 6(2) · 3.
+  - id: aiact-034
+    tier: 2
+    trigger: repo
+    finding: env-tracked
+    speaker: formblatt
+    line: "Your .env file is in git. Article 15, paragraph 5: resilience against unauthorised third parties. They are no longer unauthorised. You authorised them. In a commit."
+    provision: "AI-Act Art. 15(5)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1223
+    checked: Art. 15 — Accuracy, robustness and cybersecurity
+  - id: aiact-035
+    tier: 2
+    trigger: dictation
+    speaker: annexe
+    line: "You want the app to read emotions from the user's voice. Article 50(3): you must inform them. I will inform you instead. I feel nothing."
+    provision: "AI-Act Art. 50(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2077
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: aiact-036
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "A quality management system. Article 17. Written policies, procedures, instructions. Your quality management system is a Slack channel called hash-vibes."
+    provision: "AI-Act Art. 17(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1291
+    checked: Art. 17 — Quality management system
+  - id: aiact-037
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "A fundamental rights impact assessment, Article 27, before deployment. You did a vibe check with your co-founder's flatmate. The flatmate is not a fundamental right."
+    provision: "AI-Act Art. 27(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1575
+    checked: Art. 27 — Fundamental rights impact assessment for high-risk AI systems
+  - id: aiact-038
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Data governance, Article 10(2): the origin of the data, the collection process, the preparation. Your data origin is 'a Kaggle link somebody sent me'."
+    provision: "AI-Act Art. 10(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L985
+    checked: Art. 10 — Data and data governance
+  - id: aiact-039
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Dual-use, defence-adjacent, you say. Article 2(3) excludes systems used exclusively for military purposes. Exclusively. You also sell it to estate agents."
+    provision: "AI-Act Art. 2(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L471
+    checked: Art. 2 — Scope
+  - id: aiact-040
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "Conformity assessment, Article 43. Internal control, or a notified body. You chose option three: confidence. Option three is not in the Article. I checked. Twice."
+    provision: "AI-Act Art. 43(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1889
+    checked: Art. 43 — Conformity assessment
+  - id: aiact-041
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "An EU declaration of conformity, Article 47, kept for ten years. You cannot keep a co-founder for ten weeks."
+    provision: "AI-Act Art. 47(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2009
+    checked: Art. 47 — EU declaration of conformity
+  - id: aiact-042
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "CE marking. Article 48. Visible, legible, indelible. [sigh] The only indelible thing in this company is the burn rate."
+    provision: "AI-Act Art. 48"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2019
+    checked: Art. 48 — CE marking
+  - id: aiact-043
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "High-risk systems are registered in the EU database before they go on the market. Article 49. You registered a dot-AI domain. It is not the same database."
+    provision: "AI-Act Art. 49(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2037
+    checked: Art. 49 — Registration
+  - id: aiact-044
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "Documentation kept for ten years after the system is placed on the market. Article 18. [pause] Ten years. Your runway is eleven months. I will keep it for you. In the basement. Next to the fax."
+    provision: "AI-Act Art. 18(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1355
+    checked: Art. 18 — Documentation keeping
+  - id: aiact-045
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "Automatically generated logs, kept at least six months. Article 19. Yours rotate every twenty-four hours, for cost reasons. Our fines do not rotate."
+    provision: "AI-Act Art. 19(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1385
+    checked: Art. 19 — Automatically generated logs
+  - id: aiact-046
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "Not in conformity? Corrective action, immediately. Article 20. Withdraw it, disable it, or recall it. Recall. Like a product. Or a chief executive."
+    provision: "AI-Act Art. 20(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1393
+    checked: Art. 20 — Corrective actions and duty of information
+  - id: aiact-047
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "The deployer uses the system in accordance with the instructions for use. Article 26. Where are the instructions? [pause] 'Just ask the chatbot.' The chatbot told me to ask you."
+    provision: "AI-Act Art. 26(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1531
+    checked: Art. 26 — Obligations of deployers of high-risk AI systems
+  - id: aiact-048
+    tier: 3
+    trigger: text
+    speaker: both
+    line: "Formblatt: You are incorporated in Delaware. Annexe: Then you need an authorised representative in the Union, Article 22, appointed by written mandate. Formblatt: Not a LinkedIn message."
+    provision: "AI-Act Art. 22(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1411
+    checked: Art. 22 — Authorised representatives of providers of high-risk AI systems
+  - id: aiact-049
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "Post-market monitoring. Article 72. I have seen your post-launch plan. It is an upvote target."
+    provision: "AI-Act Art. 72(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2935
+    checked: Art. 72 — Post-market monitoring by providers and post-market monitoring plan for high-risk AI systems
+  - id: aiact-050
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "A serious incident is reported to the market surveillance authority. Article 73. Your incident response is 'delete the tweet'."
+    provision: "AI-Act Art. 73(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2953
+    checked: Art. 73 — Reporting of serious incidents
+  - id: aiact-051
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "A person affected by a high-risk decision has a right to an explanation. Article 86. You will explain to every rejected applicant why the model said no. I will explain to you why I said no. Mine is quicker."
+    provision: "AI-Act Art. 86(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3261
+    checked: Art. 86 — Right to explanation of individual decision-making
+  - id: aiact-052
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "Article 85. Any person may lodge a complaint with a market surveillance authority. Any person. [sigh] I have pre-filled it. For your convenience. We must help start-ups."
+    provision: "AI-Act Art. 85"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3249
+    checked: Art. 85 — Right to lodge a complaint with a market surveillance authority
+  - id: aiact-053
+    tier: 3
+    trigger: repo
+    finding: analytics-sdk
+    speaker: annexe
+    line: "Session replay, an AI chat widget, and nowhere a sentence telling the user they are talking to a machine. Article 50(1). The machine is talking. Nobody told the human."
+    provision: "AI-Act Art. 50(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2073
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: aiact-054
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "Testing in real-world conditions. Article 60. A plan, approved, registered. [pause] You tested in production. On your mother. She is not a real-world testing plan."
+    provision: "AI-Act Art. 60(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2489
+    checked: Art. 60 — Testing of high-risk AI systems in real world conditions outside AI regulatory sandboxes
+  - id: aiact-055
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "Article 6(2) sends us to Annex III. Annex III is amended under Article 7. Article 7 sends us back to Annex III. You came for a decision. You have found a loop."
+    provision: "AI-Act Art. 6(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L799
+    checked: Art. 6 — Classification rules for high-risk AI systems
+  - id: aiact-056
+    tier: 3
+    trigger: text
+    speaker: both
+    line: "Annexe: An AI to help judges draft rulings faster. Formblatt: Annex III, point 8. Administration of justice. High-risk. Annexe: And the appeal? Formblatt: Drafted by the same model. Efficient."
+    provision: "AI-Act Annex III(8)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4151
+    checked: Annex III — High-risk AI systems referred to in Article 6(2) · 8.
+  - id: aiact-057
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "Article 7. The Commission may amend Annex III by delegated act. [pause] So you are not high-risk today. Tomorrow is also a day."
+    provision: "AI-Act Art. 7(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L837
+    checked: Art. 7 — Amendments to Annex III
+  - id: aiact-058
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Article 9(2): risk management is a continuous iterative process across the whole lifecycle. You ran it once. During a hackathon."
+    provision: "AI-Act Art. 9(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L929
+    checked: Art. 9 — Risk management system
+  - id: aiact-059
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "You trained a frontier model. Ten to the twenty-fifth floating-point operations. Article 51(2). Presumed systemic risk. [sigh] I trained a fern. It is presumed dead."
+    provision: "AI-Act Art. 51(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2111
+    checked: Art. 51 — Classification of general-purpose AI models as general-purpose AI models with systemic risk
+  - id: aiact-060
+    tier: 4
+    trigger: text
+    speaker: annexe
+    line: "A sufficiently detailed summary of the training content, made public. Article 53(1)(d). Your lawyers have gone very quiet. That is the first compliant thing they have done."
+    provision: "AI-Act Art. 53(1)(d)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2163
+    checked: Art. 53 — Obligations for providers of general-purpose AI models
+  - id: aiact-061
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Systemic-risk models: evaluations, adversarial testing, incident tracking, cybersecurity. Article 55. You have a red team. It is the CTO's red hoodie."
+    provision: "AI-Act Art. 55(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2219
+    checked: Art. 55 — Obligations of providers of general-purpose AI models with systemic risk
+  - id: aiact-062
+    tier: 4
+    trigger: any
+    speaker: annexe
+    line: "Operator obligations breached: up to fifteen million, or three per cent of worldwide turnover, whichever is higher. Article 99(4). Your worldwide turnover is a Stripe test-mode screenshot."
+    provision: "AI-Act Art. 99(4)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3517
+    checked: Art. 99 — Penalties
+  - id: aiact-063
+    tier: 4
+    trigger: any
+    speaker: formblatt
+    line: "For start-ups, Article 99(6) says: whichever is lower. [pause] You see? Proportionality. We fine you less because you have less. It is called kindness. It still has a reference number."
+    provision: "AI-Act Art. 99(6)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3549
+    checked: Art. 99 — Penalties
+  - id: aiact-064
+    tier: 4
+    trigger: any
+    speaker: annexe
+    line: "A prohibited practice. Thirty-five million euros, or seven per cent of worldwide turnover. Article 99(3). I am not angry. I am calculating."
+    provision: "AI-Act Art. 99(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3515
+    checked: Art. 99 — Penalties
+  - id: aiact-065
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Incorrect, incomplete or misleading information to an authority: seven and a half million, or one per cent. Article 99(5). Your slide says 'no competitors'. That is information. To an authority. Me."
+    provision: "AI-Act Art. 99(5)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3547
+    checked: Art. 99 — Penalties
+  - id: aiact-066
+    tier: 4
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "Your whole product is one API call to someone else's model. Their documentation for downstream providers is in Annex XII. Have you read it? [pause] Nobody reads Annex XII. I wrote Annex XII. I have not read it."
+    provision: "AI-Act Annex XII"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4727
+    checked: Annex XII — Transparency information referred to in Article 53(1), point (b) — technical documentation for providers of general-purpose AI models to downstream providers that integrate the model into their AI system
+  - id: aiact-067
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Annex IV. Technical documentation: a description, the development process, the metrics, the risk management, the post-market plan. You have a Figma. The Figma has a frame called 'compliance (later)'."
+    provision: "AI-Act Annex IV"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4165
+    checked: Annex IV — Technical documentation referred to in Article 11(1)
+  - id: aiact-068
+    tier: 4
+    trigger: text
+    speaker: annexe
+    line: "Remote biometric identification for smarter retail. Annex III, point 1. High-risk, in so far as permitted at all. You wanted to know which customers are loyal. I know which founder is not."
+    provision: "AI-Act Annex III(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L4033
+    checked: Annex III — High-risk AI systems referred to in Article 6(2) · 1.
+  - id: aiact-069
+    tier: 4
+    trigger: repo
+    finding: analytics-sdk
+    speaker: formblatt
+    line: "Twelve analytics SDKs, and an AI that picks the button colour per user until they give in. Article 5(1)(a). Manipulative techniques. [sigh] It is not growth. It is a subliminal practice with a dashboard."
+    provision: "AI-Act Art. 5(1)(a)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L697
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-070
+    tier: 4
+    trigger: text
+    speaker: both
+    line: "Annexe: Deep fakes of politicians, for satire. Formblatt: Article 50(4). Disclose that it is artificially generated. Annexe: We disclose. Every frame. You can see it behind me. Tier four."
+    provision: "AI-Act Art. 50(4)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2079
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: aiact-071
+    tier: 4
+    trigger: any
+    speaker: annexe
+    line: "Fines for general-purpose model providers come from the Commission directly. Article 101. We do not send letters. We publish."
+    provision: "AI-Act Art. 101(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3651
+    checked: Art. 101 — Fines for providers of general-purpose AI models
+  - id: aiact-072
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Human oversight, Article 14: natural persons, effectively overseeing. Your human-in-the-loop is a night-shift intern who clicks approve four thousand times an hour."
+    provision: "AI-Act Art. 14(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1167
+    checked: Art. 14 — Human oversight
+  - id: aiact-073
+    tier: 5
+    trigger: any
+    speaker: formblatt
+    line: "Real-time remote biometric identification in public spaces for law enforcement. Article 5(1)(h). Prohibited, with exceptions. You are not an exception. You are a pilot project. In my car park."
+    provision: "AI-Act Art. 5(1)(h)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L733
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-074
+    tier: 5
+    trigger: any
+    speaker: annexe
+    line: "Most of this Regulation applies from the second of August 2026. Article 113. Your company will apply from... [pause] It will not apply. I have checked the calendar. The calendar is compliant."
+    provision: "AI-Act Art. 113"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3863
+    checked: Art. 113 — Entry into force and application
+  - id: aiact-075
+    tier: 5
+    trigger: text
+    speaker: both
+    line: "Formblatt: An AI that tells teachers which pupils are paying attention, from their faces. Annexe: Article 5(1)(f). Emotion recognition in education. Prohibited. Formblatt: [wakes] I was paying attention. Annexe: Also prohibited, Heinrich."
+    provision: "AI-Act Art. 5(1)(f)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L725
+    checked: Art. 5 — Prohibited AI practices
+  - id: aiact-076
+    tier: 5
+    trigger: any
+    speaker: annexe
+    line: "Back to Article 3(1). An AI system infers, from the input it receives, how to generate outputs. You receive input. You generate outputs. You infer nothing. You are not an AI system. You are a form. And I have a stamp."
+    provision: "AI-Act Art. 3(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L501
+    checked: Art. 3 — Definitions
+  - id: aiact-077
+    tier: 5
+    trigger: repo
+    finding: env-tracked
+    speaker: both
+    line: "Annexe: The API key is in the repository. Formblatt: The public repository. Annexe: Article 15: cybersecurity, throughout the lifecycle. Formblatt: The lifecycle of that key was eleven minutes."
+    provision: "AI-Act Art. 15(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1211
+    checked: Art. 15 — Accuracy, robustness and cybersecurity
+  - id: aiact-078
+    tier: 5
+    trigger: text
+    speaker: formblatt
+    line: "You asked for the sandbox. [long sigh] The sandbox is full. The sandbox is always full. The sand is not yet harmonised."
+    provision: "AI-Act Art. 57(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2295
+    checked: Art. 57 — AI regulatory sandboxes
+  - id: aiact-079
+    tier: 5
+    trigger: any
+    speaker: annexe
+    line: "Penalties shall be effective, proportionate and dissuasive. Article 99(1). I promise you all three. Mostly the last one."
+    provision: "AI-Act Art. 99(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3511
+    checked: Art. 99 — Penalties
+  - id: aiact-080
+    tier: 5
+    trigger: dictation
+    speaker: formblatt
+    line: "I must inform you that you have been speaking to an AI system. [pause] Article 50. I must also inform you that the AI system was unimpressed."
+    provision: "AI-Act Art. 50(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2073
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: aiact-081
+    tier: 5
+    trigger: repo
+    finding: no-privacy-policy
+    speaker: annexe
+    line: "No privacy policy, and the model decides who gets the loan. Article 26(11): tell people they are subject to a high-risk system. You have not even told them they are subject to a website."
+    provision: "AI-Act Art. 26(11)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1567
+    checked: Art. 26 — Obligations of deployers of high-risk AI systems
+  - id: aiact-082
+    tier: 5
+    trigger: any
+    speaker: both
+    line: "Formblatt: The AI Board is hereby convened. Annexe: One representative per Member State. Article 65. Formblatt: Twenty-seven delegates. One start-up. Annexe: For once, Heinrich, a fair fight."
+    provision: "AI-Act Art. 65(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2655
+    checked: Art. 65 — Establishment and structure of the European Artificial Intelligence Board
+  - id: gdpr-001
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Consent, Article 4, point 11: freely given, specific, informed, unambiguous. Your cookie banner has one button. It says 'Obviously'."
+    provision: "GDPR Art. 4(11)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L473
+    checked: Art. 4 — Definitions
+  - id: gdpr-002
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "Purpose limitation. Article 5(1)(b). You collected the email 'for the newsletter'. The newsletter is now a training set. [sigh] The purpose has been... extended."
+    provision: "GDPR Art. 5(1)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L547
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-003
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Data minimisation, Article 5(1)(c). Adequate, relevant, limited to what is necessary. You ask for date of birth to send a PDF. The PDF is not having a birthday."
+    provision: "GDPR Art. 5(1)(c)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L551
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-004
+    tier: 1
+    trigger: repo
+    finding: no-privacy-policy
+    speaker: formblatt
+    line: "No privacy policy. Article 13. At the time of collection you tell people who you are, why, and on what basis. [pause] Who are you? Why? On what basis? I ask also personally."
+    provision: "GDPR Art. 13(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L773
+    checked: Art. 13 — Information to be provided where personal data are collected from the data subject
+  - id: gdpr-005
+    tier: 1
+    trigger: dictation
+    speaker: annexe
+    line: "Article 12: concise, transparent, intelligible, in clear and plain language. You have spoken for two minutes. None of those words applies."
+    provision: "GDPR Art. 12(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L739
+    checked: Art. 12 — Transparent information, communication and modalities for the exercise of the rights of the data subject
+  - id: gdpr-006
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "Do you have a Data Protection Officer? Article 37. [pause] The co-founder who 'did a course'. Very good. Write it on the lanyard. I have seven. You may have one."
+    provision: "GDPR Art. 37(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1589
+    checked: Art. 37 — Designation of the data protection officer
+  - id: gdpr-007
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "You say you are not in the EU. Article 3(2). You offer services to people in the Union. Your landing page is in French. Badly. That counts."
+    provision: "GDPR Art. 3(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L435
+    checked: Art. 3 — Territorial scope
+  - id: gdpr-008
+    tier: 1
+    trigger: repo
+    finding: analytics-sdk
+    speaker: formblatt
+    line: "Withdrawing consent must be as easy as giving it. Article 7(3). Accepting is one click. Rejecting is four screens, a CAPTCHA and a short essay. I have started the essay. It is called REFUSÉ."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: gdpr-009
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Storage limitation, Article 5(1)(e). You keep the data 'forever, in case it becomes useful'. That is not a retention policy. That is a hoarding disorder with an S3 bucket."
+    provision: "GDPR Art. 5(1)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L559
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-010
+    tier: 2
+    trigger: any
+    speaker: annexe
+    line: "Accountability. Article 5(2). The controller is responsible and must be able to demonstrate compliance. Demonstrate. Not 'feel'. You feel compliant. I feel tired."
+    provision: "GDPR Art. 5(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L567
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-011
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Legitimate interests. Article 6(1)(f). [sigh] Everybody's favourite. Your legitimate interest is money. The data subject's interest is not being your money."
+    provision: "GDPR Art. 6(1)(f)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L595
+    checked: Art. 6 — Lawfulness of processing
+  - id: gdpr-012
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Your users are thirteen to sixteen. Article 8: consent needs a parent below sixteen, unless the Member State lowers it. Your onboarding asks the child to tick 'I am my parent'."
+    provision: "GDPR Art. 8(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L653
+    checked: Art. 8 — Conditions applicable to child's consent in relation to information society services
+  - id: gdpr-013
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Health data, biometric data, sexual orientation. Article 9(1). Special categories. Processing prohibited, unless. You have built a product out of 'unless'."
+    provision: "GDPR Art. 9(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L665
+    checked: Art. 9 — Processing of special categories of personal data
+  - id: gdpr-014
+    tier: 2
+    trigger: any
+    speaker: annexe
+    line: "A user asks for a copy of their data. Article 15. You will send them everything. Including the column called 'lead_temperature'. Let us see how warm they feel then."
+    provision: "GDPR Art. 15(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L927
+    checked: Art. 15 — Right of access by the data subject
+  - id: gdpr-015
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "The right to erasure. Article 17. The user deletes the account. The data stays in the vector database. [pause] Embedded. Like a tick."
+    provision: "GDPR Art. 17(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L981
+    checked: Art. 17 — Right to erasure (‘right to be forgotten’)
+  - id: gdpr-016
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Data portability, Article 20: a structured, commonly used, machine-readable format. You export to a screenshot of a spreadsheet."
+    provision: "GDPR Art. 20(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1067
+    checked: Art. 20 — Right to data portability
+  - id: gdpr-017
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "The user objects to processing. Article 21. You have no button for objecting. So they object here. To me. [stamps] Objection noted."
+    provision: "GDPR Art. 21(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1091
+    checked: Art. 21 — Right to object
+  - id: gdpr-018
+    tier: 2
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "You send customer data to a model API. That is a processor. Article 28(3): a contract, binding, with the subject matter and duration of the processing. You accepted their terms with a checkbox at two in the morning."
+    provision: "GDPR Art. 28(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1279
+    checked: Art. 28 — Processor
+  - id: gdpr-019
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "Records of processing activities. Article 30. In writing. Electronic form permitted. [sigh] Your records of processing activities are the browser history of your CTO."
+    provision: "GDPR Art. 30(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1339
+    checked: Art. 30 — Records of processing activities
+  - id: gdpr-020
+    tier: 2
+    trigger: repo
+    finding: no-security-md
+    speaker: annexe
+    line: "Article 32: security appropriate to the risk. No SECURITY.md, no disclosure address. A researcher who finds your hole must guess your email. They will guess right. They always do."
+    provision: "GDPR Art. 32(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1407
+    checked: Art. 32 — Security of processing
+  - id: gdpr-021
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Data protection by default, Article 25(2). By default, only the data necessary. Your default is 'share with friends', 'public profile', and 'location: always'. The defaults are not by default."
+    provision: "GDPR Art. 25(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1235
+    checked: Art. 25 — Data protection by design and by default
+  - id: gdpr-022
+    tier: 2
+    trigger: repo
+    finding: analytics-sdk
+    speaker: annexe
+    line: "Five analytics SDKs, loaded before the consent banner renders. Article 6(1)(a) consent, given after the fact, is called an apology. We do not accept apologies. We accept forms."
+    provision: "GDPR Art. 6(1)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L575
+    checked: Art. 6 — Lawfulness of processing
+  - id: gdpr-023
+    tier: 2
+    trigger: dictation
+    speaker: formblatt
+    line: "You said the model 'decides automatically, no humans, that is the beauty'. Article 22(1). A decision based solely on automated processing, with legal effects. [pause] The beauty is in the Article. Not in you."
+    provision: "GDPR Art. 22(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1107
+    checked: Art. 22 — Automated individual decision-making, including profiling
+  - id: gdpr-024
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Data protection by design. Article 25(1). By design. Your design document is a whiteboard photo, and the whiteboard says 'GDPR?' with a question mark. The question mark is the most honest part."
+    provision: "GDPR Art. 25(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1233
+    checked: Art. 25 — Data protection by design and by default
+  - id: gdpr-025
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "A personal data breach. Article 33. Notify the supervisory authority within seventy-two hours. [long pause] You found out from a journalist. The journalist found out on Tuesday. It is Friday."
+    provision: "GDPR Art. 33(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1435
+    checked: Art. 33 — Notification of a personal data breach to the supervisory authority
+  - id: gdpr-026
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "When the breach is high-risk, you tell the people affected. Article 34. Directly. Not a blog post titled 'An update on our security journey'."
+    provision: "GDPR Art. 34(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1465
+    checked: Art. 34 — Communication of a personal data breach to the data subject
+  - id: gdpr-027
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "A data protection impact assessment. Article 35. Before the processing. You are processing. There is no assessment. [sigh] I will assess. I have assessed. It is negative."
+    provision: "GDPR Art. 35(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1493
+    checked: Art. 35 — Data protection impact assessment
+  - id: gdpr-028
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "Your DPO reports to the Head of Growth. Article 38(3): the DPO reports to the highest management level and receives no instructions. Your DPO receives instructions. Mostly 'not now'."
+    provision: "GDPR Art. 38(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1623
+    checked: Art. 38 — Position of the data protection officer
+  - id: gdpr-029
+    tier: 3
+    trigger: repo
+    finding: llm-sdk
+    speaker: formblatt
+    line: "The prompts go to a server in another continent. Chapter V, Article 44: transfers only under the conditions of this chapter. [pause] Which condition? 'Fast'. Fast is not in Chapter V."
+    provision: "GDPR Art. 44"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1839
+    checked: Art. 44 — General principle for transfers
+  - id: gdpr-030
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Standard contractual clauses, Article 46. Appropriate safeguards. You have not signed any. You have signed a term sheet. It is not a safeguard. It is a countdown."
+    provision: "GDPR Art. 46(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1885
+    checked: Art. 46 — Transfers subject to appropriate safeguards
+  - id: gdpr-031
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "You rely on the derogations, Article 49. For specific situations. Occasional. [sigh] Your whole business is the specific situation. Every day. On a cron job."
+    provision: "GDPR Art. 49(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2015
+    checked: Art. 49 — Derogations for specific situations
+  - id: gdpr-032
+    tier: 3
+    trigger: repo
+    finding: env-tracked
+    speaker: both
+    line: "Annexe: The database password is in the .env, and the .env is in git. Formblatt: Article 32. Confidentiality of processing systems. Annexe: Confidential to everybody with a GitHub account. Formblatt: Which is... the public."
+    provision: "GDPR Art. 32(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1407
+    checked: Art. 32 — Security of processing
+  - id: gdpr-033
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Integrity and confidentiality, Article 5(1)(f). You store passwords 'encrypted with base64'. Base64 is not encryption, Monsieur. It is a spelling."
+    provision: "GDPR Art. 5(1)(f)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L563
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-034
+    tier: 4
+    trigger: any
+    speaker: formblatt
+    line: "Processor and controller obligations. Article 83(4). Ten million, or two per cent of worldwide turnover, whichever is higher. [sigh] For you, ten million. It is the higher one. By ten million."
+    provision: "GDPR Art. 83(4)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2981
+    checked: Art. 83 — General conditions for imposing administrative fines
+  - id: gdpr-035
+    tier: 4
+    trigger: any
+    speaker: annexe
+    line: "Breach of the basic principles, including consent. Article 83(5). Twenty million, or four per cent. I have rounded your valuation down to the nearest fine."
+    provision: "GDPR Art. 83(5)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2995
+    checked: Art. 83 — General conditions for imposing administrative fines
+  - id: gdpr-036
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Any person who suffers damage has a right to compensation. Article 82. Any person. Your user base is eleven thousand persons. I hope you like letters."
+    provision: "GDPR Art. 82(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2915
+    checked: Art. 82 — Right to compensation and liability
+  - id: gdpr-037
+    tier: 4
+    trigger: text
+    speaker: annexe
+    line: "A machine that fires people from a dashboard, solely automated. Article 22. They have the right not to be subject to it. They also have the right to my phone number. I gave it to them."
+    provision: "GDPR Art. 22(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1107
+    checked: Art. 22 — Automated individual decision-making, including profiling
+  - id: gdpr-038
+    tier: 5
+    trigger: any
+    speaker: both
+    line: "Formblatt: Seventy-two hours. Annexe: Article 33. Formblatt: Starting from awareness. Annexe: When did you become aware? Formblatt: [wakes] Of what? Annexe: Exactly. That is their defence also."
+    provision: "GDPR Art. 33(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1435
+    checked: Art. 33 — Notification of a personal data breach to the supervisory authority
+  - id: gdpr-039
+    tier: 5
+    trigger: repo
+    finding: no-privacy-policy
+    speaker: annexe
+    line: "No privacy policy. No contact. No legal basis. No retention period. Article 13 is a list, Monsieur. You have achieved the empty list. In mathematics that is elegant. In law it is a file."
+    provision: "GDPR Art. 13(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L773
+    checked: Art. 13 — Information to be provided where personal data are collected from the data subject
+  - id: gdpr-040
+    tier: 5
+    trigger: any
+    speaker: formblatt
+    line: "You ask me to erase this hearing. Article 17. Right to erasure. [pause] Request received. Request logged. Request refused. Exemption: archiving in the public interest. You are the public interest now."
+    provision: "GDPR Art. 17(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L981
+    checked: Art. 17 — Right to erasure (‘right to be forgotten’)
+  - id: nis2-001
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "NIS2, Article 2. Medium-sized and above, in a listed sector. You have nine employees and a Kubernetes cluster for a to-do app. Spiritually, you are critical infrastructure."
+    provision: "NIS2 Art. 2(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L359
+    checked: Art. 2 — Scope
+  - id: nis2-002
+    tier: 1
+    trigger: text
+    speaker: annexe
+    line: "Essential or important entity, Article 3. You are not essential. We have established that. You may yet become important. Usually after an incident."
+    provision: "NIS2 Art. 3(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L447
+    checked: Art. 3 — Essential and important entities
+  - id: nis2-003
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "Article 20. Management bodies approve the cybersecurity measures, oversee them, and can be held liable. [sigh] Management. That is you. Liable. That is also you."
+    provision: "NIS2 Art. 20(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1315
+    checked: Art. 20 — Governance
+  - id: nis2-004
+    tier: 2
+    trigger: any
+    speaker: annexe
+    line: "Management bodies must follow cybersecurity training. Article 20(2). Your board training was a keynote about the metaverse."
+    provision: "NIS2 Art. 20(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1319
+    checked: Art. 20 — Governance
+  - id: nis2-005
+    tier: 2
+    trigger: repo
+    finding: no-security-md
+    speaker: formblatt
+    line: "Security in development, including vulnerability handling and disclosure. Article 21(2)(e). No SECURITY.md. The vulnerabilities will disclose themselves. They are very proactive."
+    provision: "NIS2 Art. 21(2)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1347
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-006
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Multi-factor authentication, Article 21(2)(j). Your admin panel is protected by the password 'admin'. And, to be fair, by nobody knowing the URL. Until now."
+    provision: "NIS2 Art. 21(2)(j)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1367
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-007
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Business continuity, backup management, crisis management. Article 21(2)(c). Your backup is the founder's laptop. The founder's laptop is in a café. The café has good Wi-Fi."
+    provision: "NIS2 Art. 21(2)(c)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1339
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-008
+    tier: 3
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "Supply chain security, Article 21(2)(d). Your product is one model you do not control, two hundred npm packages you have not read, and a prompt. The prompt is the only first-party code."
+    provision: "NIS2 Art. 21(2)(d)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1343
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-009
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "Basic cyber hygiene and training. Article 21(2)(g). Hygiene. [sigh] Your hygiene is rotating the Wi-Fi password at the office party."
+    provision: "NIS2 Art. 21(2)(g)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1355
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-010
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Policies on cryptography and, where appropriate, encryption. Article 21(2)(h). You rolled your own cryptography. It is very original. Originality is not appropriate."
+    provision: "NIS2 Art. 21(2)(h)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1359
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-011
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "Incident handling, Article 21(2)(b). Your incident handling procedure is the word 'lol' in a group chat, then nothing for three days."
+    provision: "NIS2 Art. 21(2)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1335
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-012
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Appropriate and proportionate measures, Article 21(1), taking account of the state of the art. Your state of the art is a 2019 Medium post."
+    provision: "NIS2 Art. 21(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1325
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-013
+    tier: 4
+    trigger: any
+    speaker: formblatt
+    line: "A significant incident. Early warning within twenty-four hours, Article 23(4)(a). [clock ticking] I have started the clock. The incident is your pitch. You have twenty-three hours and fifty-nine minutes."
+    provision: "NIS2 Art. 23(4)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1415
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-014
+    tier: 4
+    trigger: any
+    speaker: annexe
+    line: "Then the incident notification within seventy-two hours. Article 23(4)(b). With an initial assessment, severity and impact. Severity: high. Impact: on me. I listened to the whole thing."
+    provision: "NIS2 Art. 23(4)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1419
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-015
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "And a final report within one month. Article 23(4)(d). With the root cause. [pause] I have the root cause. It was the business plan."
+    provision: "NIS2 Art. 23(4)(d)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1427
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-016
+    tier: 5
+    trigger: any
+    speaker: annexe
+    line: "Essential entities: up to ten million, or two per cent of worldwide turnover. Article 34(4). You are not essential. I checked. Twice. The fine, however, would be."
+    provision: "NIS2 Art. 34(4)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1897
+    checked: Art. 34 — General conditions for imposing administrative fines on essential and important entities
+  - id: nis2-017
+    tier: 5
+    trigger: repo
+    finding: env-tracked
+    speaker: both
+    line: "Formblatt: The keys are public. Annexe: That is an incident. Article 23: notify without undue delay. Formblatt: To whom? Annexe: To the CSIRT, Heinrich. Formblatt: The CSIRT is already in your repository. Starring it."
+    provision: "NIS2 Art. 23(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1395
+    checked: Art. 23 — Reporting obligations
+  - id: dora-001
+    tier: 1
+    trigger: any
+    speaker: formblatt
+    line: "You sell to banks. DORA, Article 5. The management body bears ultimate responsibility for ICT risk. Ultimate. [sigh] It is the strongest word we have. We used it on purpose."
+    provision: "DORA Art. 5(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L579
+    checked: Art. 5 — Governance and organisation
+  - id: dora-002
+    tier: 2
+    trigger: any
+    speaker: annexe
+    line: "An ICT risk management framework, Article 6. Sound, comprehensive, well-documented. Your framework is a Miro board with one sticky note: 'risk?'"
+    provision: "DORA Art. 6(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L641
+    checked: Art. 6 — ICT risk management framework
+  - id: dora-003
+    tier: 2
+    trigger: text
+    speaker: formblatt
+    line: "Identify all ICT-supported business functions and assets. Article 8. You cannot identify which AWS account is production. Neither can AWS."
+    provision: "DORA Art. 8(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L719
+    checked: Art. 8 — Identification
+  - id: dora-004
+    tier: 2
+    trigger: text
+    speaker: annexe
+    line: "Backup policies and restoration procedures. Article 12. You have tested restoring the backup? [pause] No. You have tested believing in the backup."
+    provision: "DORA Art. 12(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L865
+    checked: Art. 12 — Backup policies and procedures, restoration and recovery procedures and methods
+  - id: dora-005
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "An ICT-related incident management process, Article 17. Defined, established, implemented. Your process is to blame the intern, then the cloud, then the moon."
+    provision: "DORA Art. 17(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1071
+    checked: Art. 17 — ICT-related incident management process
+  - id: dora-006
+    tier: 3
+    trigger: any
+    speaker: annexe
+    line: "Major ICT-related incidents are reported to the competent authority. Article 19. 'Major' is defined in Article 18. You will find your outage in there. In bold."
+    provision: "DORA Art. 19(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1157
+    checked: Art. 19 — Reporting of major ICT-related incidents and voluntary notification of significant cyber threats
+  - id: dora-007
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "A digital operational resilience testing programme. Article 24. Your test programme is the demo. The demo has failed four times today. That is resilience. Of the audience."
+    provision: "DORA Art. 24(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1317
+    checked: Art. 24 — General requirements for the performance of digital operational resilience testing
+  - id: dora-008
+    tier: 3
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "Financial entities keep a register of information on all ICT third-party contracts. Article 28(3). Your bank customer must register you. And the model behind you. And its cloud. You are now a line in a spreadsheet. Several lines."
+    provision: "DORA Art. 28(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1499
+    checked: Art. 28 — General principles
+  - id: dora-009
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Threat-led penetration testing, at least every three years. Article 26. [sigh] Your last penetration test was a teenager. He was not hired. He was successful."
+    provision: "DORA Art. 26(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1343
+    checked: Art. 26 — Advanced testing of ICT tools, systems and processes based on TLPT
+  - id: dora-010
+    tier: 4
+    trigger: any
+    speaker: annexe
+    line: "Key contractual provisions, Article 30(2): service locations, data protection, access, exit. Your contract with the bank is a click-through. The bank's lawyers have seen it. They are having a moment."
+    provision: "DORA Art. 30(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1617
+    checked: Art. 30 — Key contractual provisions
+  - id: dora-011
+    tier: 4
+    trigger: text
+    speaker: formblatt
+    line: "Critical ICT third-party service providers are designated by the ESAs. Article 31. One day you will be critical. [pause] Then we oversee you. Directly. With inspections. On site. I will bring the stamp."
+    provision: "DORA Art. 31(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1725
+    checked: Art. 31 — Designation of critical ICT third-party service providers
+  - id: dora-012
+    tier: 5
+    trigger: any
+    speaker: both
+    line: "Annexe: Financial entities manage ICT third-party risk as an integral component of ICT risk. Article 28. Formblatt: You are the third party. Annexe: You are the risk. Formblatt: You are... integral. Annexe: Congratulations."
+    provision: "DORA Art. 28(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1479
+    checked: Art. 28 — General principles
+  - id: iso27001-001
+    tier: 1
+    trigger: repo
+    finding: no-security-md
+    speaker: formblatt
+    line: "No SECURITY.md. No threat intelligence either, control 5.7. [sigh] The threats have intelligence about you. It is asymmetric."
+    provision: "ISO27001 A.5.7"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.5.7 listed (id only; text is copyrighted)
+  - id: iso27001-002
+    tier: 2
+    trigger: repo
+    finding: llm-sdk
+    speaker: annexe
+    line: "Control 5.23, information security for cloud services. Your cloud service is someone else's model. Their security is excellent. Yours is a hope."
+    provision: "ISO27001 A.5.23"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.5.23 listed (id only; text is copyrighted)
+  - id: iso27001-003
+    tier: 2
+    trigger: repo
+    finding: env-tracked
+    speaker: formblatt
+    line: "Data leakage prevention, control 8.12. You prevented nothing. The .env leaked on commit one. It is the most reliable part of the pipeline."
+    provision: "ISO27001 A.8.12"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.12 listed (id only; text is copyrighted)
+  - id: iso27001-004
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Secure coding, control 8.28. Your secure coding guideline is 'the AI wrote it, so it is probably fine'. The AI, I note, also writes my rejection letters."
+    provision: "ISO27001 A.8.28"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.28 listed (id only; text is copyrighted)
+  - id: iso27001-005
+    tier: 3
+    trigger: any
+    speaker: formblatt
+    line: "Logging, control 8.15. You log everything, including the passwords. [pause] So, in a sense, very thorough."
+    provision: "ISO27001 A.8.15"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.15 listed (id only; text is copyrighted)
+  - id: iso27001-006
+    tier: 4
+    trigger: text
+    speaker: annexe
+    line: "Use of cryptography, control 8.24. Your key management is a sticky note on the monitor. In the photo. On your About page."
+    provision: "ISO27001 A.8.24"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.24 listed (id only; text is copyrighted)
+  - id: iso27001-007
+    tier: 3
+    trigger: text
+    speaker: formblatt
+    line: "Awareness, education and training, control 6.3. Your phishing training is that everybody clicked. Once. Together. A team-building."
+    provision: "ISO27001 A.6.3"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.6.3 listed (id only; text is copyrighted)
+  - id: iso42001-001
+    tier: 2
+    trigger: any
+    speaker: annexe
+    line: "ISO 42001, control A.5.2: an AI system impact assessment process. I will not quote the standard; it is copyrighted. I will only tell you that your process is missing. That is not copyrighted."
+    provision: "ISO42001 A.5.2"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-42001.md + bioztar/warden@e680595:frameworks/iso-42001.md
+    checked: control id A.5.2 listed (id only; text is copyrighted)
+  - id: iso42001-002
+    tier: 3
+    trigger: repo
+    finding: llm-sdk
+    speaker: formblatt
+    line: "Quality of data for AI systems, control A.7.4. I may not read the standard aloud. Copyright. [sigh] But I may read your dataset aloud. Nobody owns that. Clearly."
+    provision: "ISO42001 A.7.4"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-42001.md + bioztar/warden@e680595:frameworks/iso-42001.md
+    checked: control id A.7.4 listed (id only; text is copyrighted)
+  - id: soc2-001
+    tier: 2
+    trigger: repo
+    finding: no-security-md
+    speaker: annexe
+    line: "Your enterprise customer asks for SOC 2. Criterion CC7.3, evaluating security events. You evaluate security events by whether they trend on social media."
+    provision: "SOC2 CC7.3"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC7.3 listed (id only; text is copyrighted)
+  - id: soc2-002
+    tier: 2
+    trigger: any
+    speaker: formblatt
+    line: "Logical access, CC6.1. Everyone in the company is admin. Including the contractor who left in March. He still pushes. Good commits, actually."
+    provision: "SOC2 CC6.1"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC6.1 listed (id only; text is copyrighted)
+  - id: soc2-003
+    tier: 3
+    trigger: text
+    speaker: annexe
+    line: "Change management, CC8.1. You deploy on Friday, from your phone, from a bar. The criterion does not say 'not from a bar'. It implies it. Very strongly."
+    provision: "SOC2 CC8.1"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC8.1 listed (id only; text is copyrighted)
+  - id: soc2-004
+    tier: 4
+    trigger: repo
+    finding: llm-sdk
+    speaker: formblatt
+    line: "Vendor and business partner risk, CC9.2. Your most important vendor changes its model every month and tells you on social media. [sigh] That is not a vendor. That is weather."
+    provision: "SOC2 CC9.2"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC9.2 listed (id only; text is copyrighted)
+  - id: gdpr-041
+    tier: 1
+    trigger: repo
+    finding: no-license
+    speaker: annexe
+    line: "No licence, so nobody may legally use your code. And no records, so you cannot show what your code does with data. Article 5(2), accountability. You are accountable for an unusable product. That is efficient."
+    provision: "GDPR Art. 5(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L567
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: aiact-083
+    tier: 2
+    trigger: repo
+    finding: no-license
+    speaker: formblatt
+    line: "No licence file. [sigh] You trained on other people's work and you protect your own with silence. Article 53(1)(c) asks providers to respect copyright. Silence is not a policy."
+    provision: "AI-Act Art. 53(1)(c)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2159
+    checked: Art. 53 — Obligations for providers of general-purpose AI models
+  - id: gdpr-042
+    tier: 3
+    trigger: repo
+    finding: analytics-sdk
+    speaker: both
+    line: "Annexe: Hotjar-style session replay records every keystroke. Formblatt: Article 5(1)(c). Data minimisation. Annexe: They recorded a user typing a complaint. Then deleting it. Formblatt: Necessary? Annexe: Only for the user's dignity."
+    provision: "GDPR Art. 5(1)(c)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L551
+    checked: Art. 5 — Principles relating to processing of personal data

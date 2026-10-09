@@ -1,0 +1,725 @@
+# DG ROAST asset manifest — read by tools/assetgen. Edit here; outputs go to assets/generated/<dir>/<id>.<ext>.
+# Prices: observed on fal.ai/models/<id>/llms.txt and docs.slng.ai on 2026-10-09 (list prices, not promos). See tools/assetgen/README.md.
+version: 1
+
+providers:
+  flux_t2i: &flux_t2i {provider: fal, model: blackforestlabs/flux-3/text-to-image, unit: image, unit_cost_usd: 0.048}
+  flux_edit: &flux_edit {provider: fal, model: blackforestlabs/flux-3/edit-image, unit: image, unit_cost_usd: 0.048}
+  trellis: &trellis {provider: fal, model: fal-ai/trellis, unit: generation, unit_cost_usd: 0.02}
+  h3_turbo: &h3_turbo {provider: fal, model: minimax/h3-max-turbo/image-to-video, unit: second, unit_cost_usd: 0.04}
+  lipsync: &lipsync {provider: fal, model: fal-ai/sync-lipsync/v3/image-to-video, unit: second, unit_cost_usd: 0.1333}
+  fish: &fish {provider: slng, model: slng/fish/tts:s2.1-pro, unit: minute, unit_cost_usd: 0.005}
+
+# Voice keys. `formblatt` / `annexe` / `council` are the defaults the speaking clips use (first pick in content/voices.md).
+voices:
+  formblatt: {<<: *fish, voice_id: 79d0bd3e4e5444b18f7b6d89b5927bf1, speed: 0.8}  # Fish stock voice 'Jordan'
+  formblatt-alt-adrian: {<<: *fish, voice_id: bf322df2096a46f18c579d0baa36f41d, speed: 0.8}  # Fish stock voice 'Adrian'
+  formblatt-alt-richard: {<<: *fish, voice_id: fbc1029c018041d4b17f2c1e57222dff, speed: 0.8}  # Fish stock voice 'Richard'
+  annexe: {<<: *fish, voice_id: e3cd384158934cc9a01029cd7d278634, speed: 0.92}  # Fish stock voice 'Laura'
+  annexe-alt-selene: {<<: *fish, voice_id: b347db033a6549378b48d00acb0d06cd, speed: 0.92}  # Fish stock voice 'Selene'
+  annexe-alt-carol: {provider: slng, model: cartesia/sonic:3, unit: minute, unit_cost_usd: 0.035, voice_id: bf991597-6c13-47e4-8411-91ec2de5c466}  # Cartesia 'Carol'
+  formblatt-alt-alaric: {provider: slng, model: cartesia/sonic:3, unit: minute, unit_cost_usd: 0.035, voice_id: 87748186-23bb-4158-a1eb-332911b0b708}  # Cartesia 'Alaric'
+  council: {provider: slng, model: slng/deepgram/aura:2-en, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-zeus-en}  # Deepgram Aura-2 'Zeus'
+
+assets:
+  # --- persona stills: neutral is text-to-image; the other four are edits of the approved neutral (identity anchor)
+  # Demo pairs use six officers; trilogue/kevin/chad/sandbox are optional (run with --include-optional if budget remains).
+  - id: formblatt-neutral
+    kind: still
+    official: formblatt
+    category: expression
+    prompt: "Dr. Heinrich Formblatt, a fictional 71-year-old Central European senior civil servant: thin white hair combed carefully over, heavy-lidded tired grey eyes behind wire-rimmed bifocals, deep lines around the mouth, a slightly shiny grey suit one size too big, beige shirt, narrow brown tie, seven different lanyards with blank plastic badges around his neck, a worn wooden rubber stamp in his right hand. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: formblatt-stamping
+    kind: still
+    official: formblatt
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: bringing a rubber stamp down hard onto a paper form on a desk in front of them, arm in motion, jaw set. Keep it photorealistic. No text, no logos, no flags."
+    reference: formblatt-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: formblatt-smug
+    kind: still
+    official: formblatt
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: formblatt-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: formblatt-appalled
+    kind: still
+    official: formblatt
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: formblatt-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: formblatt-asleep
+    kind: still
+    official: formblatt
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: formblatt-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: annexe-neutral
+    kind: still
+    official: annexe
+    category: expression
+    prompt: "Mme Ségolène Annexe-Vandamme, a fictional 58-year-old French director in a European administration: chin-length dark bob streaked with silver, sharp cheekbones, thin red-framed reading glasses, immaculate tailored navy suit, a single strand of pearls, perfectly still posture, a polite closed-mouth smile that does not reach her eyes. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: annexe-stamping
+    kind: still
+    official: annexe
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: bringing a rubber stamp down hard onto a paper form on a desk in front of them, arm in motion, jaw set. Keep it photorealistic. No text, no logos, no flags."
+    reference: annexe-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: annexe-smug
+    kind: still
+    official: annexe
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: annexe-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: annexe-appalled
+    kind: still
+    official: annexe
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: annexe-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: annexe-asleep
+    kind: still
+    official: annexe
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: annexe-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: trilogue-neutral
+    kind: still
+    official: trilogue
+    category: expression
+    prompt: "The Trilogue, a surreal but photorealistic fictional figure: one body in one grey suit with three heads side by side on one pair of shoulders — a bald man in his fifties, a woman in her sixties with grey curls, a bearded man in his forties — each head wearing a different blank lanyard badge, all three looking in slightly different directions. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: trilogue-stamping
+    kind: still
+    official: trilogue
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: all three heads arguing while one hand slams a rubber stamp onto a paper form. Keep it photorealistic. No text, no logos, no flags."
+    reference: trilogue-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: trilogue-smug
+    kind: still
+    official: trilogue
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: trilogue-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: trilogue-appalled
+    kind: still
+    official: trilogue
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: trilogue-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: trilogue-asleep
+    kind: still
+    official: trilogue
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: all three heads asleep, leaning on each other. Keep it photorealistic. No text, no logos, no flags."
+    reference: trilogue-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: grandma-gdpr-neutral
+    kind: still
+    official: grandma-gdpr
+    category: expression
+    prompt: "Oma Gerda, a fictional 84-year-old grandmother: white hair in a neat bun, reading glasses on a beaded chain, a soft lilac cardigan over a blouse, knitting needles in her hands holding a half-finished knitted rectangle in cookie-banner colours (no text), sitting in a worn armchair. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: grandma-gdpr-stamping
+    kind: still
+    official: grandma-gdpr
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: putting the knitting down to bring a rubber stamp down firmly on a paper form. Keep it photorealistic. No text, no logos, no flags."
+    reference: grandma-gdpr-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: grandma-gdpr-smug
+    kind: still
+    official: grandma-gdpr
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: grandma-gdpr-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: grandma-gdpr-appalled
+    kind: still
+    official: grandma-gdpr
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: grandma-gdpr-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: grandma-gdpr-asleep
+    kind: still
+    official: grandma-gdpr
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: grandma-gdpr-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: kevin-neutral
+    kind: still
+    official: kevin
+    category: expression
+    prompt: "Kevin from Compliance, a fictional 26-year-old compliance consultant: neat side-parted haircut, eager wide smile, slim-fit light-blue shirt, a lanyard with a blank badge, generic white wireless earbuds, a circular ring-light reflection visible in his eyes, a laptop covered in blank stickers held under one arm. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: kevin-stamping
+    kind: still
+    official: kevin
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: bringing a rubber stamp down hard onto a paper form on a desk in front of them, arm in motion, jaw set. Keep it photorealistic. No text, no logos, no flags."
+    reference: kevin-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: kevin-smug
+    kind: still
+    official: kevin
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: kevin-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: kevin-appalled
+    kind: still
+    official: kevin
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: kevin-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: kevin-asleep
+    kind: still
+    official: kevin
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: kevin-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: auditor-9000-neutral
+    kind: still
+    official: auditor-9000
+    category: expression
+    prompt: "AUDITOR-9000, a fictional 1987 beige mainframe terminal: a chunky yellowed beige CRT monitor whose green phosphor screen shows a simple face made of glowing dot pixels, a beige keyboard, a dot-matrix printer beside it with a long stream of perforated continuous-feed paper spilling to the floor, dusty basement lighting. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: auditor-9000-stamping
+    kind: still
+    official: auditor-9000
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: the dot-matrix printer violently printing, paper shooting out, the green pixel face frowning. Keep it photorealistic. No text, no logos, no flags."
+    reference: auditor-9000-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: auditor-9000-smug
+    kind: still
+    official: auditor-9000
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: the green pixel face showing a smug sideways smile. Keep it photorealistic. No text, no logos, no flags."
+    reference: auditor-9000-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: auditor-9000-appalled
+    kind: still
+    official: auditor-9000
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: the green pixel face showing wide shocked eyes and an O-shaped mouth, screen flickering. Keep it photorealistic. No text, no logos, no flags."
+    reference: auditor-9000-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: auditor-9000-asleep
+    kind: still
+    official: auditor-9000
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: the screen dimmed to a faint green standby glow with the pixel face's eyes as two flat lines. Keep it photorealistic. No text, no logos, no flags."
+    reference: auditor-9000-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: chad-neutral
+    kind: still
+    official: chad
+    category: expression
+    prompt: "Chad Whitmore III, a fictional American Big Tech policy executive in his mid-forties: tanned, perfectly styled hair, extremely white even teeth in a wide beaming smile, a navy quarter-zip pullover over a collared shirt, a blank visitor lobby badge on a lanyard, holding a reusable coffee cup with no branding. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: chad-stamping
+    kind: still
+    official: chad
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: bringing a rubber stamp down hard onto a paper form on a desk in front of them, arm in motion, jaw set. Keep it photorealistic. No text, no logos, no flags."
+    reference: chad-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: chad-smug
+    kind: still
+    official: chad
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: chad-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: chad-appalled
+    kind: still
+    official: chad
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: chad-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: chad-asleep
+    kind: still
+    official: chad
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: chad-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: de-vries-neutral
+    kind: still
+    official: de-vries
+    category: expression
+    prompt: "Inspector Pim de Vries, a fictional Dutch cyber-incident inspector in his mid-forties: close-cropped blond hair, square jaw, a black tactical vest worn over a grey suit and tie, a small radio clipped to the shoulder, holding a clipboard up in front of his chest like a riot shield, alert squinting eyes. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: de-vries-stamping
+    kind: still
+    official: de-vries
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: bringing a rubber stamp down hard onto a paper form on a desk in front of them, arm in motion, jaw set. Keep it photorealistic. No text, no logos, no flags."
+    reference: de-vries-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: de-vries-smug
+    kind: still
+    official: de-vries
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: de-vries-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: de-vries-appalled
+    kind: still
+    official: de-vries
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: de-vries-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: de-vries-asleep
+    kind: still
+    official: de-vries
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: de-vries-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: sandbox-neutral
+    kind: still
+    official: sandbox
+    category: expression
+    prompt: "Baroness Brigitte von Sandbox, a fictional aristocratic woman in her mid-sixties: silver hair swept up under a small diamond tiara, an emerald-green silk ball gown, long white evening gloves, holding a child's red plastic bucket and yellow plastic spade, delighted aristocratic expression. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: sandbox-stamping
+    kind: still
+    official: sandbox
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: bringing a rubber stamp down hard onto a paper form on a desk in front of them, arm in motion, jaw set. Keep it photorealistic. No text, no logos, no flags."
+    reference: sandbox-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: sandbox-smug
+    kind: still
+    official: sandbox
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: sandbox-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: sandbox-appalled
+    kind: still
+    official: sandbox
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: sandbox-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: sandbox-asleep
+    kind: still
+    official: sandbox
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: sandbox-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+    optional: true
+  - id: the-cookie-neutral
+    kind: still
+    official: the-cookie
+    category: expression
+    prompt: "The Cookie, a fictional sentient chocolate-chip cookie character the size of a person's torso: a large golden-brown chocolate-chip cookie with two small sad expressive eyes and a tiny mouth, wearing a tiny grey three-piece suit with a pocket watch chain, tiny arms, photorealistic food-photography textures. Neutral, attentive expression, looking at the camera. Photorealistic studio portrait photograph, chest-up, centred, 85mm lens, soft diffused office light, plain muted blue-grey seamless background, sharp focus on the face, natural skin texture. Entirely fictional person. No text, no logos, no flags, no emblems, no watermark."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: the-cookie-stamping
+    kind: still
+    official: the-cookie
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: using both tiny arms to slam a small rubber stamp onto a paper form. Keep it photorealistic. No text, no logos, no flags."
+    reference: the-cookie-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: the-cookie-smug
+    kind: still
+    official: the-cookie
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: a self-satisfied closed-mouth smile, one eyebrow raised, chin slightly lifted, eyes half-lidded. Keep it photorealistic. No text, no logos, no flags."
+    reference: the-cookie-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: the-cookie-appalled
+    kind: still
+    official: the-cookie
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: appalled: eyes wide, mouth slightly open, leaning back, one hand raised to the chest. Keep it photorealistic. No text, no logos, no flags."
+    reference: the-cookie-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  - id: the-cookie-asleep
+    kind: still
+    official: the-cookie
+    category: expression
+    prompt: "Same character as the reference image — identical face, hair, age, clothing, accessories, lighting, background, framing and camera. Change only the expression and pose: fallen asleep upright: head tilted to one side, eyes closed, mouth slightly open. Keep it photorealistic. No text, no logos, no flags."
+    reference: the-cookie-neutral
+    provider: *flux_edit
+    params: {"aspect_ratio": "3:4", "resolution": "1k"}
+  # --- backdrops (generic; no real institution, logos or flags)
+  - id: backdrop-brussels
+    kind: still
+    official: shared
+    category: backdrop
+    prompt: "Photorealistic wide shot of a generic, slightly dated European administrative meeting room: long pale-wood table, rows of identical grey chairs, microphones on goosenecks, interpretation booths with dark glass at the back, beige walls, fluorescent ceiling panels, stacks of ring binders and paper files, a single wilting office plant. Empty of people. No logos, no flags, no emblems, no readable text."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+  - id: backdrop-strasbourg
+    kind: still
+    official: shared
+    category: backdrop
+    prompt: "Photorealistic wide shot of a generic hemicycle-style parliamentary chamber: semicircular tiers of blue upholstered seats and wooden desks, a raised presiding bench, interpretation booths high on the walls, large screens switched off, cool daylight from a glass ceiling. Empty of people. Not any real building; no logos, no flags, no emblems, no readable text."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+  # --- stamp art (red ink on white; composited with multiply blend at runtime)
+  - id: stamp-refuse
+    kind: still
+    official: shared
+    category: stamp
+    prompt: "A single red rubber-stamp ink impression reading exactly \"REFUSÉ\" in bold condensed capital letters inside a double rectangular border, slightly rotated, uneven ink pressure, speckled texture and small ink voids, centred on a pure flat white background. Only those letters, spelled exactly with the accents shown. No other text, no emblems."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:2", "resolution": "1k"}
+  - id: stamp-incomplet
+    kind: still
+    official: shared
+    category: stamp
+    prompt: "A single red rubber-stamp ink impression reading exactly \"INCOMPLET\" in bold condensed capital letters inside a double rectangular border, slightly rotated, uneven ink pressure, speckled texture and small ink voids, centred on a pure flat white background. Only those letters, spelled exactly with the accents shown. No other text, no emblems."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:2", "resolution": "1k"}
+  - id: stamp-renvoye
+    kind: still
+    official: shared
+    category: stamp
+    prompt: "A single red rubber-stamp ink impression reading exactly \"RENVOYÉ EN COMMISSION\" in bold condensed capital letters inside a double rectangular border, slightly rotated, uneven ink pressure, speckled texture and small ink voids, centred on a pure flat white background. Only those letters, spelled exactly with the accents shown. No other text, no emblems."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "3:2", "resolution": "1k"}
+  # --- AI Act Art. 50 disclosure overlays, escalating with the tier (dark grey on white; multiply blend)
+  - id: watermark-tier1
+    kind: still
+    official: shared
+    category: watermark
+    prompt: "Flat graphic overlay on a pure white background: a small discreet corner label reading \"AI-generated\", in a sober dark grey sans-serif typeface like an official disclosure notice, crisp vector-like edges. Only that text, spelled exactly. No emblems, no flags, no logos."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+  - id: watermark-tier2
+    kind: still
+    official: shared
+    category: watermark
+    prompt: "Flat graphic overlay on a pure white background: a medium corner label reading \"AI-generated content — Art. 50\", in a sober dark grey sans-serif typeface like an official disclosure notice, crisp vector-like edges. Only that text, spelled exactly. No emblems, no flags, no logos."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+  - id: watermark-tier3
+    kind: still
+    official: shared
+    category: watermark
+    prompt: "Flat graphic overlay on a pure white background: a bold banner across the bottom reading \"THIS CONTENT IS AI-GENERATED (Art. 50)\", in a sober dark grey sans-serif typeface like an official disclosure notice, crisp vector-like edges. Only that text, spelled exactly. No emblems, no flags, no logos."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+  - id: watermark-tier4
+    kind: still
+    official: shared
+    category: watermark
+    prompt: "Flat graphic overlay on a pure white background: a large diagonal repeated pattern reading \"AI-GENERATED · Art. 50\", in a sober dark grey sans-serif typeface like an official disclosure notice, crisp vector-like edges. Only that text, spelled exactly. No emblems, no flags, no logos."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+  - id: watermark-tier5
+    kind: still
+    official: shared
+    category: watermark
+    prompt: "Flat graphic overlay on a pure white background: a huge full-frame diagonal official notice reading \"ARTIFICIALLY GENERATED — Art. 50(2) — DO NOT BELIEVE\" with a dotted border, in a sober dark grey sans-serif typeface like an official disclosure notice, crisp vector-like edges. Only that text, spelled exactly. No emblems, no flags, no logos."
+    provider: *flux_t2i
+    params: {"aspect_ratio": "16:9", "resolution": "1k"}
+
+  # --- voice samples: one audition line per shortlisted voice (content/voices.md)
+  - id: voice-formblatt
+    kind: voice
+    official: formblatt
+    category: audition
+    line: "Ah. Yes. The file. I have read the file. [sigh] Twice. And I regret to inform you... it is incomplete."
+    voice: formblatt
+    duration_s: 12
+    provider: *fish
+  - id: voice-formblatt-alt-adrian
+    kind: voice
+    official: formblatt
+    category: audition
+    line: "Ah. Yes. The file. I have read the file. [sigh] Twice. And I regret to inform you... it is incomplete."
+    voice: formblatt-alt-adrian
+    duration_s: 12
+    provider: *fish
+  - id: voice-formblatt-alt-richard
+    kind: voice
+    official: formblatt
+    category: audition
+    line: "Ah. Yes. The file. I have read the file. [sigh] Twice. And I regret to inform you... it is incomplete."
+    voice: formblatt-alt-richard
+    duration_s: 12
+    provider: *fish
+  - id: voice-formblatt-alt-alaric
+    kind: voice
+    official: formblatt
+    category: audition
+    line: "Ah. Yes. The file. I have read the file. [sigh] Twice. And I regret to inform you... it is incomplete."
+    voice: formblatt-alt-alaric
+    duration_s: 12
+    provider: *fish
+  - id: voice-annexe
+    kind: voice
+    official: annexe
+    category: audition
+    line: "Bonjour. I have read your proposal. It is very ambitious. Ambition is not, unfortunately, an annex."
+    voice: annexe
+    duration_s: 9
+    provider: *fish
+  - id: voice-annexe-alt-selene
+    kind: voice
+    official: annexe
+    category: audition
+    line: "Bonjour. I have read your proposal. It is very ambitious. Ambition is not, unfortunately, an annex."
+    voice: annexe-alt-selene
+    duration_s: 9
+    provider: *fish
+  - id: voice-annexe-alt-carol
+    kind: voice
+    official: annexe
+    category: audition
+    line: "Bonjour. I have read your proposal. It is very ambitious. Ambition is not, unfortunately, an annex."
+    voice: annexe-alt-carol
+    duration_s: 9
+    provider: *fish
+  - id: voice-council
+    kind: voice
+    official: shared
+    category: audition
+    line: "The Council has taken note. The Council will revert. The Council does not revert."
+    voice: council
+    duration_s: 7
+    provider: *fish
+
+  # --- 3D busts (optional stage models3d) from each persona's approved neutral still
+  - id: formblatt
+    kind: model3d
+    official: formblatt
+    category: bust
+    source_still: formblatt-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+  - id: annexe
+    kind: model3d
+    official: annexe
+    category: bust
+    source_still: annexe-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+  - id: trilogue
+    kind: model3d
+    official: trilogue
+    category: bust
+    source_still: trilogue-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+    optional: true
+  - id: grandma-gdpr
+    kind: model3d
+    official: grandma-gdpr
+    category: bust
+    source_still: grandma-gdpr-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+  - id: kevin
+    kind: model3d
+    official: kevin
+    category: bust
+    source_still: kevin-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+    optional: true
+  - id: auditor-9000
+    kind: model3d
+    official: auditor-9000
+    category: bust
+    source_still: auditor-9000-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+  - id: chad
+    kind: model3d
+    official: chad
+    category: bust
+    source_still: chad-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+    optional: true
+  - id: de-vries
+    kind: model3d
+    official: de-vries
+    category: bust
+    source_still: de-vries-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+  - id: sandbox
+    kind: model3d
+    official: sandbox
+    category: bust
+    source_still: sandbox-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+    optional: true
+  - id: the-cookie
+    kind: model3d
+    official: the-cookie
+    category: bust
+    source_still: the-cookie-neutral
+    provider: *trellis
+    params: {"texture_size": "1024"}
+
+  # --- minimal clip set (formblatt + annexe): idle, talking, stamp, verdict — 3–5 s each
+  - id: formblatt-idle
+    kind: clip-silent
+    official: formblatt
+    category: idle
+    prompt: "The man sits almost still behind his desk, breathing slowly, blinking heavily, adjusting his bifocals once. Locked-off camera, subtle motion only, seamless loop. Photorealistic, same person as the image."
+    source_still: formblatt-neutral
+    duration_s: 4
+    provider: *h3_turbo
+    params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
+  - id: formblatt-talking
+    kind: clip-silent
+    official: formblatt
+    category: talking
+    prompt: "The man speaks slowly and wearily to the camera, mouth moving as if talking, small tired hand gestures, one sigh. Locked-off camera, no cuts. Photorealistic, same person as the image."
+    source_still: formblatt-neutral
+    duration_s: 5
+    provider: *h3_turbo
+    params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
+  - id: formblatt-stamp
+    kind: clip-silent
+    official: formblatt
+    category: stamp
+    prompt: "The man lifts the wooden rubber stamp and slams it down hard on the form, the desk shudders, papers jump. Locked-off camera, no cuts. Photorealistic, same person as the image."
+    source_still: formblatt-stamping
+    duration_s: 3
+    provider: *h3_turbo
+    params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
+  - id: formblatt-verdict
+    kind: clip-speaking
+    official: formblatt
+    category: verdict
+    line: "The file is closed. Your file is refused. [sigh] It has been refused... thoroughly."
+    source_still: formblatt-neutral
+    voice: formblatt
+    duration_s: 5
+    provider: *lipsync
+  - id: annexe-idle
+    kind: clip-silent
+    official: annexe
+    category: idle
+    prompt: "The woman sits perfectly still, a faint polite smile, one slow blink, she straightens a pen on the desk. Locked-off camera, subtle motion only, seamless loop. Photorealistic, same person as the image."
+    source_still: annexe-neutral
+    duration_s: 4
+    provider: *h3_turbo
+    params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
+  - id: annexe-talking
+    kind: clip-silent
+    official: annexe
+    category: talking
+    prompt: "The woman speaks calmly and precisely to the camera, mouth moving as if talking, minimal gestures, she leans in slightly. Locked-off camera, no cuts. Photorealistic, same person as the image."
+    source_still: annexe-neutral
+    duration_s: 5
+    provider: *h3_turbo
+    params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
+  - id: annexe-stamp
+    kind: clip-silent
+    official: annexe
+    category: stamp
+    prompt: "The woman brings a rubber stamp down onto the form with one precise, unhurried movement, then aligns it with her fingertip. Locked-off camera, no cuts. Photorealistic, same person as the image."
+    source_still: annexe-stamping
+    duration_s: 3
+    provider: *h3_turbo
+    params: {"resolution": "768P", "prompt_expansion_mode": "disabled"}
+  - id: annexe-verdict
+    kind: clip-speaking
+    official: annexe
+    category: verdict
+    line: "Your startup is not illegal. It is merely... non-compliant. I have signed it."
+    source_still: annexe-neutral
+    voice: annexe
+    duration_s: 5
+    provider: *lipsync
