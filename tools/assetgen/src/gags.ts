@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { isMap, isSeq, parse, parseDocument } from "yaml";
 
 export const TRIGGERS = ["text", "dictation", "repo", "any"] as const;
-export const SPEAKERS = ["formblatt", "annexe", "both"] as const;
+export const SPEAKERS = ["formblatt", "annexe", "grandma-gdpr", "auditor-9000", "de-vries", "the-cookie", "both"] as const;
+/** `speaker: both` means the two officers of `pair` (docs/PERSONA.md "The pairs"). */
+export const PAIRS = {
+  commission: ["formblatt", "annexe"],
+  basement: ["grandma-gdpr", "auditor-9000"],
+  raid: ["de-vries", "the-cookie"],
+} as const;
 export const KNOWN_FINDINGS = [
   "no-license",
   "env-tracked",
@@ -24,6 +30,7 @@ export interface Gag {
   trigger: (typeof TRIGGERS)[number];
   finding?: string;
   speaker: (typeof SPEAKERS)[number];
+  pair?: keyof typeof PAIRS;
   line: string;
   provision: string;
   verified: boolean;
@@ -73,6 +80,9 @@ export function validateGags(raw: unknown): { gags: Gag[]; errors: string[] } {
     if (g?.finding !== undefined && !/^[a-z0-9-]+$/.test(g.finding)) errors.push(`${w}: finding must be kebab-case`);
     if (g?.finding !== undefined && g.trigger !== "repo") errors.push(`${w}: finding only with trigger repo`);
     if (!SPEAKERS.includes(g?.speaker)) errors.push(`${w}: speaker must be ${SPEAKERS.join("|")}`);
+    if (g?.speaker === "both" && !Object.hasOwn(PAIRS, String(g.pair)))
+      errors.push(`${w}: speaker both needs pair ${Object.keys(PAIRS).join("|")}`);
+    if (g?.speaker !== "both" && g?.pair !== undefined) errors.push(`${w}: pair only with speaker both`);
     if (!g?.line || typeof g.line !== "string") errors.push(`${w}: line missing`);
     if (!g?.provision || !parseProvision(g.provision)) errors.push(`${w}: provision '${g?.provision}' not in a recognised format`);
     if (typeof g?.verified !== "boolean") errors.push(`${w}: verified must be true|false`);
