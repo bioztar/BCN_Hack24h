@@ -13,6 +13,7 @@ Change it only through helm. Demo is **2026-10-10** — favour working over perf
 | `packages/server/`, `corpus/`, `Dockerfile`, `compose.yaml`, `.env.example` | **Lane B** | |
 | `packages/web/` | **Lane A** | built by Vite, served by the server as static files from `packages/web/dist` at `/` |
 | `packages/pocket/` | **Lane C** | the phone app (PWA) — built by Vite, served from `packages/pocket/dist` at `/pocket/` |
+| `packages/analyzer/` | **Lane D** | the real compliance analyzer: engine + vendored skills + Fastify plugin + its own UI at `/analyze/` |
 | `docs/` | helm | |
 
 Root: npm workspaces (`"workspaces": ["packages/*"]`), Node ≥ 22, TypeScript, ESM, vitest.
@@ -105,6 +106,22 @@ Errors: JSON `{ error: string }` with a proper status; 429 from the rate limiter
 - Develops against fixtures matching the types above until Lane B's server is up; no
   dependency on Lane B being merged first.
 
+## The analyzer (Lane D) — serious mode
+
+The roast is the hook; the analyzer is the real tool. It productionises the two skills
+(`bioztar/EU-AI-Act` → `eu-ai-act-compliance`, `bioztar/warden` → `warden-compliance`) as
+a web app. Lane D owns its own types inside `packages/analyzer/` (not `packages/shared`).
+
+- `packages/analyzer` exports `analyzerPlugin` (Fastify plugin). helm registers it in the
+  server at merge: `app.register(analyzerPlugin, { prefix: "/api/analyze" })`, and serves
+  `packages/analyzer/web/dist` at `/analyze/`.
+- `POST /api/analyze` (multipart or JSON): `{ kind: "idea" | "document" | "repo", text?, repoUrl?, file? }`
+  → `{ reportId }`; `GET /api/analyze/:reportId/stream` SSE progress + final report;
+  `GET /api/analyze/:reportId.md` Markdown export.
+- Reads `corpus/provisions.json` (Lane B builds it) for citation validation when present;
+  never writes `corpus/`.
+- The roast's verdict screen links to `/analyze/` ("Get the real report") — helm wires it.
+
 ## Assets
 
 Generated media is served from `/assets/...` (Lane B serves `assets/generated/` statically).
@@ -112,8 +129,18 @@ Persona YAML references them by path. Missing files must not break the UI.
 
 ## Deploy target
 
-`roast.pro7ocol.com`, uk-lon-1, Traefik labels as in `docs/reference/karen/compose.yaml`,
-container bound to `127.0.0.1:8796`, port 8796, SQLite under `/data`. helm deploys.
+One container, two hostnames (Vitaly, 2026-10-09 — DNS for both already points at uk-lon-1):
+
+| Host | Serves |
+|---|---|
+| `eurocrat.pro7ocol.com` | the roast stage at `/`, the pocket PWA at `/pocket/` (the stage links to it — a QR code + "Get your Pocket Eurocrat" button), the wall at `/wall` |
+| `warden.pro7ocol.com` | the analyzer: `/` redirects to `/analyze/`; the roast is not linked from here except a small footer easter egg |
+
+Traefik labels as in `docs/reference/karen/compose.yaml` with a rule
+`Host(\`eurocrat.pro7ocol.com\`) || Host(\`warden.pro7ocol.com\`)`, container bound to
+`127.0.0.1:8796`, port 8796, SQLite under `/data`. The server redirects `/` → `/analyze/`
+when the `Host` header is `warden.pro7ocol.com`. The roast verdict's "Get the real report"
+links to `https://warden.pro7ocol.com/analyze/`. helm deploys.
 
 ## Merge order
 
