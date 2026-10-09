@@ -105,6 +105,10 @@ final class DummyScene: SKScene {
         }
     }
 
+    /// Meltdown: both officers burn (particle fire + soot + panic). `extinguish()` puts them out.
+    func ignite() { puppets.forEach { $0.ignite() } }
+    func extinguish() { puppets.forEach { $0.extinguish() } }
+
     func shake() {
         puppets.forEach { $0.kick() }
         for p in papers {

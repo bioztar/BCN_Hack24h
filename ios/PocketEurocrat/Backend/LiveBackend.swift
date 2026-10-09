@@ -13,9 +13,31 @@ struct LiveBackend: RoastBackend {
     func personas() async throws -> [Persona] { try await get("api/personas") }
     func pairs() async throws -> [Pair] { try await get("api/pairs") }
 
-    func createCase(_ submission: Submission, officers: [String]) async throws -> CaseTicket {
-        try await send("api/case", json: ["submission": submission.json, "officers": officers])
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?) async throws -> CaseTicket {
+        var body: [String: Any] = ["submission": submission.json, "officers": officers]
+        if let applicantId { body["applicantId"] = applicantId }
+        return try await send("api/case", json: body)
     }
+
+    // MARK: v2
+
+    func register(_ input: ApplicantInput) async throws -> QueueTicket {
+        let body = try JSONEncoder().encode(input)
+        return try JSONDecoder().decode(QueueTicket.self, from: try await raw(request("api/applicants", method: "POST", body: body, type: "application/json")))
+    }
+
+    func betterPlace(applicantId: String, cause: BetterPlaceCause) async throws -> BetterPlaceResult {
+        try await send("api/applicants/\(applicantId)/better-place", json: ["cause": cause.rawValue])
+    }
+
+    func leaderboard(sort: LeaderboardSort, limit: Int) async throws -> [LeaderboardEntry] {
+        let page: LeaderboardPage = try await get("api/leaderboard?sort=\(sort.rawValue)&limit=\(limit)")
+        return page.entries
+    }
+
+    func leaderboardDetail(caseID: String) async throws -> LeaderboardDetail { try await get("api/leaderboard/\(caseID)") }
+
+    func leaderboardStream() -> AsyncThrowingStream<LeaderboardEntry, Error> { sse(path: "api/leaderboard/stream") }
 
     func reply(caseID: String, text: String) async throws {
         _ = try await raw(request("api/case/\(caseID)/reply", method: "POST", body: JSONSerialization.data(withJSONObject: ["text": text]), type: "application/json"))
@@ -29,18 +51,21 @@ struct LiveBackend: RoastBackend {
 
     func resolve(_ path: String) -> URL? { URL(string: path, relativeTo: base)?.absoluteURL }
 
-    func stream(caseID: String) -> AsyncThrowingStream<RoastEvent, Error> {
+    func stream(caseID: String) -> AsyncThrowingStream<RoastEvent, Error> { sse(path: "api/case/\(caseID)/stream") }
+
+    /// Server-sent events: every `data:` line is one JSON message decoded as `T` (undecodable ones are skipped).
+    private func sse<T: Decodable>(path: String) -> AsyncThrowingStream<T, Error> {
         AsyncThrowingStream { cont in
             let task = Task {
                 do {
-                    var req = URLRequest(url: base.appending(path: "api/case/\(caseID)/stream"))
+                    var req = URLRequest(url: base.appending(path: path))
                     req.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-                    req.timeoutInterval = 120
+                    req.timeoutInterval = 3600
                     let (bytes, resp) = try await session.bytes(for: req)
                     try Self.check(resp, data: Data())
                     for try await line in bytes.lines where line.hasPrefix("data:") {
                         let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
-                        if let ev = try? JSONDecoder().decode(RoastEvent.self, from: Data(payload.utf8)) { cont.yield(ev) }
+                        if let ev = try? JSONDecoder().decode(T.self, from: Data(payload.utf8)) { cont.yield(ev) }
                     }
                     cont.finish()
                 } catch { cont.finish(throwing: error) }
@@ -52,7 +77,8 @@ struct LiveBackend: RoastBackend {
     // MARK: plumbing
 
     private func request(_ path: String, method: String = "GET", body: Data? = nil, type: String? = nil) -> URLRequest {
-        var req = URLRequest(url: base.appending(path: path))
+        // URL(string:relativeTo:) keeps a "?query" intact (appending(path:) would percent-escape it).
+        var req = URLRequest(url: URL(string: path, relativeTo: base)!.absoluteURL)
         req.httpMethod = method
         req.httpBody = body
         if let type { req.setValue(type, forHTTPHeaderField: "Content-Type") }

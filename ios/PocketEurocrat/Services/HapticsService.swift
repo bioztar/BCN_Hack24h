@@ -39,6 +39,42 @@ final class HapticsService {
         play(engine, events: [slam, thud], curves: [fade])
     }
 
+    /// One tick per fine; heavier for bigger fines.
+    func fineTick(strength: Float) {
+        guard let engine else { UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: CGFloat(strength)); return }
+        let tick = CHHapticEvent(eventType: .hapticTransient, parameters: [
+            .init(parameterID: .hapticIntensity, value: min(max(strength, 0.2), 1)),
+            .init(parameterID: .hapticSharpness, value: 0.7),
+        ], relativeTime: 0)
+        play(engine, events: [tick], curves: [])
+    }
+
+    /// Meltdown: a growing crackle-rumble for `seconds`.
+    func rumble(seconds: Double) {
+        guard let engine else {
+            let g = UINotificationFeedbackGenerator()
+            g.notificationOccurred(.error)
+            return
+        }
+        let base = CHHapticEvent(eventType: .hapticContinuous, parameters: [
+            .init(parameterID: .hapticIntensity, value: 0.5),
+            .init(parameterID: .hapticSharpness, value: 0.25),
+        ], relativeTime: 0, duration: seconds)
+        let swell = CHHapticParameterCurve(parameterID: .hapticIntensityControl, controlPoints: [
+            .init(relativeTime: 0, value: 0.3), .init(relativeTime: seconds * 0.8, value: 1), .init(relativeTime: seconds, value: 0.2),
+        ], relativeTime: 0)
+        var events = [base]
+        var t = 0.1
+        while t < seconds {   // crackle
+            events.append(CHHapticEvent(eventType: .hapticTransient, parameters: [
+                .init(parameterID: .hapticIntensity, value: Float.random(in: 0.4...1)),
+                .init(parameterID: .hapticSharpness, value: Float.random(in: 0.5...1)),
+            ], relativeTime: t))
+            t += Double.random(in: 0.06...0.18)
+        }
+        play(engine, events: events, curves: [swell])
+    }
+
     /// Light tick when the official hits a wall.
     func bump(strength: Float) {
         guard let engine else { UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: CGFloat(strength)); return }

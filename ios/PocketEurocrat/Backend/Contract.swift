@@ -21,12 +21,21 @@ struct Provision: Codable, Hashable {
 enum Submission {
     case text(String)
     case dictation(String)
+    case repo(String)
 
     var json: [String: Any] {
         switch self {
         case .text(let t): return ["kind": "text", "text": t]
         case .dictation(let t): return ["kind": "dictation", "text": t]
+        case .repo(let url): return ["kind": "repo", "repoUrl": url]
         }
+    }
+
+    /// A pasted GitHub URL is a repo pitch; anything else is text (or dictation).
+    static func classify(_ input: String, dictated: Bool) -> Submission {
+        let t = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: t), url.scheme?.hasPrefix("http") == true, url.host?.hasSuffix("github.com") == true { return .repo(t) }
+        return dictated ? .dictation(t) : .text(t)
     }
 }
 
@@ -81,6 +90,21 @@ struct Notice: Codable, Equatable {
     let fineBasis: String
     let findings: [Finding]
     let issuedAt: String
+
+    // v2 (NoticeV2) — all optional so a v1 server still decodes.
+    var applicantId: String? = nil
+    var startupName: String? = nil
+    var founderName: String? = nil
+    var totalEur: Double? = nil
+    var totalJailMonths: Int? = nil
+    var meltdown: Bool? = nil
+    var tldr: [TLDR]? = nil
+    var recommendations: [Recommendation]? = nil
+    var reportUrl: String? = nil
+    var badgeUrl: String? = nil
+
+    struct TLDR: Codable, Equatable { let law: String; let oneLine: String }
+    struct Recommendation: Codable, Equatable { let text: String; var provision: Provision? = nil }
 }
 
 /// SSE payload of GET /api/case/:id/stream. Unknown `type`s decode to `.unknown` so a newer server never kills the stream.
@@ -90,11 +114,16 @@ enum RoastEvent: Decodable, Equatable {
     case line(RoastLine)
     case verdict(Notice)
     case audio(lineID: String, url: String)   // late TTS for an already-sent line
+    case fine(Fine)                           // v2: one per cited provision; drives the meter
+    case meltdown(totalEur: Double, totalJailMonths: Int)
+    case analyzing(stage: String, progress: Double)
     case awaiting(String)
     case error(String)
     case unknown
 
-    private enum Keys: String, CodingKey { case type, officers, ticket, tier, name, notice, prompt, message, id, audioUrl }
+    private enum Keys: String, CodingKey {
+        case type, officers, ticket, tier, name, notice, prompt, message, id, audioUrl, totalEur, totalJailMonths, stage, progress
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -103,6 +132,12 @@ enum RoastEvent: Decodable, Equatable {
         case "tier": self = .tier(try c.decode(Int.self, forKey: .tier), name: try c.decode(String.self, forKey: .name))
         case "line": self = .line(try RoastLine(from: decoder))
         case "verdict": self = .verdict(try c.decode(Notice.self, forKey: .notice))
+        case "fine": self = .fine(try Fine(from: decoder))
+        case "meltdown":
+            self = .meltdown(totalEur: try c.decode(Double.self, forKey: .totalEur),
+                             totalJailMonths: try c.decode(Int.self, forKey: .totalJailMonths))
+        case "analyzing":
+            self = .analyzing(stage: try c.decode(String.self, forKey: .stage), progress: try c.decode(Double.self, forKey: .progress))
         case "audio": self = .audio(lineID: try c.decode(String.self, forKey: .id), url: try c.decode(String.self, forKey: .audioUrl))
         case "awaiting": self = .awaiting(try c.decode(String.self, forKey: .prompt))
         case "error": self = .error(try c.decode(String.self, forKey: .message))

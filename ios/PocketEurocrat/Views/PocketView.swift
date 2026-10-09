@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PocketView: View {
     @Bindable var model: PocketModel
+    var onApplyAgain: () -> Void = {}
     @State private var pitch = ""
     @FocusState private var typing: Bool
 
@@ -15,7 +16,7 @@ struct PocketView: View {
 
             // Only this overlay rides up with the keyboard.
             VStack(spacing: 0) {
-                officerPicker
+                meter
                 Spacer()
                 if let line = model.subtitle { SubtitleBar(line: line, tier: model.tierName) }
                 controls
@@ -31,6 +32,10 @@ struct PocketView: View {
                 try? await Task.sleep(for: .seconds(1.5))
                 typing = true
             }
+            if ProcessInfo.processInfo.arguments.contains("-ignite") {   // meltdown screenshot aid
+                try? await Task.sleep(for: .seconds(1))
+                model.puppet.ignite()
+            }
             if ProcessInfo.processInfo.arguments.contains("-mouth-demo") {   // hold both mouths open for a screenshot
                 model.puppet.setMouth(open: 0.9, wide: 1, speaker: model.duo.first?.id)   // left officer only
             }
@@ -45,35 +50,49 @@ struct PocketView: View {
             Button("OK", role: .cancel) {}
         } message: { Text(model.errorMessage ?? "") }
         .sheet(item: .init(get: { model.notice.map(NoticeBox.init) }, set: { if $0 == nil { model.dismissVerdict() } })) { box in
-            VerdictCard(notice: box.notice)
-                .presentationDetents([.large])
+            VerdictCard(notice: box.notice, resolve: model.backend.resolve, onApplyAgain: {
+                model.dismissVerdict()
+                onApplyAgain()
+            })
+            .presentationDetents([.large])
         }
     }
 
-    /// "Formblatt & Annexe-Vandamme": last name of each officer (the persona name minus title/first name).
-    private func pairLabel(_ pair: Pair) -> String {
-        pair.officers.map { id in
-            let name = Roster.name(id)
-            return name.split(separator: " ").last.map(String.init) ?? name
-        }.joined(separator: " & ")
-    }
-
-    private var officerPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(model.pairs, id: \.id) { pair in
-                    Button { model.select(pair: pair.id) } label: {
-                        Text(pairLabel(pair))
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(Capsule().fill(Color.accentColor.opacity(pair.id == model.pairID ? 1 : 0.3)))
-                            .foregroundStyle(.white)
+    /// Fines / jail meter: spins up on every `fine` event; flames at meltdown. Shows the repo-analysis
+    /// progress instead while the officers read a GitHub pitch.
+    private var meter: some View {
+        VStack(spacing: 4) {
+            if let a = model.analyzing {
+                VStack(spacing: 6) {
+                    Text(a.stage).font(.footnote.weight(.semibold))
+                    ProgressView(value: a.progress).tint(.orange)
+                }
+                .padding(12)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            } else if model.totalEur > 0 || model.lastFine != nil {
+                HStack(alignment: .firstTextBaseline, spacing: 14) {
+                    Text(Money.short(model.totalEur))
+                        .font(.system(size: 34, weight: .black, design: .rounded).monospacedDigit())
+                        .foregroundStyle(model.meltedDown ? .orange : .red)
+                        .contentTransition(.numericText(value: model.totalEur))
+                    if model.totalJailMonths > 0 {
+                        Text("⛓ \(Money.jail(model.totalJailMonths))").font(.headline.monospacedDigit())
+                            .contentTransition(.numericText(value: Double(model.totalJailMonths)))
                     }
+                    if model.meltedDown { Text("🔥") .font(.title) }
+                }
+                .animation(.easeOut(duration: 0.6), value: model.totalEur)
+                if let f = model.lastFine {
+                    Text("\(f.provision.label) — \(f.caption)")
+                        .font(.caption2).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.center)
+                        .id(f.id)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .padding(.horizontal, 12)
         }
-        .padding(.top, 6)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12).padding(.top, 6)
+        .animation(.easeOut(duration: 0.25), value: model.lastFine?.id)
     }
 
     private var controls: some View {

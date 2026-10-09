@@ -1,37 +1,92 @@
 import SwiftUI
 
-/// The shareable notice. `VerdictCard` = sheet with share button; `NoticeFace` = the part rendered to an image.
+/// The verdict: shareable badge (server `badgeUrl`, or a locally rendered notice), TL;DR per law, the PDF
+/// report link, and "apply again".
 struct VerdictCard: View {
     let notice: Notice
-    @State private var image: Image?
+    /// Resolves a server-relative path (badgeUrl / reportUrl) against the API base; nil for the mock.
+    var resolve: (String) -> URL? = { _ in nil }
+    var onApplyAgain: () -> Void = {}
+
+    @State private var badge: Image?
     @Environment(\.displayScale) private var scale
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 16) {
-            NoticeFace(notice: notice)
+        ScrollView {
+            VStack(spacing: 16) {
+                Group {
+                    if let badge {
+                        badge.resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 10))
+                    } else {
+                        NoticeFace(notice: notice)
+                    }
+                }
+
+                actions
+
+                if let tldr = notice.tldr, !tldr.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TL;DR").font(.headline)
+                        ForEach(Array(tldr.enumerated()), id: \.offset) { _, row in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(row.law).font(.caption.monospaced().weight(.bold)).foregroundStyle(.orange).frame(width: 78, alignment: .leading)
+                                Text(row.oneLine).font(.callout)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if let recs = notice.recommendations, !recs.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("How to adjust the idea").font(.headline)
+                        ForEach(Array(recs.enumerated()), id: \.offset) { _, r in
+                            Text("• " + r.text).font(.callout)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Button("Apply again with another startup", action: onApplyAgain).buttonStyle(.bordered)
+                Button("Close", action: dismiss.callAsFunction).font(.footnote)
+            }
+            .padding()
+        }
+        .task(id: notice) { await loadBadge() }
+    }
+
+    private var actions: some View {
+        VStack(spacing: 10) {
             HStack {
-                if let image {
-                    ShareLink(item: image, preview: SharePreview("Notice \(notice.serial)", image: image)) {
-                        Label("Share verdict", systemImage: "square.and.arrow.up")
+                if let badge {
+                    ShareLink(item: badge, preview: SharePreview("\(notice.startupName ?? notice.startup) — REFUSÉ", image: badge)) {
+                        Label("Share badge", systemImage: "square.and.arrow.up")
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                Link(destination: URL(string: "https://warden.pro7ocol.com/analyze/")!) {
-                    Label("Get the real report", systemImage: "doc.text.magnifyingglass")
+                if let path = notice.reportUrl, let url = resolve(path) {
+                    Link(destination: url) { Label("Open report (PDF)", systemImage: "doc.richtext") }
+                        .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
             }
-            Button("Close", action: dismiss.callAsFunction).font(.footnote)
+            Link(destination: URL(string: "https://warden.pro7ocol.com/analyze/")!) {
+                Label("Get the real report", systemImage: "doc.text.magnifyingglass")
+            }
+            .font(.footnote)
         }
-        .padding()
-        .task(id: notice) { render() }
     }
 
-    @MainActor private func render() {
+    /// Server badge when there is one; otherwise render the on-screen notice so sharing always works.
+    private func loadBadge() async {
+        if let path = notice.badgeUrl, let url = resolve(path),
+           let (data, _) = try? await URLSession.shared.data(from: url), let ui = UIImage(data: data) {
+            badge = Image(uiImage: ui)
+            return
+        }
         let renderer = ImageRenderer(content: NoticeFace(notice: notice).frame(width: 340).environment(\.colorScheme, .light))
         renderer.scale = scale
-        if let ui = renderer.uiImage { image = Image(uiImage: ui) }
+        if let ui = renderer.uiImage { badge = Image(uiImage: ui) }
     }
 }
 
@@ -39,14 +94,15 @@ struct NoticeFace: View {
     let notice: Notice
 
     private var fine: String {
-        notice.fineEur.formatted(.currency(code: "EUR").presentation(.narrow).precision(.fractionLength(0)))
+        (notice.totalEur ?? notice.fineEur).formatted(.currency(code: "EUR").presentation(.narrow).precision(.fractionLength(0)))
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("NOTICE OF NON-COMPLIANCE").font(.caption.weight(.heavy)).tracking(1.5)
             Text(notice.serial).font(.caption.monospaced()).foregroundStyle(.secondary)
-            Text(notice.startup).font(.system(.title, design: .serif, weight: .bold))
+            Text((notice.startupName ?? notice.startup) + (notice.meltdown == true ? " 🔥" : ""))
+                .font(.system(.title, design: .serif, weight: .bold))
             Divider()
             ForEach(Array(notice.findings.enumerated()), id: \.offset) { _, f in
                 VStack(alignment: .leading, spacing: 2) {
@@ -55,8 +111,11 @@ struct NoticeFace: View {
                 }
             }
             Divider()
-            Text("FINE").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+            Text("FINES").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
             Text(fine).font(.system(size: 34, weight: .black, design: .serif)).foregroundStyle(.red)
+            if let jail = notice.totalJailMonths, jail > 0 {
+                Text("+ \(Money.jail(jail)) custodial").font(.subheadline.weight(.semibold))
+            }
             Text(notice.fineBasis).font(.caption2).foregroundStyle(.secondary)
             Text(notice.officers.map(Roster.name).joined(separator: " & ")).font(.caption2.italic())
         }

@@ -1,49 +1,155 @@
 import Foundation
 
-/// Fixture backend: lets the whole app run with no server. Lines are placeholder gags in the
-/// spirit of content/gags.yaml (A0's checked bank replaces them once the live API is up).
+/// Fixture backend: runs the whole v2 flow (register → queue → better-place → case with fines/meltdown →
+/// verdict → leaderboard) with no server. Pitch flavours: any text containing "meltdown" or a GitHub URL ends
+/// in a meltdown; a URL also streams `analyzing` progress first.
 struct MockBackend: RoastBackend {
     var lineDelay: Duration = .milliseconds(900)
+
+    /// Case state shared across struct copies (pitch flavour, applicant, live leaderboard).
+    private final class Store: @unchecked Sendable {
+        let lock = NSLock()
+        var cases: [String: (pitch: Submission, applicantId: String?, officers: [String])] = [:]
+        var applicants: [String: ApplicantInput] = [:]
+        var board: [LeaderboardEntry] = MockBackend.seedBoard
+        var listeners: [UUID: AsyncThrowingStream<LeaderboardEntry, Error>.Continuation] = [:]
+    }
+    private static let store = Store()
 
     func personas() async throws -> [Persona] { Roster.officers }
     func pairs() async throws -> [Pair] { Roster.pairs }
 
-    func createCase(_ submission: Submission, officers: [String]) async throws -> CaseTicket {
-        CaseTicket(caseId: "mock-\(officers.joined(separator: "+"))", ticket: 4812, officers: officers)
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?) async throws -> CaseTicket {
+        let id = "mock-\(officers.joined(separator: "+"))-\(UUID().uuidString.prefix(6))"
+        Self.store.lock.withLock { Self.store.cases[id] = (submission, applicantId, officers) }
+        return CaseTicket(caseId: id, ticket: 4812, officers: officers)
     }
 
     func reply(caseID: String, text: String) async throws {}
     func transcribe(audio: Data, contentType: String) async throws -> String {
         "We use AI to match dogs with remote jobs. Pre-seed, no revenue, no lawyer."
     }
-    func resolve(_ path: String) -> URL? { nil }
+    func resolve(_ path: String) -> URL? { URL(string: path) }
+
+    // MARK: v2
+
+    func register(_ input: ApplicantInput) async throws -> QueueTicket {
+        try await Task.sleep(for: .milliseconds(400))
+        let id = "app-\(UUID().uuidString.prefix(8))"
+        Self.store.lock.withLock { Self.store.applicants[id] = input }
+        return QueueTicket(applicantId: id, ticket: Int.random(in: 10_000...99_999), position: 2_417_906,
+                           etaText: "Estimated decision: Q3 2031", countdownSec: 35)
+    }
+
+    func betterPlace(applicantId: String, cause: BetterPlaceCause) async throws -> BetterPlaceResult {
+        try await Task.sleep(for: .milliseconds(500))
+        return BetterPlaceResult(position: 1, skipped: 2_417_905, cause: cause,
+                                 quip: "\(cause.label)! Noted, filed, and used to skip 2,417,905 less virtuous applicants.")
+    }
+
+    func leaderboard(sort: LeaderboardSort, limit: Int) async throws -> [LeaderboardEntry] {
+        let all = Self.store.lock.withLock { Self.store.board }
+        let sorted: [LeaderboardEntry]
+        switch sort {
+        case .fines: sorted = all.sorted { $0.totalEur > $1.totalEur }
+        case .jail: sorted = all.sorted { $0.totalJailMonths > $1.totalJailMonths }
+        case .recent: sorted = all.sorted { $0.issuedAt > $1.issuedAt }
+        }
+        return Array(sorted.prefix(limit))
+    }
+
+    func leaderboardStream() -> AsyncThrowingStream<LeaderboardEntry, Error> {
+        AsyncThrowingStream { cont in
+            let id = UUID()
+            Self.store.lock.withLock { Self.store.listeners[id] = cont }
+            cont.onTermination = { _ in _ = Self.store.lock.withLock { Self.store.listeners.removeValue(forKey: id) } }
+        }
+    }
+
+    func leaderboardDetail(caseID: String) async throws -> LeaderboardDetail {
+        guard let entry = Self.store.lock.withLock({ Self.store.board.first { $0.caseId == caseID } }) else {
+            throw URLError(.fileDoesNotExist)
+        }
+        return LeaderboardDetail(entry: entry, findings: Self.findings)
+    }
+
+    // MARK: roast
+
+    private static let aiAct = Provision(id: "ai-act-6", label: "AI Act Art. 6(3)", title: "Derogation from high-risk", url: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj")
+    private static let gdpr = Provision(id: "gdpr-33", label: "GDPR Art. 33", title: "Notification of a personal data breach", url: "https://eur-lex.europa.eu/eli/reg/2016/679/oj")
+    private static let nis2 = Provision(id: "nis2-21", label: "NIS2 Art. 21", title: "Cybersecurity risk-management measures", url: "https://eur-lex.europa.eu/eli/dir/2022/2555/oj")
+    private static let findings: [Notice.Finding] = [
+        .init(text: "Undocumented Article 6(3) derogation.", provision: aiAct),
+        .init(text: "No breach-notification process; no breach noticed either.", provision: gdpr),
+    ]
 
     func stream(caseID: String) -> AsyncThrowingStream<RoastEvent, Error> {
-        let ids = caseID.dropFirst("mock-".count).split(separator: "+").map(String.init)
+        let ids = Self.store.lock.withLock { Self.store.cases[caseID]?.officers } ?? Roster.pairs[0].officers
         let (a, b) = (ids.first ?? "formblatt", ids.last ?? "annexe")
-        let art = Provision(id: "ai-act-6", label: "AI Act Art. 6(3)", title: "Derogation from high-risk", url: "https://eur-lex.europa.eu/eli/reg/2024/1689/oj")
-        let gdpr = Provision(id: "gdpr-33", label: "GDPR Art. 33", title: "Notification of a personal data breach", url: "https://eur-lex.europa.eu/eli/reg/2016/679/oj")
-        let script: [RoastEvent] = [
-            .tier(1, name: "Pre-consultation"),
-            .line(RoastLine(id: "m1", speaker: a, text: "Is it an AI system? Article 3, point 1. Varying levels of autonomy. Your pitch has one level. It is called 'next slide'.")),
-            .line(RoastLine(id: "m2", speaker: b, text: "I have read your pitch. Fortunately for you, I read slowly.", provisions: [art])),
-            .tier(2, name: "Committee"),
-            .line(RoastLine(id: "m3", speaker: a, text: "You say it is not high-risk. A derogation! You must document it. You have not documented it.", provisions: [art])),
-            .line(RoastLine(id: "m4", speaker: b, text: "Breach notification within 72 hours. You have not noticed the breach. This is the breach.", provisions: [gdpr], stamp: "REFUSÉ")),
-            .verdict(Notice(
-                serial: "L-2026/04812", startup: "DogJobs.ai", officers: [a, b], fineEur: 35_000_000,
-                fineBasis: "€35M or 7% of worldwide turnover, whichever is higher — AI Act Art. 99(3)",
-                findings: [
-                    .init(text: "Undocumented Article 6(3) derogation.", provision: art),
-                    .init(text: "No breach-notification process; no breach noticed either.", provision: gdpr),
-                ],
-                issuedAt: "2026-10-09T20:00:00Z")),
-        ]
+        let state = Self.store.lock.withLock { Self.store.cases[caseID] }
+        var isRepo = false, wantsMeltdown = false
+        if let sub = state?.pitch {
+            switch sub {
+            case .repo: isRepo = true; wantsMeltdown = true
+            case .text(let t), .dictation(let t): wantsMeltdown = t.lowercased().contains("meltdown")
+            }
+        }
+        let applicant = state?.applicantId.flatMap { id in Self.store.lock.withLock { Self.store.applicants[id] } }
+        let startup = applicant?.startupName ?? "DogJobs.ai"
+
+        // Fine ladder: (amount, jail months). The big last one crosses the €1bn meltdown threshold when asked.
+        let amounts: [(Double, Int)] = [(35_000_000, 0), (7_500_000, 0), (20_000_000, 36), (10_000_000, 0), (15_000_000, 60),
+                                        wantsMeltdown ? (1_100_000_000, 1_200) : (42_000_000, 12)]
+        var script: [RoastEvent] = []
+        if isRepo {
+            for (i, stage) in ["Cloning repository…", "Counting LLM SDKs…", "Reading your .env (tracked, naturally)…", "Judging your README…"].enumerated() {
+                script.append(.analyzing(stage: stage, progress: Double(i + 1) / 4))
+            }
+        }
+        script.append(.tier(1, name: "Pre-consultation"))
+        script.append(.line(RoastLine(id: "m1", speaker: a, text: "Is it an AI system? Article 3, point 1. Varying levels of autonomy. Your pitch has one level. It is called 'next slide'.")))
+        var total = 0.0, jail = 0
+        func fine(_ i: Int, _ p: Provision, _ caption: String) {
+            total += amounts[i].0; jail += amounts[i].1
+            script.append(.fine(Fine(id: "f\(i)", provision: p, amountEur: amounts[i].0, jailMonths: amounts[i].1,
+                                     totalEur: total, totalJailMonths: jail, caption: caption)))
+        }
+        fine(0, Self.aiAct, "Next slide: not a level of autonomy.")
+        script.append(.line(RoastLine(id: "m2", speaker: b, text: "I have read your pitch. Fortunately for you, I read slowly.", provisions: [Self.aiAct])))
+        fine(1, Self.gdpr, "The dog did not consent.")
+        script.append(.tier(2, name: "Committee"))
+        script.append(.line(RoastLine(id: "m3", speaker: a, text: "You say it is not high-risk. A derogation! You must document it. You have not documented it.", provisions: [Self.aiAct])))
+        fine(2, Self.nis2, "Your incident response plan is a group chat.")
+        fine(3, Self.gdpr, "Breach noticed in 2031, estimated.")
+        script.append(.line(RoastLine(id: "m4", speaker: b, text: "Breach notification within 72 hours. You have not noticed the breach. This is the breach.", provisions: [Self.gdpr], stamp: "REFUSÉ")))
+        fine(4, Self.nis2, "Supply chain: one dog.")
+        fine(5, Self.aiAct, wantsMeltdown ? "Cumulative: you have exceeded the European budget." : "Rounding error in your disfavour.")
+        let melted = total >= meltdownEur || jail >= meltdownJailMonths
+        if melted { script.append(.meltdown(totalEur: total, totalJailMonths: jail)) }
+
+        let notice = Notice(
+            serial: "L-2026/04812", startup: startup, officers: [a, b], fineEur: total,
+            fineBasis: "€35M or 7% of worldwide turnover, whichever is higher — AI Act Art. 99(3)",
+            findings: Self.findings, issuedAt: ISO8601DateFormatter().string(from: Date()),
+            applicantId: state?.applicantId, startupName: startup, founderName: applicant?.founderName,
+            totalEur: total, totalJailMonths: jail, meltdown: melted,
+            tldr: [.init(law: "AI Act", oneLine: "High-risk derogation undocumented; transparency duties unmet."),
+                   .init(law: "GDPR", oneLine: "No lawful basis for the dog; no breach process.")],
+            recommendations: [.init(text: "Document the Article 6(3) derogation before launch.", provision: Self.aiAct),
+                              .init(text: "Appoint a DPO. The dog does not qualify.", provision: Self.gdpr)],
+            reportUrl: nil, badgeUrl: nil)
+        script.append(.verdict(notice))
+
+        let entry = LeaderboardEntry(caseId: caseID, startupName: startup, founderName: applicant?.founderName,
+                                     oneLiner: applicant?.oneLiner, photoUrl: nil, totalEur: total, totalJailMonths: jail,
+                                     meltdown: melted, topLaws: ["AI Act", "GDPR", "NIS2"], issuedAt: ISO8601DateFormatter().string(from: Date()))
+        let delay = lineDelay
         return AsyncThrowingStream { cont in
             let task = Task {
                 for ev in script {
-                    try? await Task.sleep(for: lineDelay)
+                    try? await Task.sleep(for: delay)
                     if Task.isCancelled { break }
+                    if case .verdict = ev { Self.publish(entry) }
                     cont.yield(ev)
                 }
                 cont.finish()
@@ -51,4 +157,29 @@ struct MockBackend: RoastBackend {
             cont.onTermination = { _ in task.cancel() }
         }
     }
+
+    private static func publish(_ entry: LeaderboardEntry) {
+        let listeners: [AsyncThrowingStream<LeaderboardEntry, Error>.Continuation] = store.lock.withLock {
+            store.board.removeAll { $0.caseId == entry.caseId }
+            store.board.append(entry)
+            return Array(store.listeners.values)
+        }
+        listeners.forEach { $0.yield(entry) }
+    }
+
+    private static let seedBoard: [LeaderboardEntry] = {
+        func e(_ n: String, _ f: String, _ one: String, _ eur: Double, _ jail: Int, _ melt: Bool, _ laws: [String], _ ago: Int) -> LeaderboardEntry {
+            LeaderboardEntry(caseId: "seed-\(n)", startupName: n, founderName: f, oneLiner: one, photoUrl: nil, totalEur: eur,
+                             totalJailMonths: jail, meltdown: melt, topLaws: laws,
+                             issuedAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(Double(-ago * 60))))
+        }
+        return [
+            e("48K", "Pavel K.", "Uber for compliance", 1_240_000_000, 1_200, true, ["AI Act", "GDPR", "DSA"], 5),
+            e("LLMeow", "Ines R.", "Cat translation as a service", 410_000_000, 480, false, ["AI Act", "GDPR"], 12),
+            e("Brainbnb", "Tom A.", "Airbnb for unused thoughts", 220_000_000, 96, false, ["GDPR", "ePrivacy"], 18),
+            e("FinOwl", "Sofia B.", "Crypto for pensioners", 95_000_000, 240, false, ["MiCA", "DORA"], 25),
+            e("Stampede", "Luca M.", "Blockchain stamps", 61_000_000, 0, false, ["DORA"], 31),
+            e("Gerrit AI", "Gerrit V.", "Pitch coach that also lies", 38_000_000, 36, false, ["AI Act"], 44),
+        ]
+    }()
 }

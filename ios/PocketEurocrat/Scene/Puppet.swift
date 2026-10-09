@@ -138,6 +138,11 @@ final class Puppet {
         let rate: CGFloat = mouthTarget > mouthOpen ? 40 : 18   // snappy open, softer close
         mouthOpen += (mouthTarget - mouthOpen) * min(1, dt * rate)
         mouthWide += (mouthWideTarget - mouthWide) * min(1, dt * 20)
+        charNow = burning ? min(1, charNow + dt / 5) : max(0, charNow - dt)   // chars over ~5 s, recovers fast
+        if burning, case .upright = stance {
+            panicClock += dt
+            if panicClock > 0.14 { panicClock = 0; omega += CGFloat.random(in: -1.6...1.6) }   // frantic flailing
+        }
         applyMouth()
         focusNow += (focus - focusNow) * min(1, dt * 8)
 
@@ -204,6 +209,76 @@ final class Puppet {
         onDownChange?()
     }
 
+    // MARK: meltdown
+
+    private var burning = false
+    private var charNow: CGFloat = 0
+    private var panicClock: CGFloat = 0
+    private var fireNodes: [SCNNode] = []
+
+    /// Particle fire in front of the bust (SceneKit particles inside the figure scene, so they are depth-sorted
+    /// with the relief — SpriteKit emitters get painted over by the SK3DNode), plus soot and a frantic wobble.
+    func ignite() {
+        guard !burning else { return }
+        burning = true
+        // (y, width of the emitter strip, birth rate) — body, chest, head; figure is 2.0 units tall.
+        let layers: [(y: Float, width: CGFloat, rate: CGFloat)] = [(-0.80, 1.5, 110), (-0.15, 1.0, 80), (0.50, 0.6, 60)]
+        for l in layers {
+            let ps = SCNParticleSystem()
+            ps.particleImage = Puppet.flameImage
+            ps.birthRate = l.rate
+            ps.particleLifeSpan = 1.0
+            ps.particleLifeSpanVariation = 0.4
+            ps.emitterShape = SCNPlane(width: l.width, height: 0.1)
+            ps.emittingDirection = SCNVector3(0, 1, 0)
+            ps.spreadingAngle = 28
+            ps.particleVelocity = 1.5
+            ps.particleVelocityVariation = 0.6
+            ps.particleSize = 0.2
+            ps.particleSizeVariation = 0.25
+            ps.particleColor = UIColor(red: 1, green: 0.55, blue: 0.1, alpha: 1)
+            ps.particleColorVariation = SCNVector4(0.08, 0.3, 0.05, 0.1)
+            ps.blendMode = .additive
+            ps.isLightingEnabled = false
+            ps.isAffectedByGravity = false
+            ps.loops = true
+            let sizeOverLife = CAKeyframeAnimation()
+            sizeOverLife.values = [0.08, 0.24, 0.04]   // absolute sizes in figure units over the particle life
+            sizeOverLife.keyTimes = [0, 0.3, 1]
+            ps.propertyControllers = [
+                .size: SCNParticlePropertyController(animation: sizeOverLife),
+                .opacity: SCNParticlePropertyController(animation: {
+                    let a = CAKeyframeAnimation()
+                    a.values = [0.0, 0.8, 0.5, 0.0]
+                    a.keyTimes = [0, 0.15, 0.6, 1]
+                    return a
+                }()),
+            ]
+            let n = SCNNode()
+            n.position = SCNVector3(0, l.y, 1.1)   // in front of the nearest relief point (≤ 0.9)
+            n.addParticleSystem(ps)
+            figureScene.rootNode.addChildNode(n)
+            fireNodes.append(n)
+        }
+    }
+
+    func extinguish() {
+        burning = false
+        fireNodes.forEach { $0.removeFromParentNode() }
+        fireNodes = []
+    }
+
+    /// Soft white blob used for every flame particle (tinted by the particle colour).
+    private static let flameImage: UIImage = {
+        let size = CGSize(width: 64, height: 64)
+        return UIGraphicsImageRenderer(size: size).image { r in
+            let colors = [UIColor.white.cgColor, UIColor(white: 1, alpha: 0).cgColor] as CFArray
+            let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+            r.cgContext.drawRadialGradient(grad, startCenter: CGPoint(x: 32, y: 32), startRadius: 0,
+                                           endCenter: CGPoint(x: 32, y: 32), endRadius: 32, options: [])
+        }
+    }()
+
     // MARK: figure
 
     private func refreshFigure() {
@@ -220,6 +295,7 @@ final class Puppet {
         for m in mouthMaterials {   // head and body share one material; setting twice is harmless
             m.setValue(NSNumber(value: Float(mouthOpen)), forKey: "mouthOpen")
             m.setValue(NSNumber(value: Float(mouthWide)), forKey: "mouthWide")
+            m.setValue(NSNumber(value: Float(charNow)), forKey: "charAmount")
         }
     }
 

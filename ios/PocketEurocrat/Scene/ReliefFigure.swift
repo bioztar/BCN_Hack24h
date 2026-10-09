@@ -78,6 +78,7 @@ enum ReliefFigure {
     float mouthHW;
     float mouthHH;
     float mouthIW;
+    float charAmount;
     #pragma body
     float2 uv = _surface.diffuseTexcoord;
     float halfH = mouthHH * 0.5;
@@ -89,6 +90,11 @@ enum ReliefFigure {
     float teeth = (1.0 - smoothstep(0.08, 0.30, depth)) * (1.0 - smoothstep(0.5, 0.85, abs(d.x))) * smoothstep(0.2, 0.5, mouthOpen);
     cavity = mix(cavity, float3(0.78, 0.74, 0.68), teeth * 0.5);
     _surface.diffuse.rgb = mix(_surface.diffuse.rgb, cavity, k);
+    // Meltdown: burn marks creep up from the bottom — noisy soot, darkening and a dull ember tint.
+    float n = fract(sin(dot(floor(uv * 48.0), float2(12.9898, 78.233))) * 43758.5453);
+    float reach = clamp(charAmount * 1.5 - (1.0 - uv.y) * 0.5 + (n - 0.5) * 0.35, 0.0, 1.0);
+    float3 soot = _surface.diffuse.rgb * 0.32 + float3(0.10, 0.02, 0.0) * (1.0 - reach);
+    _surface.diffuse.rgb = mix(_surface.diffuse.rgb, soot, reach * min(charAmount * 2.0, 1.0));
     // Soft left/right image borders, where the cut-out is cropped (a hard crop edge shows where busts overlap).
     float side = smoothstep(0.0, 0.10, uv.x) * (1.0 - smoothstep(0.90, 1.0, uv.x));
     _surface.diffuse.a *= side;
@@ -141,7 +147,7 @@ enum ReliefFigure {
         let m = mouth ?? MouthStore.Rect(u: -5, v: 0, hw: 0.05, hh: 0.02, iw: 0.04)   // no mouth: cavity off-image
         let values: [(String, Float)] = [
             ("mouthU", m.u), ("mouthV", m.v), ("mouthHW", m.hw), ("mouthHH", m.hh), ("mouthIW", m.iw),
-            ("mouthOpen", 0), ("mouthWide", 1),
+            ("mouthOpen", 0), ("mouthWide", 1), ("charAmount", 0),
         ]
         for (key, value) in values { material.setValue(NSNumber(value: value), forKey: key) }
         return material
@@ -201,6 +207,14 @@ enum ReliefFigure {
                 let ramp = t * t * (3 - 2 * t)           // smoothstep
                 z[j * nx + i] *= relief * (0.35 + 0.65 * ramp)
             }
+        }
+
+        // Soft-clamp protruding regions (the raised stamp hand is the nearest thing in the photo and smears when it
+        // is pulled that far forward): above the 85th percentile of the figure's depth, keep only 25% of the excess.
+        let used = zip(z, inside).filter { $0.1 }.map(\.0).sorted()
+        if used.count > 100 {
+            let cap = used[used.count * 85 / 100]
+            for i in 0..<z.count where z[i] > cap { z[i] = cap + (z[i] - cap) * 0.25 }
         }
 
         // Dilate by one cell: the photo's alpha (not the mesh) defines the silhouette, so never cut inside it.

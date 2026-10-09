@@ -20,6 +20,15 @@ final class PocketModel {
     var notice: Notice?
     var errorMessage: String?
 
+    // v2 roast mini-game: running totals from `fine` events, meltdown, repo-analysis progress.
+    var totalEur: Double = 0
+    var totalJailMonths = 0
+    var lastFine: Fine?
+    var meltedDown = false
+    var analyzing: (stage: String, progress: Double)?
+    /// Set by the flow once the founder registered; sent with the case so the verdict lands on the leaderboard.
+    @ObservationIgnored var applicantId: String?
+
     let puppet: DummyScene = {
         let s = DummyScene(size: CGSize(width: 390, height: 700))
         s.scaleMode = .resizeFill
@@ -189,8 +198,9 @@ final class PocketModel {
                 try await backend.reply(caseID: existing, text: pitch)
                 id = existing
             } else {
-                let sub: Submission = dictated ? .dictation(pitch) : .text(pitch)
-                id = try await backend.createCase(sub, officers: pair.officers).caseId
+                resetCase()
+                id = try await backend.createCase(Submission.classify(pitch, dictated: dictated),
+                                                  officers: pair.officers, applicantId: applicantId).caseId
                 caseID = id
             }
             phase = .roasting
@@ -244,6 +254,22 @@ final class PocketModel {
             }
             if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6), speaker: line.speaker) }
         case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()
+        case .analyzing(let stage, let progress):
+            analyzing = (stage, progress)
+            puppet.setExpression(.appalled)   // officers hold their heads while the repo is read
+        case .fine(let fine):
+            if analyzing != nil { analyzing = nil; refreshExpression() }
+            totalEur = fine.totalEur
+            totalJailMonths = fine.totalJailMonths
+            lastFine = fine
+            haptics.fineTick(strength: Float(min(max(fine.amountEur / 50_000_000, 0.25), 1)))
+        case .meltdown(let eur, let jail):
+            totalEur = eur
+            totalJailMonths = jail
+            meltedDown = true
+            puppet.ignite()
+            haptics.rumble(seconds: 3)
+            try? await Task.sleep(for: .seconds(5))   // let them burn before the verdict card covers the screen
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle
         case .officers, .audio, .unknown: break
@@ -251,6 +277,27 @@ final class PocketModel {
     }
 
     func dismissVerdict() { notice = nil; subtitle = nil; tierName = nil }
+
+    /// Fresh meter, fires out, nobody's face smoking — before each new case.
+    private func resetCase() {
+        totalEur = 0
+        totalJailMonths = 0
+        lastFine = nil
+        meltedDown = false
+        analyzing = nil
+        notice = nil
+        puppet.extinguish()
+    }
+
+    /// Back to a clean slate for the next applicant (flow calls this on "Apply again").
+    func newApplication() {
+        resetCase()
+        caseID = nil
+        subtitle = nil
+        tierName = nil
+        applicantId = nil
+        phase = .idle
+    }
 }
 
 extension PocketModel.Phase {

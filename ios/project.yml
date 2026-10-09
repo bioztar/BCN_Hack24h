@@ -12,7 +12,7 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Config flip: "mock" = fixture backend (no server), "live" = https://eurocrat.pro7ocol.com
-    ROAST_BACKEND: live
+    ROAST_BACKEND: mock   # v2 flow runs on fixtures until server-v2 is deployed; flip to live then
     ROAST_BASE_URL: https://eurocrat.pro7ocol.com
 targets:
   PocketEurocrat:
@@ -30,6 +30,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSMicrophoneUsageDescription: Hold the button to dictate your pitch to the Eurocrat.
+        NSCameraUsageDescription: Your founder photo goes on the Commission's file (and the leaderboard).
         ITSAppUsesNonExemptEncryption: false
         RoastBackend: $(ROAST_BACKEND)
         RoastBaseURL: $(ROAST_BASE_URL)
