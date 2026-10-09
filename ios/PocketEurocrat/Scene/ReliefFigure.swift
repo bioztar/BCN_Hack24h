@@ -15,7 +15,7 @@ enum ReliefFigure {
     /// Cells over which depth ramps up from the silhouette, so edges roll off instead of cliffing.
     private static let edgeRamp: Float = 7
     /// Overlap (rows) between the head and body meshes, so the head can turn without opening a crack.
-    private static let overlapRows = 6
+    private static let overlapRows = 10   // rows shared by head and body meshes (±6%): a wider shared band hides the split
 
     private static var cache: [String: SCNNode] = [:]
 
@@ -89,6 +89,10 @@ enum ReliefFigure {
     float teeth = (1.0 - smoothstep(0.08, 0.30, depth)) * (1.0 - smoothstep(0.5, 0.85, abs(d.x))) * smoothstep(0.2, 0.5, mouthOpen);
     cavity = mix(cavity, float3(0.78, 0.74, 0.68), teeth * 0.5);
     _surface.diffuse.rgb = mix(_surface.diffuse.rgb, cavity, k);
+    // Soft left/right image borders, where the cut-out is cropped (a hard crop edge shows where busts overlap).
+    float side = smoothstep(0.0, 0.10, uv.x) * (1.0 - smoothstep(0.90, 1.0, uv.x));
+    _surface.diffuse.a *= side;
+    _surface.transparent.a *= side;
     """
 
     // MARK: photo-relief
@@ -100,29 +104,22 @@ enum ReliefFigure {
         let width = height * aspect
 
         let field = heightField(depth: depth)
-        let material = SCNMaterial()
-        material.diffuse.contents = image
-        material.lightingModel = .lambert
-        material.isDoubleSided = true
-        if let m = MouthStore.rect(for: "\(officer.id)-\(expression.rawValue)") {
-            material.shaderModifiers = [.geometry: jawShader, .surface: mouthShader]
-            for (key, value) in [("mouthU", m.u), ("mouthV", m.v), ("mouthHW", m.hw), ("mouthHH", m.hh), ("mouthIW", m.iw),
-                                 ("mouthOpen", 0), ("mouthWide", 1)] {
-                material.setValue(NSNumber(value: value), forKey: key)
-            }
-        }
+        let mouth = MouthStore.rect(for: "\(officer.id)-\(expression.rawValue)")
 
         // Split below the chin so the seam never crosses the mouth: mouth line + a face-height allowance.
-        let neckV = min(max((MouthStore.rect(for: "\(officer.id)-\(expression.rawValue)")?.v ?? 0.31) + 0.12, 0.40), 0.60)
+        let neckV = min(max((mouth?.v ?? 0.31) + 0.12, 0.40), 0.60)
         let neckY = (0.5 - neckV) * height
         let neckRow = Int(neckV * Float(rows - 1))
+        // NB: a cross-fade of the head layer's alpha over the overlap band was tried and rejected — SceneKit's
+        // blending left a visible lighter band across the chest. The hard split stays clean because the head
+        // pivots at the neck's real depth (below) and the two meshes share vertices/uv/material in the overlap.
+        let material = makeMaterial(image: image, mouth: mouth)
         let body = mesh(field: field, width: width, material: material, rows: (neckRow - overlapRows)..<(rows - 1))
         body.name = "body"
         let head = mesh(field: field, width: width, material: material, rows: 0..<(neckRow + overlapRows))
         head.name = "head"
-        // Head rotates about the neck: pivot and position at the neck point.
-        // Pivot at the neck's actual depth (the relief puts it well in front of z = 0), or turning the head
-        // would shear the overlap rows sideways and show a seam across the shoulders.
+        // Head rotates about the neck, at the neck's actual depth (the relief puts it well in front of z = 0),
+        // or turning it would shear the overlap rows sideways and open a seam across the shoulders.
         let neckZ = field.z[min(neckRow, rows - 1) * columns + columns / 2]
         head.pivot = SCNMatrix4MakeTranslation(0, neckY, neckZ)
         head.position = SCNVector3(0, neckY, neckZ)
@@ -132,6 +129,22 @@ enum ReliefFigure {
         root.addChildNode(head)
         root.addChildNode(backFace(image: image, width: width))
         return root
+    }
+
+    /// Lit photo material with the lip-sync shaders.
+    private static func makeMaterial(image: UIImage, mouth: MouthStore.Rect?) -> SCNMaterial {
+        let material = SCNMaterial()
+        material.diffuse.contents = image
+        material.lightingModel = .lambert
+        material.isDoubleSided = true
+        material.shaderModifiers = [.geometry: jawShader, .surface: mouthShader]
+        let m = mouth ?? MouthStore.Rect(u: -5, v: 0, hw: 0.05, hh: 0.02, iw: 0.04)   // no mouth: cavity off-image
+        let values: [(String, Float)] = [
+            ("mouthU", m.u), ("mouthV", m.v), ("mouthHW", m.hw), ("mouthHH", m.hh), ("mouthIW", m.iw),
+            ("mouthOpen", 0), ("mouthWide", 1),
+        ]
+        for (key, value) in values { material.setValue(NSNumber(value: value), forKey: key) }
+        return material
     }
 
     private struct Field {
