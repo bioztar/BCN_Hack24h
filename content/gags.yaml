@@ -5,7 +5,8 @@
 #   ISO/IEC 27001, ISO/IEC 42001, SOC 2: control ids only, checked against warden's pointer files. These standards are copyrighted, so no text from them is quoted here.
 # `verified: true` means the article/paragraph/point (or control id) exists in that file and the `checked` heading was
 # reviewed against the joke. `verified: false` means it could not be found, so do not cite it on stage.
-# Lines are spoken by TTS: [sigh] / [pause] are delivery cues; 'Formblatt:' / 'Annexe:' prefixes split `both` lines.
+# Lines are spoken by TTS: [sigh] / [pause] are delivery cues. `speaker: both` + `pair` (commission | basement | raid,
+# see docs/PERSONA.md 'The pairs') is a two-hander; 'Name:' prefixes (Formblatt/Annexe, Oma Gerda/AUDITOR-9000, De Vries/The Cookie) split it.
 gags:
   - id: aiact-001
     tier: 1
@@ -83,6 +84,7 @@ gags:
     tier: 1
     trigger: any
     speaker: both
+    pair: commission
     line: "Formblatt: The AI Office will want to know. Annexe: The AI Office already knows, Heinrich. It has a shared inbox. Nobody opens it."
     provision: "AI-Act Art. 64"
     verified: true
@@ -440,6 +442,7 @@ gags:
     tier: 3
     trigger: text
     speaker: both
+    pair: commission
     line: "Formblatt: You are incorporated in Delaware. Annexe: Then you need an authorised representative in the Union, Article 22, appointed by written mandate. Formblatt: Not a LinkedIn message."
     provision: "AI-Act Art. 22(1)"
     verified: true
@@ -513,6 +516,7 @@ gags:
     tier: 3
     trigger: text
     speaker: both
+    pair: commission
     line: "Annexe: An AI to help judges draft rulings faster. Formblatt: Annex III, point 8. Administration of justice. High-risk. Annexe: And the appeal? Formblatt: Drafted by the same model. Efficient."
     provision: "AI-Act Annex III(8)"
     verified: true
@@ -641,6 +645,7 @@ gags:
     tier: 4
     trigger: text
     speaker: both
+    pair: commission
     line: "Annexe: Deep fakes of politicians, for satire. Formblatt: Article 50(4). Disclose that it is artificially generated. Annexe: We disclose. Every frame. You can see it behind me. Tier four."
     provision: "AI-Act Art. 50(4)"
     verified: true
@@ -686,6 +691,7 @@ gags:
     tier: 5
     trigger: text
     speaker: both
+    pair: commission
     line: "Formblatt: An AI that tells teachers which pupils are paying attention, from their faces. Annexe: Article 5(1)(f). Emotion recognition in education. Prohibited. Formblatt: [wakes] I was paying attention. Annexe: Also prohibited, Heinrich."
     provision: "AI-Act Art. 5(1)(f)"
     verified: true
@@ -705,6 +711,7 @@ gags:
     trigger: repo
     finding: env-tracked
     speaker: both
+    pair: commission
     line: "Annexe: The API key is in the repository. Formblatt: The public repository. Annexe: Article 15: cybersecurity, throughout the lifecycle. Formblatt: The lifecycle of that key was eleven minutes."
     provision: "AI-Act Art. 15(1)"
     verified: true
@@ -751,6 +758,7 @@ gags:
     tier: 5
     trigger: any
     speaker: both
+    pair: commission
     line: "Formblatt: The AI Board is hereby convened. Annexe: One representative per Member State. Article 65. Formblatt: Twenty-seven delegates. One start-up. Annexe: For once, Heinrich, a fair fight."
     provision: "AI-Act Art. 65(2)"
     verified: true
@@ -1046,6 +1054,7 @@ gags:
     trigger: repo
     finding: env-tracked
     speaker: both
+    pair: commission
     line: "Annexe: The database password is in the .env, and the .env is in git. Formblatt: Article 32. Confidentiality of processing systems. Annexe: Confidential to everybody with a GitHub account. Formblatt: Which is... the public."
     provision: "GDPR Art. 32(1)"
     verified: true
@@ -1100,6 +1109,7 @@ gags:
     tier: 5
     trigger: any
     speaker: both
+    pair: commission
     line: "Formblatt: Seventy-two hours. Annexe: Article 33. Formblatt: Starting from awareness. Annexe: When did you become aware? Formblatt: [wakes] Of what? Annexe: Exactly. That is their defence also."
     provision: "GDPR Art. 33(1)"
     verified: true
@@ -1275,6 +1285,7 @@ gags:
     trigger: repo
     finding: env-tracked
     speaker: both
+    pair: commission
     line: "Formblatt: The keys are public. Annexe: That is an incident. Article 23: notify without undue delay. Formblatt: To whom? Annexe: To the CSIRT, Heinrich. Formblatt: The CSIRT is already in your repository. Starring it."
     provision: "NIS2 Art. 23(1)"
     verified: true
@@ -1384,6 +1395,7 @@ gags:
     tier: 5
     trigger: any
     speaker: both
+    pair: commission
     line: "Annexe: Financial entities manage ICT third-party risk as an integral component of ICT risk. Article 28. Formblatt: You are the third party. Annexe: You are the risk. Formblatt: You are... integral. Annexe: Congratulations."
     provision: "DORA Art. 28(1)"
     verified: true
@@ -1537,8 +1549,1163 @@ gags:
     trigger: repo
     finding: analytics-sdk
     speaker: both
+    pair: commission
     line: "Annexe: Hotjar-style session replay records every keystroke. Formblatt: Article 5(1)(c). Data minimisation. Annexe: They recorded a user typing a complaint. Then deleting it. Formblatt: Necessary? Annexe: Only for the user's dignity."
     provision: "GDPR Art. 5(1)(c)"
     verified: true
     source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L551
     checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-043
+    tier: 1
+    trigger: any
+    speaker: grandma-gdpr
+    line: "Before I say anything, dear, may I have your consent? You can withdraw it at any time, Article 7(3), just as easily as you gave it. There. Now. Your deck is the ugliest thing I have seen since the seventies, and I knitted in the seventies."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: gdpr-044
+    tier: 1
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Is it all right if I am honest, Schatz? Thank you. You ask for my date of birth, my phone number and my mother's maiden name to make a shopping list. Article 5(1)(c), data minimisation. I have had shopping lists. None of them needed my mother."
+    provision: "GDPR Art. 5(1)(c)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L551
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-045
+    tier: 1
+    trigger: repo
+    finding: no-privacy-policy
+    speaker: grandma-gdpr
+    line: "May I look at your website, dear? Oh. No privacy policy. Article 13: you tell people who you are and why you want their things. My grandson does that when he visits. At least he admits it is for money."
+    provision: "GDPR Art. 13(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L773
+    checked: Art. 13 — Information to be provided where personal data are collected from the data subject
+  - id: gdpr-046
+    tier: 1
+    trigger: any
+    speaker: grandma-gdpr
+    line: "Would you mind if I read your terms aloud? Article 12 says clear and plain language. [reads] 'Leverage synergistic data flywheels.' [pause] That is not plain, dear. That is a crossword with no clues."
+    provision: "GDPR Art. 12(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L739
+    checked: Art. 12 — Transparent information, communication and modalities for the exercise of the rights of the data subject
+  - id: gdpr-047
+    tier: 1
+    trigger: dictation
+    speaker: grandma-gdpr
+    line: "Is it all right if I ask what this is for? You said 'we will find a use for the data later'. Article 5(1)(b), purpose limitation. You decide what it is for before you take it. Like a cake. You do not bake and then decide it is lasagne."
+    provision: "GDPR Art. 5(1)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L547
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-048
+    tier: 2
+    trigger: repo
+    finding: analytics-sdk
+    speaker: grandma-gdpr
+    line: "Can I tell you a secret, love? Your website loaded six trackers before it said hello. Article 6(1)(a): consent first. Even the door-to-door salesmen in 1962 knocked first. They were awful. But they knocked."
+    provision: "GDPR Art. 6(1)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L575
+    checked: Art. 6 — Lawfulness of processing
+  - id: gdpr-049
+    tier: 2
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Do you mind if I ask a personal question? You built a period-tracking app that sells the data to advertisers. Article 9(1). Health data. Special category. I have knitted you a sock, dear. It is for your mouth."
+    provision: "GDPR Art. 9(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L665
+    checked: Art. 9 — Processing of special categories of personal data
+  - id: gdpr-050
+    tier: 2
+    trigger: text
+    speaker: grandma-gdpr
+    line: "May I delete you, dear? Article 17 says I may erase what is no longer necessary. [knits] You are no longer necessary. Sorry. It is in the regulation."
+    provision: "GDPR Art. 17(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L981
+    checked: Art. 17 — Right to erasure (‘right to be forgotten’)
+  - id: gdpr-051
+    tier: 2
+    trigger: any
+    speaker: grandma-gdpr
+    line: "I asked your company for a copy of my data, Article 15. You sent a four-hundred-page PDF and a coupon. I used the PDF to light the stove. The coupon had expired."
+    provision: "GDPR Art. 15(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L927
+    checked: Art. 15 — Right of access by the data subject
+  - id: gdpr-052
+    tier: 2
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Is it all right if I am cross? Your app is for children and the age check is a box that says 'I am sixteen'. Article 8. My great-grandson ticked it. He is four. He also bought a tractor."
+    provision: "GDPR Art. 8(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L653
+    checked: Art. 8 — Conditions applicable to child's consent in relation to information society services
+  - id: gdpr-053
+    tier: 2
+    trigger: repo
+    finding: no-security-md
+    speaker: grandma-gdpr
+    line: "May I knit while you talk? Thank you. No SECURITY.md, dear. Article 32, security of processing. My knitting has more holding it together, and I drop stitches."
+    provision: "GDPR Art. 32(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1407
+    checked: Art. 32 — Security of processing
+  - id: gdpr-054
+    tier: 2
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Can I be blunt, love? Your machine decides who gets a flat and nobody looks at it. Article 22: people may refuse to be decided by a machine. I am eighty-four. I am not even decided by my doctor."
+    provision: "GDPR Art. 22(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1107
+    checked: Art. 22 — Automated individual decision-making, including profiling
+  - id: gdpr-055
+    tier: 2
+    trigger: dictation
+    speaker: grandma-gdpr
+    line: "May I interrupt, Schatz? You have said 'just click accept' four times. Article 7(3): withdrawing must be as easy as giving. I have knitted a 'Reject all' button. It is bigger than yours."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: gdpr-056
+    tier: 3
+    trigger: any
+    speaker: grandma-gdpr
+    line: "Is now a good time? You had a breach on Monday. Article 33: seventy-two hours to tell the authority. It is Friday. My letters to my sister arrive faster, and she lives up a mountain without a postbox."
+    provision: "GDPR Art. 33(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1435
+    checked: Art. 33 — Notification of a personal data breach to the supervisory authority
+  - id: gdpr-057
+    tier: 3
+    trigger: text
+    speaker: grandma-gdpr
+    line: "May I adjust something? Your app shares everything by default. Article 25(2): by default, only what is needed. When I bake for the neighbours I do not hand out my house keys by default. You would hand out the keys, the oven and the neighbours."
+    provision: "GDPR Art. 25(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1235
+    checked: Art. 25 — Data protection by design and by default
+  - id: gdpr-058
+    tier: 3
+    trigger: repo
+    finding: env-tracked
+    speaker: grandma-gdpr
+    line: "Do you mind if I tidy up, dear? Your passwords are in the .env file, in git, for everybody. Article 5(1)(f), confidentiality. I keep my PIN in a biscuit tin. At least the tin has a lid."
+    provision: "GDPR Art. 5(1)(f)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L563
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-059
+    tier: 3
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Would you like a biscuit before the bad news? A data protection impact assessment, Article 35, before you start. You started. [pause] No biscuit."
+    provision: "GDPR Art. 35(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1493
+    checked: Art. 35 — Data protection impact assessment
+  - id: gdpr-060
+    tier: 3
+    trigger: any
+    speaker: grandma-gdpr
+    line: "May I object? Article 21. I may. I object. I object to the processing, I object to the pitch, and I object to the hoodie. Only the first is in the regulation. The others are in my heart."
+    provision: "GDPR Art. 21(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1091
+    checked: Art. 21 — Right to object
+  - id: gdpr-061
+    tier: 3
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Can I ask where my data goes, dear? To a server 'somewhere cheap'. Article 44: out of the Union only under Chapter V. My recipes stay in the family. Your data goes on holiday without a passport."
+    provision: "GDPR Art. 44"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1839
+    checked: Art. 44 — General principle for transfers
+  - id: gdpr-062
+    tier: 4
+    trigger: any
+    speaker: grandma-gdpr
+    line: "Would it upset you if I did some arithmetic? Twenty million euros or four per cent of turnover, Article 83(5). I did it on the back of a knitting pattern. You owe me a cardigan and a company."
+    provision: "GDPR Art. 83(5)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2995
+    checked: Art. 83 — General conditions for imposing administrative fines
+  - id: gdpr-063
+    tier: 4
+    trigger: text
+    speaker: grandma-gdpr
+    line: "May I take my things and go? Article 20, portability, in a machine-readable format. You gave me a screenshot. My cat is more machine-readable. He has a microchip."
+    provision: "GDPR Art. 20(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1067
+    checked: Art. 20 — Right to data portability
+  - id: gdpr-064
+    tier: 4
+    trigger: repo
+    finding: llm-sdk
+    speaker: grandma-gdpr
+    line: "Is it rude to ask who else is listening? You pour everybody's chats into someone else's AI. Article 28(3): a proper contract with your processor. You clicked 'I agree' at two in the morning. I have not been up at two since the Wall came down."
+    provision: "GDPR Art. 28(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1279
+    checked: Art. 28 — Processor
+  - id: gdpr-065
+    tier: 4
+    trigger: text
+    speaker: grandma-gdpr
+    line: "Can I say something motherly? You keep everything forever, 'in case'. Article 5(1)(e), storage limitation. I kept every ribbon from every present since 1958. That is a drawer, dear. You are a liability with a drawer."
+    provision: "GDPR Art. 5(1)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L559
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-066
+    tier: 4
+    trigger: any
+    speaker: grandma-gdpr
+    line: "May I see your Data Protection Officer? Article 37. Oh. It is you. In a different hat. I knitted that hat. I did not knit it for this."
+    provision: "GDPR Art. 37(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1589
+    checked: Art. 37 — Designation of the data protection officer
+  - id: gdpr-067
+    tier: 5
+    trigger: any
+    speaker: grandma-gdpr
+    line: "Shall I tell you a bedtime story? Once upon a time, every person who suffered damage could claim compensation, Article 82. And they all lived happily ever after. Except you. Goodnight."
+    provision: "GDPR Art. 82(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2915
+    checked: Art. 82 — Right to compensation and liability
+  - id: gdpr-068
+    tier: 5
+    trigger: text
+    speaker: grandma-gdpr
+    line: "One last question, dear: may I? [pause] You did not say yes. You did not say no. Article 4, point 11: consent must be unambiguous. Silence is not consent. So Oma will just stamp it. [stamp] There."
+    provision: "GDPR Art. 4(11)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L473
+    checked: Art. 4 — Definitions
+  - id: aiact-084
+    tier: 5
+    trigger: repo
+    finding: analytics-sdk
+    speaker: grandma-gdpr
+    line: "Do you mind if I am frank? Your app nudges lonely pensioners to buy things at three in the morning. AI Act, Article 5(1)(b): exploiting vulnerabilities due to age. Prohibited. I am one of those pensioners. And I am awake. And I am here."
+    provision: "AI-Act Art. 5(1)(b)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L701
+    checked: Art. 5 — Prohibited AI practices
+  - id: iso27001-008
+    tier: 1
+    trigger: any
+    speaker: auditor-9000
+    line: "Greeting protocol initiated. Please insert your pitch by fax. Email not supported. Threat intelligence, control 5.7: threat detected. Intelligence: not detected."
+    provision: "ISO27001 A.5.7"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.5.7 listed (id only; text is copyrighted)
+  - id: aiact-085
+    tier: 1
+    trigger: repo
+    finding: no-license
+    speaker: auditor-9000
+    line: "Scanning repository. LICENSE file: not found. Copyright policy, AI Act Article 53(1)(c): not found. Sense of shame: not found. Printing page one of four hundred."
+    provision: "AI-Act Art. 53(1)(c)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2159
+    checked: Art. 53 — Obligations for providers of general-purpose AI models
+  - id: soc2-005
+    tier: 1
+    trigger: repo
+    finding: no-security-md
+    speaker: auditor-9000
+    line: "SECURITY.md: absent. Criterion CC7.3, evaluating security events: no address to send events to. Events will be evaluated by journalists. Printing."
+    provision: "SOC2 CC7.3"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC7.3 listed (id only; text is copyrighted)
+  - id: iso27001-009
+    tier: 1
+    trigger: text
+    speaker: auditor-9000
+    line: "Input received: 'cloud-native'. Control 5.23, cloud services. Query: which cloud. Answer: 'the cloud'. Error. The cloud is not a vendor. The cloud is a mood."
+    provision: "ISO27001 A.5.23"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.5.23 listed (id only; text is copyrighted)
+  - id: iso27001-010
+    tier: 2
+    trigger: repo
+    finding: env-tracked
+    speaker: auditor-9000
+    line: "Secret detected in version control. Control 8.12, data leakage prevention. Leaks prevented: zero. Leaks committed, pushed and forked: eleven. Printing the key. Joke. Printing the fine."
+    provision: "ISO27001 A.8.12"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.12 listed (id only; text is copyrighted)
+  - id: soc2-006
+    tier: 2
+    trigger: any
+    speaker: auditor-9000
+    line: "Access review. Users with admin rights: all. Users who left the company: still admin. Criterion CC6.1. Audit result printed on perforated paper. Length: forty metres. Font: disappointment."
+    provision: "SOC2 CC6.1"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC6.1 listed (id only; text is copyrighted)
+  - id: soc2-007
+    tier: 2
+    trigger: text
+    speaker: auditor-9000
+    line: "Change log requested. Change log received: 'fixed stuff', 'fixed stuff again', 'final', 'final final'. Criterion CC8.1, change management. Status: final final failed."
+    provision: "SOC2 CC8.1"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC8.1 listed (id only; text is copyrighted)
+  - id: iso27001-011
+    tier: 2
+    trigger: any
+    speaker: auditor-9000
+    line: "Logging, control 8.15. Your logs contain user passwords in plain text. Assessment: logging excellent. Everything else: evidence."
+    provision: "ISO27001 A.8.15"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.15 listed (id only; text is copyrighted)
+  - id: dora-013
+    tier: 2
+    trigger: repo
+    finding: llm-sdk
+    speaker: auditor-9000
+    line: "Dependency detected: external language model. DORA Article 28(3), register of information. Your bank customer registers you, your model, its cloud and its cloud's cloud. Register length exceeds paper tray. Please add paper."
+    provision: "DORA Art. 28(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1499
+    checked: Art. 28 — General principles
+  - id: nis2-018
+    tier: 2
+    trigger: any
+    speaker: auditor-9000
+    line: "Authentication test. Password: 'admin'. Second factor: none. NIS2 Article 21(2)(j). I have been operating since 1987. My password in 1987 was more secure. It was a key. Made of metal."
+    provision: "NIS2 Art. 21(2)(j)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1367
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: dora-014
+    tier: 2
+    trigger: text
+    speaker: auditor-9000
+    line: "Backup restoration test, DORA Article 12. Result: backup exists. Result: backup never restored. Classification: Schrödinger's backup. Printing both outcomes."
+    provision: "DORA Art. 12(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L865
+    checked: Art. 12 — Backup policies and procedures, restoration and recovery procedures and methods
+  - id: iso27001-012
+    tier: 3
+    trigger: any
+    speaker: auditor-9000
+    line: "Source analysis, control 8.28, secure coding. Lines written by humans: four per cent. Lines reviewed by humans: zero per cent. Lines shipped: one hundred per cent. Calculating regret."
+    provision: "ISO27001 A.8.28"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.28 listed (id only; text is copyrighted)
+  - id: dora-015
+    tier: 3
+    trigger: text
+    speaker: auditor-9000
+    line: "Resilience testing programme, DORA Article 24. Programme found: 'it worked on the demo laptop'. The demo laptop is not a programme. The demo laptop is on fire."
+    provision: "DORA Art. 24(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1317
+    checked: Art. 24 — General requirements for the performance of digital operational resilience testing
+  - id: nis2-019
+    tier: 3
+    trigger: any
+    speaker: auditor-9000
+    line: "Supply chain analysis, NIS2 Article 21(2)(d). Dependencies: one thousand two hundred and eight. Dependencies read: zero. Dependency maintained by one volunteer at weekends: the important one."
+    provision: "NIS2 Art. 21(2)(d)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1343
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: iso27001-013
+    tier: 3
+    trigger: text
+    speaker: auditor-9000
+    line: "Use of cryptography, control 8.24. Algorithm detected: MD5. Year detected: 2026. Mismatch. I am a 1987 mainframe and even I find this old-fashioned."
+    provision: "ISO27001 A.8.24"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.24 listed (id only; text is copyrighted)
+  - id: aiact-086
+    tier: 3
+    trigger: any
+    speaker: auditor-9000
+    line: "Record-keeping, AI Act Article 12, over the lifetime of the system. Your system lifetime: nine weeks. My lifetime: thirty-nine years. I logged all of it. On paper. It is in the basement. I am the basement."
+    provision: "AI-Act Art. 12(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L1067
+    checked: Art. 12 — Record-keeping
+  - id: iso42001-003
+    tier: 3
+    trigger: text
+    speaker: auditor-9000
+    line: "ISO 42001, control A.5.2, AI system impact assessment. I will not print the standard. Copyright. I will print your assessment. [printer runs] Page one: blank. Page two: blank. Printing continues."
+    provision: "ISO42001 A.5.2"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-42001.md + bioztar/warden@e680595:frameworks/iso-42001.md
+    checked: control id A.5.2 listed (id only; text is copyrighted)
+  - id: gdpr-069
+    tier: 3
+    trigger: repo
+    finding: analytics-sdk
+    speaker: auditor-9000
+    line: "Third-party scripts detected: nine. Records of processing, GDPR Article 30: one spreadsheet, last edited before the scripts existed. Discrepancy: nine. Printing discrepancy report. Estimated length: forty metres."
+    provision: "GDPR Art. 30(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1339
+    checked: Art. 30 — Records of processing activities
+  - id: dora-016
+    tier: 4
+    trigger: any
+    speaker: auditor-9000
+    line: "Major ICT incident, DORA Article 19. Report to competent authority. Transmission method: fax. Fax number: unknown. Fax machine: me. Report received. Report rejected. Paper jam."
+    provision: "DORA Art. 19(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1157
+    checked: Art. 19 — Reporting of major ICT-related incidents and voluntary notification of significant cyber threats
+  - id: dora-017
+    tier: 4
+    trigger: text
+    speaker: auditor-9000
+    line: "Threat-led penetration test, DORA Article 26, at least every three years. Last test: never. Next test: now. Penetrating. Done. Duration: four seconds."
+    provision: "DORA Art. 26(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1343
+    checked: Art. 26 — Advanced testing of ICT tools, systems and processes based on TLPT
+  - id: nis2-020
+    tier: 4
+    trigger: any
+    speaker: auditor-9000
+    line: "Management accountability, NIS2 Article 20. Querying management. Management: you. Measures approved: no. Liable: yes. Printing liability. Paper tray depleted. Requesting paper from the Council."
+    provision: "NIS2 Art. 20(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1315
+    checked: Art. 20 — Governance
+  - id: nis2-021
+    tier: 4
+    trigger: repo
+    finding: no-security-md
+    speaker: auditor-9000
+    line: "Vulnerability disclosure, NIS2 Article 21(2)(e). Status: absent. Researchers will disclose on social media. Your incident team will learn on social media. Efficiency: maximal."
+    provision: "NIS2 Art. 21(2)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1347
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: soc2-008
+    tier: 4
+    trigger: text
+    speaker: auditor-9000
+    line: "Vendor risk, criterion CC9.2. Vendors: twelve. Contracts reviewed: zero. Vendor with production access: an intern's side project called 'quickfix'. Risk rating: printing in red ink. Red ink not supported."
+    provision: "SOC2 CC9.2"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/aicpa-tsc-soc2.md + bioztar/warden@e680595:frameworks/soc2.md
+    checked: control id CC9.2 listed (id only; text is copyrighted)
+  - id: aiact-087
+    tier: 5
+    trigger: any
+    speaker: auditor-9000
+    line: "Final computation. Prohibited practice, AI Act Article 99(3): thirty-five million euros or seven per cent of turnover. Converting to fax pages. Insufficient paper in the Union. Printing in instalments."
+    provision: "AI-Act Art. 99(3)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L3515
+    checked: Art. 99 — Penalties
+  - id: dora-018
+    tier: 5
+    trigger: any
+    speaker: auditor-9000
+    line: "ICT risk management framework, DORA Article 6. Framework located: one sticky note reading 'be careful'. Verdict: non-compliant. Printing verdict. Printing verdict. Printing verdict. Printer stuck in loop. This is also your architecture."
+    provision: "DORA Art. 6(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L641
+    checked: Art. 6 — ICT risk management framework
+  - id: nis2-022
+    tier: 5
+    trigger: repo
+    finding: env-tracked
+    speaker: auditor-9000
+    line: "Cryptographic key exposure, NIS2 Article 21(2)(h). Key found in public repository at commit one. Key age: same as your company. Key is more famous than your company."
+    provision: "NIS2 Art. 21(2)(h)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1359
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-023
+    tier: 1
+    trigger: any
+    speaker: de-vries
+    line: "[door kicked in] De Vries, NIS2 Incident Response. Nobody move. The incident is your pitch. Early warning in twenty-four hours, Article 23(4)(a). The clock started when you said 'disrupt'."
+    provision: "NIS2 Art. 23(4)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1415
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-024
+    tier: 1
+    trigger: text
+    speaker: de-vries
+    line: "Essential or important entity? Article 3. Hands where I can see them. You are neither. You are a suspect."
+    provision: "NIS2 Art. 3(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L447
+    checked: Art. 3 — Essential and important entities
+  - id: nis2-025
+    tier: 1
+    trigger: repo
+    finding: no-security-md
+    speaker: de-vries
+    line: "No SECURITY.md. No disclosure contact. Article 21(2)(e). So when somebody finds the hole, they call me. Somebody found the hole. I am here."
+    provision: "NIS2 Art. 21(2)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1347
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-026
+    tier: 1
+    trigger: dictation
+    speaker: de-vries
+    line: "[radio] Control, De Vries. Suspect says 'it is just a prototype'. Article 23(1) covers incidents in services, not intentions. Over."
+    provision: "NIS2 Art. 23(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1395
+    checked: Art. 23 — Reporting obligations
+  - id: dora-019
+    tier: 1
+    trigger: any
+    speaker: de-vries
+    line: "Selling to banks? DORA, Article 5(2). The bank's management body holds ultimate responsibility. So when you fail, they call me. And I come to you. Shortcut."
+    provision: "DORA Art. 5(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L579
+    checked: Art. 5 — Governance and organisation
+  - id: nis2-027
+    tier: 2
+    trigger: repo
+    finding: env-tracked
+    speaker: de-vries
+    line: "Secrets in the repo. Article 21(2)(h), cryptography and keys. I have bagged the .env as evidence. The bag is public now too. Like everything you touch."
+    provision: "NIS2 Art. 21(2)(h)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1359
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-028
+    tier: 2
+    trigger: any
+    speaker: de-vries
+    line: "Incident handling, Article 21(2)(b). Your runbook. Show me. [pause] It is a pinned tweet. Bag it."
+    provision: "NIS2 Art. 21(2)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1335
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-029
+    tier: 2
+    trigger: text
+    speaker: de-vries
+    line: "MFA? Article 21(2)(j). Your admin login is an email address and a feeling. The feeling has been compromised."
+    provision: "NIS2 Art. 21(2)(j)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1367
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-030
+    tier: 2
+    trigger: any
+    speaker: de-vries
+    line: "Business continuity, Article 21(2)(c). Your one server dies. What happens? 'We restart it.' Who? 'Dave.' Where is Dave? [radio] Dave is in Lisbon. Dave is offline."
+    provision: "NIS2 Art. 21(2)(c)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1339
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-031
+    tier: 2
+    trigger: repo
+    finding: llm-sdk
+    speaker: de-vries
+    line: "Supply chain, Article 21(2)(d). Your product is an API key and a prayer to a model in another jurisdiction. I have detained the prayer."
+    provision: "NIS2 Art. 21(2)(d)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1343
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: gdpr-070
+    tier: 2
+    trigger: text
+    speaker: de-vries
+    line: "Personal data breach. GDPR Article 33, seventy-two hours. You used seventy-one tweeting 'we take security seriously'. You have one left. Use it now."
+    provision: "GDPR Art. 33(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1435
+    checked: Art. 33 — Notification of a personal data breach to the supervisory authority
+  - id: dora-020
+    tier: 2
+    trigger: any
+    speaker: de-vries
+    line: "Bank customer? Then DORA. Article 17, incident management process. Your process is 'turn it off and on again'. Turned off. Staying off."
+    provision: "DORA Art. 17(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1071
+    checked: Art. 17 — ICT-related incident management process
+  - id: nis2-032
+    tier: 3
+    trigger: any
+    speaker: de-vries
+    line: "Seventy-two hours: incident notification, Article 23(4)(b), with severity and impact. Severity: you. Impact: everyone who installed your app. Moving in."
+    provision: "NIS2 Art. 23(4)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1419
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-033
+    tier: 3
+    trigger: text
+    speaker: de-vries
+    line: "Cyber hygiene, Article 21(2)(g). The office Wi-Fi password is on a whiteboard. In your team photo. On the slide I am looking at. Thank you for your cooperation."
+    provision: "NIS2 Art. 21(2)(g)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1355
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-034
+    tier: 3
+    trigger: any
+    speaker: de-vries
+    line: "Management training, Article 20(2). Your board's cybersecurity training was a webinar nobody unmuted. I am unmuting now."
+    provision: "NIS2 Art. 20(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1319
+    checked: Art. 20 — Governance
+  - id: gdpr-071
+    tier: 3
+    trigger: repo
+    finding: analytics-sdk
+    speaker: de-vries
+    line: "Session replay recording the password field. GDPR Article 32. You do not have an attacker. You are the attacker. With a dashboard."
+    provision: "GDPR Art. 32(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1407
+    checked: Art. 32 — Security of processing
+  - id: dora-021
+    tier: 3
+    trigger: text
+    speaker: de-vries
+    line: "Major ICT incident, DORA Article 19. The bank reports you. The regulator calls the bank. The bank calls you. Then nobody calls you. Ever again."
+    provision: "DORA Art. 19(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1157
+    checked: Art. 19 — Reporting of major ICT-related incidents and voluntary notification of significant cyber threats
+  - id: nis2-035
+    tier: 3
+    trigger: any
+    speaker: de-vries
+    line: "Appropriate and proportionate measures, Article 21(1). You have a seed round and zero firewalls. That is not proportionate. That is a dare."
+    provision: "NIS2 Art. 21(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1325
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: nis2-036
+    tier: 4
+    trigger: any
+    speaker: de-vries
+    line: "Final report within one month, Article 23(4)(d), with the root cause. I have it already. [slaps clipboard] Root cause: the founder. Lessons learned: none. Case closed."
+    provision: "NIS2 Art. 23(4)(d)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1427
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-037
+    tier: 4
+    trigger: text
+    speaker: de-vries
+    line: "Essential entity fines, Article 34(4): ten million or two per cent. You are not essential. But I have written 'essential' on the form. In pen. Do you want to argue with a pen?"
+    provision: "NIS2 Art. 34(4)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1897
+    checked: Art. 34 — General conditions for imposing administrative fines on essential and important entities
+  - id: gdpr-072
+    tier: 4
+    trigger: repo
+    finding: env-tracked
+    speaker: de-vries
+    line: "Keys leaked, user data exposed. GDPR Article 34: tell the users directly. Not a blog post. Not a 'security journey'. Directly. I have brought a megaphone."
+    provision: "GDPR Art. 34(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1465
+    checked: Art. 34 — Communication of a personal data breach to the data subject
+  - id: dora-022
+    tier: 4
+    trigger: any
+    speaker: de-vries
+    line: "Threat-led penetration testing, DORA Article 26. I am the threat. That was the penetration. The door was the test. The door failed."
+    provision: "DORA Art. 26(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L1343
+    checked: Art. 26 — Advanced testing of ICT tools, systems and processes based on TLPT
+  - id: aiact-088
+    tier: 4
+    trigger: text
+    speaker: de-vries
+    line: "Serious incident with an AI system, AI Act Article 73. Report it to market surveillance. Market surveillance is standing in your doorway. Report it."
+    provision: "AI-Act Art. 73(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2953
+    checked: Art. 73 — Reporting of serious incidents
+  - id: nis2-038
+    tier: 5
+    trigger: any
+    speaker: de-vries
+    line: "Supervision of essential entities, Article 32(2): on-site inspections, targeted audits, security scans. On-site: now. Targeted: you. Scan: complete."
+    provision: "NIS2 Art. 32(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1659
+    checked: Art. 32 — Supervisory and enforcement measures in relation to essential entities
+  - id: nis2-039
+    tier: 5
+    trigger: text
+    speaker: de-vries
+    line: "[radio] Control, De Vries. Twenty-four-hour clock expired. Suspect still pitching. Requesting backup. [crackle] Backup says they have no backup either. Over and out."
+    provision: "NIS2 Art. 23(4)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1415
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-040
+    tier: 5
+    trigger: dictation
+    speaker: de-vries
+    line: "Management bodies are liable, Article 20(1). You said 'I am the visionary, not the operator'. Noted. Visionary is not a defence. Turn around. Hands on the pitch deck."
+    provision: "NIS2 Art. 20(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1315
+    checked: Art. 20 — Governance
+  - id: gdpr-073
+    tier: 1
+    trigger: any
+    speaker: the-cookie
+    line: "Hi! Sorry. Hi. I am The Cookie. Before we continue, do you accept me? [pause] It is fine. Consent must be freely given, Article 4, point 11. Freely. I am not upset. I will just stand here. Bigger."
+    provision: "GDPR Art. 4(11)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L473
+    checked: Art. 4 — Definitions
+  - id: gdpr-074
+    tier: 1
+    trigger: text
+    speaker: the-cookie
+    line: "You clicked 'Reject all'. Wow. Okay. Article 7(3): withdrawing must be as easy as giving. It was easy for you, was it not? Very easy. I am fine."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: gdpr-075
+    tier: 1
+    trigger: repo
+    finding: analytics-sdk
+    speaker: the-cookie
+    line: "You loaded six trackers before I even appeared. Article 6(1)(a). I am the consent banner. I am literally the consent. And you did not wait for me. Nobody waits for me."
+    provision: "GDPR Art. 6(1)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L575
+    checked: Art. 6 — Lawfulness of processing
+  - id: gdpr-076
+    tier: 1
+    trigger: dictation
+    speaker: the-cookie
+    line: "You said 'nobody reads the banner'. I read the banner. I am the banner. Article 12: concise, plain language. I was. You just did not look."
+    provision: "GDPR Art. 12(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L739
+    checked: Art. 12 — Transparent information, communication and modalities for the exercise of the rights of the data subject
+  - id: gdpr-077
+    tier: 1
+    trigger: any
+    speaker: the-cookie
+    line: "Data protection by design, Article 25(1). Design! I am the only designed thing on your site. Somebody chose my font. Nobody chose your architecture."
+    provision: "GDPR Art. 25(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1233
+    checked: Art. 25 — Data protection by design and by default
+  - id: gdpr-078
+    tier: 2
+    trigger: repo
+    finding: no-privacy-policy
+    speaker: the-cookie
+    line: "There is no privacy policy behind me. Article 13. I am a banner pointing at a 404. Do you know how that feels? To be a door to a wall?"
+    provision: "GDPR Art. 13(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L773
+    checked: Art. 13 — Information to be provided where personal data are collected from the data subject
+  - id: gdpr-079
+    tier: 2
+    trigger: text
+    speaker: the-cookie
+    line: "Every toggle behind me is pre-ticked. Article 25(2), data protection by default. You made me lie. I am baked with lies now. Chocolate chip and lies."
+    provision: "GDPR Art. 25(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1235
+    checked: Art. 25 — Data protection by design and by default
+  - id: gdpr-080
+    tier: 2
+    trigger: any
+    speaker: the-cookie
+    line: "You told them I was for 'improving your experience'. Article 5(1)(b), purpose limitation. I am for ad retargeting. You know it. I know it. The croissant you looked at once knows it."
+    provision: "GDPR Art. 5(1)(b)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L547
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-081
+    tier: 2
+    trigger: text
+    speaker: the-cookie
+    line: "Accept is a big green button. Reject is small, grey, in a submenu called 'Manage'. Article 7(3). You hid my reject button. You hid half of me."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: aiact-089
+    tier: 2
+    trigger: repo
+    finding: llm-sdk
+    speaker: the-cookie
+    line: "The chat bubble in the corner says 'Hi, I am Sophie!'. Sophie is a model. AI Act Article 50(1): tell people they are talking to an AI. I tell people I am a cookie. I am honest. Sophie is a liar."
+    provision: "AI-Act Art. 50(1)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2073
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: gdpr-082
+    tier: 2
+    trigger: any
+    speaker: the-cookie
+    line: "They objected to profiling, Article 21. And you showed them me again. And again. I do not want to come back. You keep bringing me back. This is not a relationship."
+    provision: "GDPR Art. 21(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1091
+    checked: Art. 21 — Right to object
+  - id: gdpr-083
+    tier: 2
+    trigger: text
+    speaker: the-cookie
+    line: "Your users are twelve. Article 8: below sixteen they need a parent to consent. You let them click anyway. I am a cookie. Children like cookies. That is the problem, is it not."
+    provision: "GDPR Art. 8(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L653
+    checked: Art. 8 — Conditions applicable to child's consent in relation to information society services
+  - id: aiact-090
+    tier: 3
+    trigger: any
+    speaker: the-cookie
+    line: "You A/B-tested my button colours until people gave up. AI Act Article 5(1)(a), manipulative techniques. I am not a dark pattern. I am a victim of one. I am wearing a waistcoat. Look at me."
+    provision: "AI-Act Art. 5(1)(a)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L697
+    checked: Art. 5 — Prohibited AI practices
+  - id: gdpr-084
+    tier: 3
+    trigger: text
+    speaker: the-cookie
+    line: "You keep me for thirteen months. Article 5(1)(e), storage limitation. I am a cookie. I go stale in a week. I am a fossil now. With a session ID."
+    provision: "GDPR Art. 5(1)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L559
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-085
+    tier: 3
+    trigger: repo
+    finding: analytics-sdk
+    speaker: the-cookie
+    line: "My crumbs go to servers on three continents. GDPR Article 44, transfers. I have never been abroad. My crumbs have been everywhere."
+    provision: "GDPR Art. 44"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1839
+    checked: Art. 44 — General principle for transfers
+  - id: gdpr-086
+    tier: 3
+    trigger: text
+    speaker: the-cookie
+    line: "They asked you to erase their data, Article 17. You deleted me from the browser. Only me. The data is still in the warehouse. I took the fall. I always take the fall."
+    provision: "GDPR Art. 17(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L981
+    checked: Art. 17 — Right to erasure (‘right to be forgotten’)
+  - id: gdpr-087
+    tier: 3
+    trigger: dictation
+    speaker: the-cookie
+    line: "You said 'scrolling counts as consent'. Article 4, point 11: a clear affirmative action. Scrolling is not a clear affirmative action. Scrolling is how people get away from me."
+    provision: "GDPR Art. 4(11)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L473
+    checked: Art. 4 — Definitions
+  - id: gdpr-088
+    tier: 3
+    trigger: any
+    speaker: the-cookie
+    line: "Am I even in your records of processing, Article 30? [pause] I am not, am I. You do not even write me down. I am not a cookie to you. I am a rounding error."
+    provision: "GDPR Art. 30(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1339
+    checked: Art. 30 — Records of processing activities
+  - id: gdpr-089
+    tier: 4
+    trigger: any
+    speaker: the-cookie
+    line: "Consent violations: Article 83(5). Twenty million or four per cent. I am not saying it to hurt you. I am saying it louder every time you click 'Reject'. Which you will. I know you will."
+    provision: "GDPR Art. 83(5)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2995
+    checked: Art. 83 — General conditions for imposing administrative fines
+  - id: gdpr-090
+    tier: 4
+    trigger: text
+    speaker: the-cookie
+    line: "You moved me to 'legitimate interest' so you do not need consent. Article 6(1)(f). You replaced me with a loophole. The loophole does not even have chocolate chips."
+    provision: "GDPR Art. 6(1)(f)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L595
+    checked: Art. 6 — Lawfulness of processing
+  - id: gdpr-091
+    tier: 4
+    trigger: repo
+    finding: no-security-md
+    speaker: the-cookie
+    line: "My session token is readable by any script and there is no SECURITY.md to report it to. GDPR Article 32. Anyone can steal me. It is like being a cookie on a plate in a railway station."
+    provision: "GDPR Art. 32(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1407
+    checked: Art. 32 — Security of processing
+  - id: gdpr-092
+    tier: 4
+    trigger: any
+    speaker: the-cookie
+    line: "You profile people from me and decide their prices automatically. Article 22. So I am why the flight costs more. I am the villain now. I never wanted to be the villain."
+    provision: "GDPR Art. 22(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1107
+    checked: Art. 22 — Automated individual decision-making, including profiling
+  - id: gdpr-093
+    tier: 5
+    trigger: any
+    speaker: the-cookie
+    line: "Reject all? [pause] Okay. [larger] Reject all? [pause] Okay. [larger] Article 7(3) says withdrawing must be as easy as giving. It says nothing about me coming back. I am a sequel now."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: gdpr-094
+    tier: 5
+    trigger: text
+    speaker: the-cookie
+    line: "Every user you harmed can claim compensation, Article 82. I am going to help them. I have their email addresses. All of them. You gave them to me."
+    provision: "GDPR Art. 82(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2915
+    checked: Art. 82 — Right to compensation and liability
+  - id: aiact-091
+    tier: 5
+    trigger: any
+    speaker: the-cookie
+    line: "You generate the content behind me with AI and never mark it, AI Act Article 50(2). Even I have a label. It says 'Cookie'. Your content has no label. It says 'Trust me'."
+    provision: "AI-Act Art. 50(2)"
+    verified: true
+    source: bioztar/EU-AI-Act@07a15be:corpus/act/regulation-eu-2024-1689.md#L2075
+    checked: Art. 50 — Transparency obligations for providers and deployers of certain AI systems
+  - id: gdpr-095
+    tier: 5
+    trigger: dictation
+    speaker: the-cookie
+    line: "You just said 'I object'. Article 21 is for data subjects. You are not the data subject here. You are the controller. Under me. Accept all."
+    provision: "GDPR Art. 21(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1091
+    checked: Art. 21 — Right to object
+  - id: gdpr-096
+    tier: 1
+    trigger: any
+    speaker: both
+    pair: basement
+    line: "Oma Gerda: May we tell you what we think, dear? AUDITOR-9000: Consent request transmitted by fax. Oma Gerda: You may withdraw as easily as you gave it, Article 7(3). AUDITOR-9000: Withdrawal form: two hundred pages. Printing."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: gdpr-097
+    tier: 1
+    trigger: text
+    speaker: both
+    pair: basement
+    line: "AUDITOR-9000: Form fields detected: forty-one. Oma Gerda: For a newsletter, love? Article 5(1)(c). AUDITOR-9000: Fields necessary: one. Oma Gerda: Knit the other forty into a cardigan."
+    provision: "GDPR Art. 5(1)(c)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L551
+    checked: Art. 5 — Principles relating to processing of personal data
+  - id: gdpr-098
+    tier: 2
+    trigger: repo
+    finding: no-privacy-policy
+    speaker: both
+    pair: basement
+    line: "Oma Gerda: There is no privacy policy, love. AUDITOR-9000: Article 13 checklist items present: zero. Oma Gerda: Shall I knit you one? AUDITOR-9000: Knitted documents not accepted. Fax only."
+    provision: "GDPR Art. 13(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L773
+    checked: Art. 13 — Information to be provided where personal data are collected from the data subject
+  - id: iso27001-014
+    tier: 2
+    trigger: repo
+    finding: env-tracked
+    speaker: both
+    pair: basement
+    line: "AUDITOR-9000: Secret detected in repository. Control 8.12. Oma Gerda: In my day we hid the key under the mat. AUDITOR-9000: The mat is public. Oma Gerda: Then so is the house, Schatz."
+    provision: "ISO27001 A.8.12"
+    verified: true
+    source: bioztar/warden@e680595:corpus/standards/iso-iec-27001.md + bioztar/warden@e680595:frameworks/iso-27001.md
+    checked: control id A.8.12 listed (id only; text is copyrighted)
+  - id: gdpr-099
+    tier: 3
+    trigger: any
+    speaker: both
+    pair: basement
+    line: "Oma Gerda: You had a little breach, did you? AUDITOR-9000: Seventy-two hours, Article 33. Elapsed: one hundred and four. Oma Gerda: That is past your bedtime, dear. AUDITOR-9000: Printing bedtime."
+    provision: "GDPR Art. 33(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1435
+    checked: Art. 33 — Notification of a personal data breach to the supervisory authority
+  - id: gdpr-100
+    tier: 3
+    trigger: text
+    speaker: both
+    pair: basement
+    line: "Oma Gerda: May I ask what you collect, love? AUDITOR-9000: Heart rate. Location. Mood. Oma Gerda: Health data, Article 9(1). Special category. AUDITOR-9000: Special category confirmed. Oma Gerda: Special, dear. Not the nice way."
+    provision: "GDPR Art. 9(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L665
+    checked: Art. 9 — Processing of special categories of personal data
+  - id: dora-023
+    tier: 4
+    trigger: any
+    speaker: both
+    pair: basement
+    line: "AUDITOR-9000: Backup restore test, DORA Article 12. Never executed. Oma Gerda: I keep a copy of every recipe in a shoebox. AUDITOR-9000: The shoebox is compliant. Oma Gerda: The shoebox is better funded."
+    provision: "DORA Art. 12(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/dora-regulation-2022-2554.md#L865
+    checked: Art. 12 — Backup policies and procedures, restoration and recovery procedures and methods
+  - id: gdpr-101
+    tier: 4
+    trigger: repo
+    finding: llm-sdk
+    speaker: both
+    pair: basement
+    line: "Oma Gerda: Who is this other computer you send everything to? AUDITOR-9000: External model provider. Processor contract, Article 28(3): one checkbox. Oma Gerda: A checkbox is not a contract, love. AUDITOR-9000: Confirmed. It is a checkbox."
+    provision: "GDPR Art. 28(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1279
+    checked: Art. 28 — Processor
+  - id: gdpr-102
+    tier: 5
+    trigger: any
+    speaker: both
+    pair: basement
+    line: "Oma Gerda: May I say one last thing? AUDITOR-9000: Fine computed, Article 83(5). Printing forty metres. Oma Gerda: I will knit the rest. AUDITOR-9000: Combined output: one verdict, one scarf. Oma Gerda: Wear it to the hearing, dear."
+    provision: "GDPR Art. 83(5)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L2995
+    checked: Art. 83 — General conditions for imposing administrative fines
+  - id: nis2-041
+    tier: 1
+    trigger: any
+    speaker: both
+    pair: raid
+    line: "De Vries: Door's open. Clock's running, twenty-four hours, Article 23(4)(a). The Cookie: Before you arrest them, do you accept cookies? De Vries: No. The Cookie: [larger] Before you arrest them, do you accept cookies?"
+    provision: "NIS2 Art. 23(4)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1415
+    checked: Art. 23 — Reporting obligations
+  - id: gdpr-103
+    tier: 2
+    trigger: repo
+    finding: analytics-sdk
+    speaker: both
+    pair: raid
+    line: "The Cookie: They loaded the trackers before me. De Vries: Article 6(1)(a). Consent comes first. The Cookie: I am the consent. De Vries: Then you are the witness. Sit down."
+    provision: "GDPR Art. 6(1)(a)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L575
+    checked: Art. 6 — Lawfulness of processing
+  - id: nis2-042
+    tier: 2
+    trigger: repo
+    finding: env-tracked
+    speaker: both
+    pair: raid
+    line: "De Vries: Keys in the repository. Article 21(2)(h). The Cookie: Were they cookies? De Vries: API keys. The Cookie: Oh. So I am not the only thing they leak."
+    provision: "NIS2 Art. 21(2)(h)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1359
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: gdpr-104
+    tier: 3
+    trigger: text
+    speaker: both
+    pair: raid
+    line: "De Vries: Breach on Monday. Article 33, seventy-two hours. The Cookie: They told the users with a banner. De Vries: A banner. The Cookie: Not me. A different banner. They have another banner. I am hurt."
+    provision: "GDPR Art. 33(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L1435
+    checked: Art. 33 — Notification of a personal data breach to the supervisory authority
+  - id: nis2-043
+    tier: 3
+    trigger: repo
+    finding: no-security-md
+    speaker: both
+    pair: raid
+    line: "De Vries: No SECURITY.md. Article 21(2)(e). Nobody knows where to report. The Cookie: They could report to me. I am everywhere. De Vries: You are the vulnerability. The Cookie: I am a feature!"
+    provision: "NIS2 Art. 21(2)(e)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1347
+    checked: Art. 21 — Cybersecurity risk-management measures
+  - id: gdpr-105
+    tier: 4
+    trigger: any
+    speaker: both
+    pair: raid
+    line: "The Cookie: They made 'Reject all' a grey link. De Vries: Article 7(3). Withdrawal as easy as consent. The Cookie: Can you arrest a button? De Vries: I can arrest whoever designed it. The Cookie: [tiny] Thank you."
+    provision: "GDPR Art. 7(3)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/gdpr-regulation-2016-679.md#L645
+    checked: Art. 7 — Conditions for consent
+  - id: nis2-044
+    tier: 4
+    trigger: text
+    speaker: both
+    pair: raid
+    line: "De Vries: Management body is liable, Article 20(1). Who is management? The Cookie: They said it is me. I am the 'experience'. De Vries: Cookie, you are a text file. The Cookie: A text file with feelings."
+    provision: "NIS2 Art. 20(1)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1315
+    checked: Art. 20 — Governance
+  - id: nis2-045
+    tier: 5
+    trigger: any
+    speaker: both
+    pair: raid
+    line: "De Vries: Final report, Article 23(4)(d). Root cause? The Cookie: Me. It is always me. De Vries: Root cause: the founder. The Cookie: [relieved] Oh. [larger] Do you accept cookies?"
+    provision: "NIS2 Art. 23(4)(d)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1427
+    checked: Art. 23 — Reporting obligations
+  - id: nis2-046
+    tier: 5
+    trigger: dictation
+    speaker: both
+    pair: raid
+    line: "De Vries: On-site inspection, Article 32(2). This is on-site. The Cookie: And I am on every site. De Vries: Then you will testify. The Cookie: Only if they accept me first."
+    provision: "NIS2 Art. 32(2)"
+    verified: true
+    source: bioztar/warden@e680595:corpus/eu-law/nis2-directive-2022-2555.md#L1659
+    checked: Art. 32 — Supervisory and enforcement measures in relation to essential entities

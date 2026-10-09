@@ -166,3 +166,8 @@ Hours count from kickoff (T0). Demo at T24 unless B1 says otherwise.
   (mission `20261009-dgroast-ios-native`, queued) — the PWA stays too. New **Lane D — the
   analyzer**: a functional compliance tool (idea / document / repo against the EU AI Act
   + warden frameworks), the two skills productionised as a web app at `/analyze/`.
+- 2026-10-09 19:30 — v1.5 (Vitaly): **fal credits gone** → stills via **Picsart** (text-to-image +
+  background removal for transparent cut-outs); no generated video, no generated 3D. The
+  officials come alive in the browser instead: talking-portrait puppet (mouth flap from TTS
+  amplitude, blink, brow, head bob) on the stage, procedural three.js officials in the
+  pocket app, the three.js stamp everywhere. fal stays an optional provider only.

@@ -14,11 +14,14 @@ export function renderClipLines(m: Manifest): string {
   ];
   const speaking = m.assets.filter((e) => e.kind === "clip-speaking");
   const silent = m.assets.filter((e) => e.kind === "clip-silent");
-  const voices = m.assets.filter((e) => e.kind === "voice");
+  const intros = m.assets.filter((e) => e.kind === "voice" && e.category === "intro");
+  const voices = m.assets.filter((e) => e.kind === "voice" && e.category !== "intro");
   out.push("## Speaking clips", "", "| clip | speaker | ~s | line |", "|---|---|---|---|");
   for (const e of speaking) out.push(`| \`${e.id}\` | ${e.official} | ${e.duration_s} | ${e.line!.replace(/\|/g, "\\|")} |`);
   out.push("", "## Silent clips (no line)", "", "| clip | official | ~s | action |", "|---|---|---|---|");
   for (const e of silent) out.push(`| \`${e.id}\` | ${e.official} | ${e.duration_s} | ${e.category ?? ""} |`);
+  out.push("", "## Intro lines (paired officers without a clip set)", "", "| line | officer | voice | ~s | line |", "|---|---|---|---|---|");
+  for (const e of intros) out.push(`| \`${e.id}\` | ${e.official} | \`${e.voice}\` | ${e.duration_s} | ${e.line!.replace(/\|/g, "\\|")} |`);
   out.push("", "## Voice samples (audition lines)", "", "| sample | voice | line |", "|---|---|---|");
   for (const e of voices) out.push(`| \`${e.id}\` | \`${e.voice}\` | ${e.line!.replace(/\|/g, "\\|")} |`);
   out.push("");
