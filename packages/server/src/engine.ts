@@ -5,10 +5,12 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { parse } from "yaml";
-import { TIER_NAMES, type ClipSlot, type Notice, type PersonaId, type RepoIntake, type RoastEvent, type Submission, type Tier } from "@dg-roast/shared";
+import { TIER_NAMES, type ClipSlot, type Meanwhile, type Notice, type PersonaId, type RepoIntake, type RoastEvent, type Submission, type Tier } from "@dg-roast/shared";
 import type { Profile } from "./config.js";
 import type { Corpus } from "./corpus.js";
-import { calculateFine, extractRevenueHeuristic } from "./fine.js";
+import { calculateFine, extractRevenueHeuristic, type FineMeter } from "./fine.js";
+import { isMeanwhileLine, meanwhileLine, meanwhilePrompt } from "./meanwhile.js";
+import { fallbackExtras, modelExtras, type Extras } from "./notice2.js";
 import type { Llm, LlmRequest } from "./llm.js";
 import type { PersonaSpec, Roster } from "./personas.js";
 import { FINDING_PROVISIONS } from "./repo.js";
@@ -43,6 +45,14 @@ export interface CaseState {
   notice?: Notice;
   /** Tier 5: computed before the round so the spoken fine and the Notice agree. */
   fine?: { fineEur: number; fineBasis: string };
+  /** v2: the registered applicant behind this case, if any. */
+  applicantId?: string;
+  /** v2: ms epoch the Meanwhile clock starts from (applicant registration, else case creation). */
+  startedAt?: number;
+  /** v2: the fines meter; totals are monotonic. */
+  meter?: FineMeter;
+  /** v2, tier 5: the final Meanwhile numbers the closing line and the Notice both state. */
+  meanwhile?: Meanwhile;
 }
 
 export interface LineOut {
@@ -166,6 +176,8 @@ export interface EngineDeps {
   profile: () => Profile;
   cheap: () => Profile;
   gags: () => Gag[];
+  /** v2 Notice extras (TL;DR + recommendations); defaults to the cheap profile with more tokens. */
+  report?: () => Profile;
   log?: (msg: string, meta?: Record<string, unknown>) => void;
   now?: () => Date;
   timings?: Partial<Timings>;
@@ -271,7 +283,7 @@ CURRENT TIER ${state.tier}/5 — ${TIER_NAMES[state.tier - 1]}: ${TIER_BRIEF[sta
 CANDIDATE PROVISIONS (id | label | title) — the ONLY ids you may cite:
 ${prov.join("\n")}
 ${gags.length ? `\nGAG BANK (inspiration, do not copy verbatim):\n${gags.map((g) => `- ${g.text} [${g.provisions.join(", ")}]`).join("\n")}\n` : ""}
-${state.tier === 5 && state.fine ? `THE FINE (already calculated, final): ${spokenEur(state.fine.fineEur)} (€${state.fine.fineEur.toLocaleString("en-GB")}); basis: ${state.fine.fineBasis}. Any line that mentions the fine states exactly this amount. Never state any other amount, figure or percentage for the fine.\n\n` : ""}SPOKEN TEXT ONLY: "text" is read aloud by a voice engine, word for word. No stage directions, no *actions*, no [bracketed cues], no "OFF-STAGE", no sound effects, no speaker-name prefix, and never a provision id like "gdpr-6" — ids go only in "provisions"; in speech say the label ("Article 6 GDPR"). A catchphrase or signature line already in <already_said> must not be used again.
+${state.tier === 5 && state.fine ? `THE FINE (already calculated, final): ${spokenEur(state.fine.fineEur)} (€${state.fine.fineEur.toLocaleString("en-GB")}); basis: ${state.fine.fineBasis}. Any line that mentions the fine states exactly this amount. Never state any other amount, figure or percentage for the fine.\n\n` : ""}${state.tier === 5 && state.meanwhile ? `${meanwhilePrompt(state.meanwhile)}\n\n` : ""}SPOKEN TEXT ONLY: "text" is read aloud by a voice engine, word for word. No stage directions, no *actions*, no [bracketed cues], no "OFF-STAGE", no sound effects, no speaker-name prefix, and never a provision id like "gdpr-6" — ids go only in "provisions"; in speech say the label ("Article 6 GDPR"). A catchphrase or signature line already in <already_said> must not be used again.
 
 OUTPUT: 3 to 5 lines, alternating speakers, starting with "${first}".${state.tier >= 2 ? ' At least one line this round MUST carry a stamp (not null) — the officials always stamp from tier 2 on.' : ""} Each line is ONE JSON object on its own line, nothing else (no prose, no array, no code fence):
 {"speaker":"<${a!.id}|${b!.id}>","text":"<one or two spoken sentences, max 40 words>","provisions":["<candidate id>"],"clip":"<${CLIP_SLOTS.join("|")}>","stamp":<null|"REFUSÉ"|"INCOMPLET"|"RENVOYÉ EN COMMISSION">,"charge":"<the finding in under 12 words>"}
@@ -396,6 +408,10 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     const said = () => [...state.lines.map((l) => l.text), ...produced.map((l) => l.text)];
     const last = () => produced.at(-1)?.speaker ?? state.lines.at(-1)?.speaker;
     const first = this.firstSpeaker(state);
+    // Tier 5 with Meanwhile numbers: the last line is the Meanwhile closer (model's, or a canned one).
+    const closer = state.tier === 5 && state.meanwhile ? state.meanwhile : null;
+    const max = closer ? 4 : 5;
+    let closed = false;
     const abandon = new AbortController();
     const model = this.modelLines(state, produced, deadline, t, abandon.signal)[Symbol.asyncIterator]();
     try {
@@ -407,13 +423,18 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
         yield opener;
         r = await race(pending, deadline - Date.now());
       }
-      while (r !== TIMEOUT && !r.done && produced.length < 5) {
+      while (r !== TIMEOUT && !r.done && produced.length < max) {
         const text = this.dropRepeats(state, r.value.text, said());
         if (text) {
           const speaker = r.value.speaker === last() ? this.partner(state, r.value.speaker) : r.value.speaker;
-          const line = { ...r.value, text, speaker };
+          const isCloser = Boolean(closer) && isMeanwhileLine(text);
+          const line: LineOut = isCloser ? { ...r.value, text, speaker, stamp: r.value.stamp ?? "REFUSÉ", clip: "verdict" } : { ...r.value, text, speaker };
           produced.push(line);
           yield line;
+          if (isCloser) {
+            closed = true;
+            break;
+          }
         }
         r = await race(model.next(), deadline - Date.now());
       }
@@ -422,16 +443,36 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
       abandon.abort();
       void model.return(undefined).catch(() => undefined);
     }
+    if (closed) return;
     // From tier 2 every round lands at least one stamp: if the model forgot, a stamped canned line closes it.
-    if (state.tier >= 2 && !produced.some((l) => l.stamp) && produced.length < 5) {
+    if (!closer && state.tier >= 2 && !produced.some((l) => l.stamp) && produced.length < 5) {
       const line = this.fill(state, this.partner(state, last()), said());
       produced.push(line);
       yield line;
     }
-    while (produced.length < 3) {
+    while (produced.length < (closer ? 2 : 3)) {
       const line = this.fill(state, this.partner(state, last()), said());
       produced.push(line);
       yield line;
+    }
+    if (closer) yield this.closer(state, this.partner(state, last()));
+  }
+
+  /** The tier-5 Meanwhile closing line, deterministic (no model needed), stamped. */
+  closer(state: CaseState, speaker: PersonaId): LineOut {
+    return { speaker, text: meanwhileLine(state.meanwhile!), provisions: [], clip: "verdict", stamp: "REFUSÉ" };
+  }
+
+  /** v2 Notice extras: model (report profile) with the deterministic fallback filling every gap. */
+  async reportExtras(state: CaseState, findings: Notice["findings"], startup: string, signal?: AbortSignal): Promise<Extras> {
+    if (!this.d.llm || !findings.length) return fallbackExtras(findings, this.d.corpus);
+    const c = this.d.report?.() ?? { ...this.d.cheap(), maxOutputTokens: 900, timeoutMs: 12000 };
+    try {
+      const pitch = [state.submission.text ?? "", state.intake?.summary ?? "", ...state.replies].filter(Boolean).join("\n");
+      return await modelExtras(this.d.llm, c, { pitch, startup, findings, corpus: this.d.corpus, ...(signal ? { signal } : {}) });
+    } catch (err) {
+      this.d.log?.("report extras failed; using fallback", { error: err instanceof Error ? err.constructor.name : "unknown" });
+      return fallbackExtras(findings, this.d.corpus);
     }
   }
 

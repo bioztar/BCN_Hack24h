@@ -123,6 +123,7 @@ export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof
     stt: new FakeStt(),
     intake: new GitHubIntake(opts.github ?? fakeGitHub({ tree: { "": [] }, files: {} }).impl, () => undefined),
     rand: () => 0,
+    analyzingStepMs: 0,
     webDir: opts.webDir,
     pocketDir: opts.pocketDir,
     assetsDir: opts.assetsDir,

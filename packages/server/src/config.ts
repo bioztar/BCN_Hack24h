@@ -59,6 +59,14 @@ export const profiles = {
     timeoutMs: positive("NEBIUS_CHEAP_TIMEOUT_MS", 4000),
     extraBody: { chat_template_kwargs: { thinking: false } },
   }),
+  /** v2 Notice: TL;DR per law + recommendations. Runs alongside the tier-5 round. */
+  report: (): Profile => ({
+    model: process.env.NEBIUS_REPORT_MODEL || process.env.NEBIUS_CHEAP_MODEL || "deepseek-ai/DeepSeek-V4.1-Flash",
+    temperature: 0.3,
+    maxOutputTokens: 900,
+    timeoutMs: positive("NEBIUS_REPORT_TIMEOUT_MS", 12000),
+    extraBody: { chat_template_kwargs: { thinking: false } },
+  }),
 };
 
 export interface SlngConfig {
