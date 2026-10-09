@@ -85,8 +85,15 @@ describe("manifest", () => {
     for (const e of m.assets.filter((a) => a.kind.startsWith("clip"))) {
       expect(CLIP_SLOTS).toContain(e.id.replace(`${e.official}-`, ""));
       expect(e.duration_s).toBeGreaterThanOrEqual(3);
-      expect(e.duration_s).toBeLessThanOrEqual(5);
+      expect(e.duration_s).toBeLessThanOrEqual(e.kind === "clip-speaking" ? 9 : 5);
     }
+    const dur = (id: string) => m.assets.find((a) => a.id === id)?.duration_s;
+    expect([dur("formblatt-verdict"), dur("annexe-verdict")]).toEqual([9, 6]);
+    const intros = m.assets.filter((a) => a.kind === "voice" && a.category === "intro");
+    expect(intros.map((a) => a.official).sort()).toEqual(["auditor-9000", "de-vries", "grandma-gdpr", "the-cookie"]);
+    const ids = intros.map((a) => m.voices[a.voice!]!.voice_id);
+    expect(new Set([...ids, ...Object.values(m.voices).filter((v) => !intros.some((a) => m.voices[a.voice!] === v)).map((v) => v.voice_id)]).size).toBe(Object.keys(m.voices).length);
+    expect(readFileSync(join(REPO_ROOT, "content/clip-lines.md"), "utf8")).toContain("intro-the-cookie");
   });
   it("never prompts for a real person or 'in the style of'", () => {
     for (const e of m.assets) expect(`${e.prompt ?? ""} ${e.line ?? ""}`).not.toMatch(/in the style of|lookalike|resembl/i);
@@ -205,6 +212,14 @@ describe("providers (fake fetch, no network)", () => {
 describe("gag bank", () => {
   const path = join(REPO_ROOT, "content/gags.yaml");
   const { gags, errors } = validateGags(parse(readFileSync(path, "utf8")));
+  it("covers each paired officer (≥25) and each pair", () => {
+    for (const p of ["grandma-gdpr", "auditor-9000", "de-vries", "the-cookie"])
+      expect(gags.filter((g) => g.speaker === p).length).toBeGreaterThanOrEqual(25);
+    for (const pair of ["commission", "basement", "raid"])
+      expect(gags.filter((g) => g.speaker === "both" && g.pair === pair).length).toBeGreaterThanOrEqual(5);
+    expect(validateGags({ gags: [{ ...gags[0], speaker: "both", pair: undefined }] }).errors.join()).toMatch(/pair/);
+    expect(validateGags({ gags: [{ ...gags[0], pair: "raid" }] }).errors.join()).toMatch(/pair only/);
+  });
   it("has ≥150 valid gags with verification filled", () => {
     expect(errors).toEqual([]);
     expect(gags.length).toBeGreaterThanOrEqual(150);

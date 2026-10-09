@@ -79,3 +79,19 @@ differently.
 | `de-vries` | Cartesia `Clarence` (`41534e16-2966-4c6b-9670-111411def906`) + radio band-pass | clipped, crackly |
 | `sandbox` | Cartesia `Charlotte` (`71a7ad14-091c-4e8e-a314-022ece01c121`) | elegant, delighted |
 | `the-cookie` | a small, soft Fish voice at speed 1.05 | wounded |
+
+## The other paired officers (basement, raid)
+
+Stock voices from Deepgram Aura-2 (`deepgram/aura:2` over SLNG's HTTP gateway, `encoding: mp3`, $0.005/min).
+Each is distinct from the others and from the Council's Zeus. Aura-2 has no elderly or synthetic voices, so age and
+"machine" come from the writing and from optional runtime effects. Intro lines: `intro-<id>` in the manifest, also in `content/clip-lines.md`.
+
+| Officer | Voice key | Aura-2 id | Why | Delivery / post |
+|---|---|---|---|---|
+| Oma Gerda (`grandma-gdpr`) | `grandma-gdpr` | `aura-2-cora-en` | smooth, melodic, caring storyteller | asks consent before every line; short pauses |
+| AUDITOR-9000 (`auditor-9000`) | `auditor-9000` | `aura-2-orion-en` | calm, polite, informative: the flattest male read | terse "Status: …" fragments; optional runtime bit-crush + dot-matrix SFX |
+| Inspector de Vries (`de-vries`) | `de-vries` | `aura-2-arcas-en` | clear, natural male | clipped sentences; optional radio band-pass + squelch |
+| The Cookie (`the-cookie`) | `the-cookie` | `aura-2-delia-en` | young, breathy, cheerful, so it can sound wounded | apologetic restarts ("Hi! Sorry. Hi.") |
+
+Alternates if one disappoints: Oma `aura-2-pandora-en` (British, calm, breathy); AUDITOR `aura-2-pluto-en`;
+de Vries `aura-2-odysseus-en`; Cookie `aura-2-luna-en`.
