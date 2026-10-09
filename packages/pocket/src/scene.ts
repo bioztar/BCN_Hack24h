@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type * as CANNON from "cannon-es";
+import { tryApplyCutout } from "./cutout";
 import { buildFigure, kindFor, tryLoadModel, type Rig } from "./figures";
 import { PocketWorld, type StepResult } from "./physics";
 import type { Persona } from "./types";
@@ -299,6 +300,7 @@ export class Stage {
     this.scene.add(rig.root);
     const actor = { persona: p, rig, body: fig.body };
     this.actors.set(p.id, actor);
+    void tryApplyCutout(rig, p.id);
     if (p.model3d) void tryLoadModel(rig, p.model3d);
     return actor;
   }

@@ -15,6 +15,10 @@ export interface Rig {
   stamp(): void;
   mood(m: Mood): void;
   update(dt: number, t: number): void;
+  /** Procedural face pieces hidden when a cutout portrait is mounted. */
+  faceParts: THREE.Object3D[];
+  /** Where a cutout portrait goes (a plane on the head / screen / cookie). */
+  faceMount: { parent: THREE.Object3D; y: number; z: number; size: number } | null;
 }
 
 export function kindFor(id: string): BodyKind {
@@ -101,25 +105,42 @@ function briefcase(color = "#6b4226"): THREE.Group {
 interface Face {
   eyes: THREE.Mesh[];
   mouth: THREE.Mesh;
+  brows: THREE.Mesh[];
+  browY: number;
+  /** Resting brow tilt: >0 = stern frown (inner ends down). */
+  stern: number;
+  extra: THREE.Object3D[];
 }
 
-function addFace(parent: THREE.Object3D, y: number, z: number, opts: { lips?: string; spread?: number; eyeColor?: string } = {}): Face {
+interface FaceOpts { lips?: string; spread?: number; eyeColor?: string; brow?: string | null; browW?: number; browH?: number; stern?: number; }
+
+function addFace(parent: THREE.Object3D, y: number, z: number, opts: FaceOpts = {}): Face {
   const s = opts.spread ?? 0.055;
   const eyeM = mat(opts.eyeColor ?? "#1a1a1a");
   const eyes = [box(0.035, 0.035, 0.02, eyeM, -s, y + 0.04, z), box(0.035, 0.035, 0.02, eyeM, s, y + 0.04, z)];
   const mouth = box(0.07, 0.02, 0.02, mat(opts.lips ?? "#5b2a2a"), 0, y - 0.045, z);
   parent.add(...eyes, mouth);
-  return { eyes, mouth };
+  const browY = y + 0.085;
+  const brows: THREE.Mesh[] = [];
+  if (opts.brow !== null) {
+    const bm = mat(opts.brow ?? "#3a2a1a");
+    for (const x of [-s, s]) brows.push(box(opts.browW ?? 0.06, opts.browH ?? 0.014, 0.02, bm, x, browY, z + 0.004));
+    parent.add(...brows);
+  }
+  return { eyes, mouth, brows, browY, stern: opts.stern ?? 0.25, extra: [] };
 }
 
-function glasses(parent: THREE.Object3D, y: number, z: number, spread = 0.055): void {
-  const m = mat("#222", { metal: 0.5, rough: 0.4 });
+function glasses(parent: THREE.Object3D, y: number, z: number, spread = 0.055, color = "#222"): THREE.Group {
+  const m = mat(color, { metal: 0.5, rough: 0.4 });
+  const g = new THREE.Group();
   for (const x of [-spread, spread]) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.007, 4, 10), m);
     ring.position.set(x, y, z);
-    parent.add(ring);
+    g.add(ring);
   }
-  parent.add(box(0.04, 0.008, 0.008, m, 0, y, z));
+  g.add(box(0.04, 0.008, 0.008, m, 0, y, z));
+  parent.add(g);
+  return g;
 }
 
 interface HumanOpts {
@@ -128,8 +149,11 @@ interface HumanOpts {
   shirt?: string;
   tie?: string | null;
   hair: (head: THREE.Group) => void;
-  glasses?: boolean;
+  glasses?: boolean | string;
   lips?: string;
+  face?: FaceOpts;
+  /** Non-uniform body scale, e.g. tall and thin. */
+  stretch?: [number, number, number];
   skirt?: boolean;
   torsoW?: number;
   leftHand?: THREE.Object3D;
@@ -148,11 +172,21 @@ function makeRig(root: THREE.Group, inner: THREE.Group, head: THREE.Object3D, fa
       const sy = current === "asleep" ? 0.15 : current === "appalled" ? 1.5 : current === "smug" ? 0.5 : 1;
       e.scale.set(current === "appalled" ? 1.4 : 1, sy, 1);
     }
+    face.brows.forEach((b, i) => {
+      const side = i === 0 ? 1 : -1;
+      const lift = current === "appalled" ? 0.03 : current === "asleep" ? -0.012 : 0;
+      const tilt = current === "appalled" ? -0.25 : current === "smug" ? (i === 0 ? -0.35 : face.stern) : current === "asleep" ? 0 : face.stern;
+      b.position.y = face.browY + lift + (current === "smug" && i === 0 ? 0.015 : 0);
+      b.rotation.z = -side * tilt;
+    });
   };
+  applyEyes();
   return {
     root,
     inner,
     head,
+    faceParts: face ? [...face.eyes, face.mouth, ...face.brows, ...face.extra] : [],
+    faceMount: null,
     talk(level) {
       talk = level;
       onTalk?.(level);
@@ -226,8 +260,10 @@ function human(o: HumanOpts): Rig {
   inner.add(head);
   head.add(ball(0.15, mat(SKIN), 0, 0, 0, 1));
   head.add(box(0.035, 0.05, 0.04, mat(SKIN), 0, -0.01, 0.15));
-  const face = addFace(head, 0.0, 0.14, { lips: o.lips });
-  if (o.glasses) glasses(head, 0.04, 0.158);
+  const nose = head.children[head.children.length - 1]!;
+  const face = addFace(head, 0.0, 0.14, { lips: o.lips, ...o.face });
+  face.extra.push(nose);
+  if (o.glasses) face.extra.push(glasses(head, 0.04, 0.158, 0.055, typeof o.glasses === "string" ? o.glasses : "#222"));
   o.hair(head);
 
   const armM = mat(o.suit);
@@ -252,7 +288,37 @@ function human(o: HumanOpts): Rig {
 
   o.extras?.(torso, inner);
   if (o.scale) inner.scale.setScalar(o.scale);
-  return makeRig(root, inner, head, face, rArm);
+  if (o.stretch) inner.scale.set(...o.stretch);
+  const rig = makeRig(root, inner, head, face, rArm);
+  rig.faceMount = { parent: head, y: 0, z: 0.152, size: 0.33 };
+  return rig;
+}
+
+function paperStack(): THREE.Group {
+  const g = new THREE.Group();
+  const tints = ["#fbfbf5", "#fff3b0", "#fbfbf5", "#cfe8ff", "#fbfbf5", "#ffd1d1", "#fbfbf5"];
+  for (let i = 0; i < 14; i++) {
+    const sheet = box(0.2, 0.012, 0.26, mat(tints[i % tints.length]!), (Math.sin(i * 2.3) * 0.012), 0.012 * i, Math.cos(i * 1.7) * 0.01);
+    sheet.rotation.y = Math.sin(i * 1.3) * 0.08;
+    g.add(sheet);
+  }
+  g.add(box(0.205, 0.18, 0.012, mat("#c8102e"), 0, 0.08, 0), box(0.012, 0.18, 0.265, mat("#c8102e"), 0, 0.08, 0));
+  const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.05), new THREE.MeshStandardMaterial({ map: textTexture("IN TRIPLICATE", "#fffef6", "#003399", 160, 56, "bold 20px Arial"), side: THREE.DoubleSide }));
+  tag.position.set(0, 0.18, 0.135);
+  g.add(tag);
+  g.rotation.x = Math.PI / 2;
+  g.position.z = 0.04;
+  return g;
+}
+
+function folder(label: string, color: string): THREE.Group {
+  const g = new THREE.Group();
+  g.add(box(0.2, 0.27, 0.025, mat(color)));
+  const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.07), new THREE.MeshStandardMaterial({ map: textTexture(label, "#fffef6", "#111", 192, 64, "bold 18px Arial") }));
+  lab.position.set(0, 0.05, 0.014);
+  g.add(lab);
+  g.position.z = 0.03;
+  return g;
 }
 
 function lanyards(torso: THREE.Group, count: number): void {
@@ -272,18 +338,49 @@ function lanyards(torso: THREE.Group, count: number): void {
   }
 }
 
-function cookieBanner(): THREE.Group {
+function knitting(): THREE.Group {
   const g = new THREE.Group();
-  const yarn = ball(0.06, mat("#c68642"), 0.04, -0.03, 0, 1);
   const needleM = mat("#cfcfcf", { metal: 0.7, rough: 0.3 });
-  const n1 = cyl(0.006, 0.006, 0.26, needleM, 4);
-  n1.rotation.z = 0.7;
-  const n2 = cyl(0.006, 0.006, 0.26, needleM, 4);
-  n2.rotation.z = -0.7;
-  const banner = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.08), new THREE.MeshStandardMaterial({ map: textTexture("ACCEPT ALL", "#f2e6c9", "#7a4b1f", 128, 48, "bold 22px Arial"), side: THREE.DoubleSide }));
-  banner.position.set(-0.02, 0.07, 0.04);
-  g.add(yarn, n1, n2, banner);
+  const n1 = cyl(0.006, 0.006, 0.3, needleM, 4);
+  n1.rotation.z = 0.9;
+  n1.position.set(0.02, 0.06, 0.05);
+  const n2 = cyl(0.006, 0.006, 0.3, needleM, 4);
+  n2.rotation.z = -0.9;
+  n2.position.set(0.02, 0.06, 0.05);
+  const swatch = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.13), new THREE.MeshStandardMaterial({ map: knitTexture(), side: THREE.DoubleSide, roughness: 1 }));
+  swatch.position.set(0.02, -0.02, 0.05);
+  const yarn = ball(0.065, mat("#003399", { rough: 1 }), -0.02, -0.1, -0.04, 1);
+  const strand = cyl(0.004, 0.004, 0.14, mat("#003399"), 3);
+  strand.position.set(0, -0.06, 0.0);
+  strand.rotation.x = 0.6;
+  g.add(n1, n2, swatch, yarn, strand);
   return g;
+}
+
+function knitTexture(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = 96;
+  c.height = 72;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#003399";
+  g.fillRect(0, 0, 96, 72);
+  g.strokeStyle = "rgba(255,255,255,0.18)";
+  for (let y = 0; y < 72; y += 6) for (let x = 0; x < 96; x += 6) {
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + 3, y + 6);
+    g.lineTo(x + 6, y);
+    g.stroke();
+  }
+  g.fillStyle = "#ffcc00";
+  g.font = "bold 22px Arial";
+  g.textAlign = "center";
+  g.fillText("GDPR", 48, 30);
+  g.font = "bold 16px Arial";
+  g.fillText("★ ★ ★", 48, 56);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 function clipboard(): THREE.Group {
@@ -375,6 +472,8 @@ function terminal(color: string): Rig {
     root,
     inner,
     head,
+    faceParts: [screen],
+    faceMount: { parent: inner, y: 0.03, z: 0.292, size: 0.32 },
     talk(l) { talk = l; },
     stamp() { stampFor = 1.1; },
     mood(m) { mood = m; },
@@ -428,7 +527,9 @@ function cookie(): Rig {
   b.position.y = -0.17;
   lArm.add(b);
   inner.add(lArm);
-  return makeRig(root, inner, head, face, arm);
+  const rig = makeRig(root, inner, head, face, arm);
+  rig.faceMount = { parent: head, y: 0, z: 0.058, size: 0.36 };
+  return rig;
 }
 
 export function buildFigure(p: Persona): Rig {
@@ -439,13 +540,17 @@ export function buildFigure(p: Persona): Rig {
         trousers: "#7b8088",
         tie: "#5a1a1a",
         glasses: true,
+        torsoW: 0.44,
+        leftHand: paperStack(),
+        face: { brow: "#f0f0f0", browW: 0.075, browH: 0.026, stern: 0.35 },
         hair: (h) => {
           const hm = mat("#e9e9e9");
           h.add(box(0.05, 0.08, 0.16, hm, -0.14, 0.02, -0.02), box(0.05, 0.08, 0.16, hm, 0.14, 0.02, -0.02), box(0.24, 0.06, 0.05, hm, 0, 0.0, -0.14));
-          h.add(box(0.1, 0.02, 0.02, mat("#e9e9e9"), -0.06, 0.1, 0.13), box(0.1, 0.02, 0.02, mat("#e9e9e9"), 0.06, 0.1, 0.13));
+          h.add(box(0.11, 0.025, 0.03, hm, 0, -0.025, 0.155));
         },
         extras: (torso) => {
           torso.add(box(0.2, 0.22, 0.02, mat("#6c7078"), 0, 0.02, 0.125));
+          torso.add(box(0.36, 0.2, 0.08, mat("#8a8f98"), 0, -0.12, 0.12));
           lanyards(torso, 7);
           const cord = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.004, 3, 10, Math.PI), mat("#222"));
           cord.position.set(0, 0.3, 0.14);
@@ -458,7 +563,10 @@ export function buildFigure(p: Persona): Rig {
         suit: "#1f3a68",
         tie: null,
         lips: "#b0122a",
-        torsoW: 0.36,
+        torsoW: 0.34,
+        stretch: [0.94, 1.1, 0.94],
+        leftHand: folder("PROPORTIONALITY", "#0f2347"),
+        face: { brow: "#1a120c", browW: 0.065, browH: 0.01, stern: 0.45 },
         hair: (h) => {
           const hm = mat("#2a1d15");
           const cap = new THREE.Mesh(new THREE.SphereGeometry(0.168, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.5), hm);
@@ -483,8 +591,9 @@ export function buildFigure(p: Persona): Rig {
         skirt: true,
         glasses: true,
         torsoW: 0.44,
-        scale: 0.9,
-        leftHand: cookieBanner(),
+        scale: 0.88,
+        leftHand: knitting(),
+        face: { brow: "#bdbdbd", stern: -0.15 },
         hair: (h) => {
           const hm = mat("#c9c9c9");
           const cap = new THREE.Mesh(new THREE.SphereGeometry(0.162, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.45), hm);
@@ -494,16 +603,28 @@ export function buildFigure(p: Persona): Rig {
         extras: (torso) => {
           for (let i = 0; i < 4; i++) torso.add(ball(0.014, mat("#e7d27a"), 0.07, 0.1 - i * 0.08, 0.125, 0));
           torso.add(box(0.44, 0.04, 0.25, mat("#8a5a7e"), 0, -0.2, 0));
+          const shawl = box(0.5, 0.1, 0.28, mat("#d9c9a8", { rough: 1 }), 0, 0.17, 0);
+          shawl.rotation.x = 0.08;
+          torso.add(shawl, box(0.12, 0.12, 0.02, mat("#d9c9a8"), 0, 0.08, 0.14));
+          torso.add(box(0.1, 0.06, 0.02, mat("#7a4a6e"), -0.12, -0.08, 0.125));
         },
       });
     case "de-vries":
       return human({
         suit: "#2f343b",
         tie: "#1c1c1c",
+        torsoW: 0.46,
         leftHand: clipboard(),
+        face: { brow: "#2a1d10", browW: 0.07, browH: 0.02, stern: 0.5 },
         hair: (h) => {
-          h.add(box(0.27, 0.06, 0.27, mat("#3a2a1a"), 0, 0.11, -0.01));
+          const capM = mat("#1d1f22");
+          h.add(box(0.31, 0.09, 0.31, capM, 0, 0.12, -0.01), box(0.26, 0.02, 0.12, capM, 0, 0.085, 0.17));
+          const capPatch = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.05), new THREE.MeshBasicMaterial({ map: textTexture("CSIRT", "#1d1f22", "#ffcc00", 128, 48, "bold 30px Arial") }));
+          capPatch.position.set(0, 0.125, 0.146);
+          h.add(capPatch);
           h.add(box(0.03, 0.05, 0.03, mat("#111"), 0.155, 0.0, 0.02));
+          const shades = box(0.2, 0.045, 0.02, mat("#0a0a0a", { metal: 0.6, rough: 0.2 }), 0, 0.04, 0.162);
+          h.add(shades);
         },
         extras: (torso) => {
           torso.add(box(0.43, 0.32, 0.27, mat("#1d1f22"), 0, -0.02, 0));
@@ -512,6 +633,9 @@ export function buildFigure(p: Persona): Rig {
           patch.position.set(0, 0.07, 0.137);
           torso.add(patch);
           torso.add(box(0.03, 0.09, 0.03, mat("#111"), -0.17, 0.1, 0.14));
+          torso.add(box(0.48, 0.05, 0.28, mat("#111"), 0, -0.19, 0));
+          for (const x of [-0.17, 0.17]) torso.add(box(0.07, 0.07, 0.05, mat("#3b4a2f"), x, -0.19, 0.15));
+          torso.add(box(0.1, 0.06, 0.29, mat("#1d1f22"), -0.2, 0.17, 0), box(0.1, 0.06, 0.29, mat("#1d1f22"), 0.2, 0.17, 0));
         },
       });
     case "auditor-9000":

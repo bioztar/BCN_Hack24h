@@ -36,7 +36,8 @@ textarea, input { -webkit-user-select: text; user-select: text; }
 .pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 .officer { --accent: var(--eu); display: flex; flex-direction: column; text-align: left; gap: 3px; background: #fff; border: 1px solid #ccc; border-top: 5px solid var(--accent); border-radius: 3px; padding: 8px; font: 13px Arial; color: #111; cursor: pointer; }
 .officer:active { transform: scale(0.97); }
-.officer-img { height: 112px; background: #e9edf5 center/contain no-repeat; margin-bottom: 4px; }
+.officer-img { position: relative; height: 112px; background: #e9edf5 center/contain no-repeat; margin-bottom: 4px; }
+.officer-face { position: absolute; right: 4px; top: 4px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); background: #fff center/cover no-repeat; }
 .officer strong { font-size: 13.5px; line-height: 1.15; }
 .officer-title { font-size: 11px; color: #555; line-height: 1.2; }
 .officer-pair { font-size: 10px; color: var(--eu); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }

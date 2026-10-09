@@ -2,6 +2,7 @@ import "./style.css";
 import { LiveApi, MockApi, type Api } from "./api";
 import { Sound, buzz, voiceFor, type Playback } from "./audio";
 import { drawNotice, formatEur, toBlob } from "./card";
+import { cutoutUrl, headCanvas, loadImage } from "./cutout";
 import { reactionLine, type Reaction } from "./lines";
 import { ShakeDetector, Stillness, gravityFromOrientation, lowPass, toScreenFrame, type Vec3 } from "./motion";
 import { initialState, reduce, type Action, type LineEvent, type RoastState } from "./reducer";
@@ -56,6 +57,13 @@ async function showPick(): Promise<void> {
     const img = el("div", "officer-img");
     const src = thumbs.get(p.id);
     if (src) img.style.backgroundImage = `url(${src})`;
+    void loadImage(cutoutUrl(p.id)).then((ci) => {
+      const face = ci && headCanvas(ci, 160);
+      if (!face) return;
+      const badge = el("div", "officer-face");
+      badge.style.backgroundImage = `url(${face.toDataURL("image/png")})`;
+      img.append(badge);
+    });
     const pair = pairs.find((x) => x.officers.includes(p.id));
     card.append(img, el("strong", "", p.name), el("span", "officer-title", p.title));
     if (pair) card.append(el("span", "officer-pair", `Pair: ${pair.id}`));
