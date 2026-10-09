@@ -1,0 +1,52 @@
+{
+  "formblatt": {
+    "kind": "person",
+    "head": {"cx": 0.03, "cz": 1.97, "rx": 0.40, "ry": 0.46, "rz": 0.53},
+    "hair_style": "ring", "hair_boost": 1.15,
+    "shoulder_z": 1.39, "torso_rx": 0.97, "torso_ry": 0.38, "neck_x": 0.02,
+    "ears": true, "relief_head": 0.55, "relief_torso": 0.30,
+    "pts": [248, 170, 320, 350, 640, 580]
+  },
+  "annexe": {
+    "kind": "person",
+    "head": {"cx": 0.0, "cz": 1.885, "rx": 0.52, "ry": 0.42, "rz": 0.60},
+    "shoulder_z": 1.12, "torso_rx": 0.97, "torso_ry": 0.36, "neck_x": 0.0,
+    "ears": false, "relief_head": 0.50, "relief_torso": 0.30,
+    "pts": [170, 330, 300, 420, 120, 760]
+  },
+  "grandma-gdpr": {
+    "kind": "person",
+    "head": {"cx": 0.0, "cz": 1.92, "rx": 0.34, "ry": 0.35, "rz": 0.39},
+    "bun": {"cx": 0.07, "cy": 0.06, "cz": 2.38, "r": [0.17, 0.15, 0.13]},
+    "hair_boost": 1.05,
+    "shoulder_z": 1.52, "torso_rx": 0.95, "torso_ry": 0.38, "neck_x": 0.0,
+    "ears": true, "relief_head": 0.50, "relief_torso": 0.30,
+    "pts": [300, 150, 330, 360, 90, 650]
+  },
+  "de-vries": {
+    "kind": "person",
+    "head": {"cx": 0.0, "cz": 1.93, "rx": 0.35, "ry": 0.40, "rz": 0.50},
+    "shoulder_z": 1.50, "torso_rx": 0.97, "torso_ry": 0.42, "neck_x": 0.0,
+    "ears": true, "relief_head": 0.55, "relief_torso": 0.30,
+    "pts": [340, 75, 340, 330, 650, 620]
+  },
+  "the-cookie": {
+    "kind": "person",
+    "head": {"cx": -0.01, "cz": 1.70, "rx": 0.76, "ry": 0.30, "rz": 0.66},
+    "shoulder_z": 1.25, "torso_rx": 0.72, "torso_ry": 0.30, "neck_x": 0.0,
+    "ears": false, "relief_head": 0.50, "relief_torso": 0.30,
+    "pts": [300, 230, 300, 230, 250, 700]
+  },
+  "auditor-9000": {
+    "kind": "terminal",
+    "shoulder_z": 1.2, "base_z": 0.08, "split_z": 1.22, "tilt": 38,
+    "relief_head": 0.45, "relief_torso": 0.30,
+    "boxes": [
+      {"part": "head",  "x": [-0.67, 0.62], "z": [1.235, 2.21], "front_y": -0.30, "depth": 0.75, "zone": 0},
+      {"part": "torso", "x": [-0.935, 0.29], "z": [0.56, 1.20],  "front_y": -0.50, "depth": 0.90, "zone": 2},
+      {"part": "torso", "x": [-0.96, 0.18],  "z": [0.085, 0.69], "front_y": -0.85, "depth": 0.45, "zone": 2},
+      {"part": "torso", "x": [0.23, 0.96],   "z": [0.27, 1.30],  "front_y": -0.35, "depth": 0.80, "zone": 2}
+    ],
+    "pts": [130, 300, 60, 640, 250, 700]
+  }
+}
