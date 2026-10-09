@@ -10,8 +10,8 @@ Live roast lines are not here — those are generated at runtime.
 
 | clip | speaker | ~s | line |
 |---|---|---|---|
-| `formblatt-verdict` | formblatt | 5 | The file is closed. Your file is refused. [sigh] It has been refused... thoroughly. |
-| `annexe-verdict` | annexe | 5 | Your startup is not illegal. It is merely... non-compliant. I have signed it. |
+| `formblatt-verdict` | formblatt | 9 | The file is closed. Your file is refused. [sigh] It has been refused... thoroughly. |
+| `annexe-verdict` | annexe | 6 | Your startup is not illegal. It is merely... non-compliant. I have signed it. |
 
 ## Silent clips (no line)
 
@@ -23,6 +23,15 @@ Live roast lines are not here — those are generated at runtime.
 | `annexe-idle` | annexe | 4 | idle |
 | `annexe-talking` | annexe | 5 | talking |
 | `annexe-stamp` | annexe | 3 | stamp |
+
+## Intro lines (paired officers without a clip set)
+
+| line | officer | voice | ~s | line |
+|---|---|---|---|---|
+| `intro-grandma-gdpr` | grandma-gdpr | `grandma-gdpr` | 12 | Hello, dear. I am Oma Gerda, from the Data Protection Officer's office. May I have your consent before I begin? [pause] Thank you. Sit down. This will not take long. It will only feel long. |
+| `intro-auditor-9000` | auditor-9000 | `auditor-9000` | 9 | AUDITOR-9000 online. Basement level minus four. Pitches accepted by fax only. Printing your file now. Estimated length: forty metres. |
+| `intro-de-vries` | de-vries | `de-vries` | 8 | [door kicked in] Inspector De Vries, NIS2 Incident Response. Nobody move. The incident is your pitch. The clock is running. |
+| `intro-the-cookie` | the-cookie | `the-cookie` | 9 | Hi! Sorry. Hi. I am The Cookie. Before we start, do you accept me? [pause] You can reject me. I will just come back. Bigger. |
 
 ## Voice samples (audition lines)
 
