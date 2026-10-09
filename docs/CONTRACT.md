@@ -223,3 +223,41 @@ roasted, the rest of the world ships. Every case carries a live **Meanwhile** co
 - **Report + badge (report-badge)**: one line on the badge under the fine ("Meanwhile: 🇨🇳 11
   AI models · 🇺🇸 3 · 🇪🇺 27 regulations + 412 forms"), a boxed paragraph on the PDF TL;DR page.
 - Flags as emoji or plain text only — no official EU emblem.
+
+## Game — "Eurocrat: Whack-a-Model" (Vitaly, 2026-10-10 02:00)
+
+A side game outside the main roast flow: a 3×3 grid of holes, AI models pop up and vanish
+fast, you **stamp every non-EU model** as fast as you can. Stamp a European model and you
+lose points. Mostly Chinese and American models (the real distribution), very rarely
+**Mistral** — the only European one. Score + rank at the end, shareable, global leaderboard.
+
+- **Package** `packages/game` (Lane G), built by Vite with base `/game/`, served by the
+  server at `/game/` (like `/pocket/`). Plain TS + canvas/DOM, no framework required,
+  mobile-first, touch + mouse, 60 fps on a mid phone. Works standalone in any browser and
+  embedded: the PWA (`/pocket/`) and the stage link to it, the **iPhone app embeds it in a
+  WKWebView** (`https://eurocrat.pro7ocol.com/game/?embed=1` hides the site chrome and posts
+  `{type:"score", ...}` to `window.webkit?.messageHandlers?.eurocrat` when a game ends).
+- **Models**: name + maker + flag + brand-ish colour tile. **No real company logos** (trademark)
+  — names, flags and colours only. Pool (weights ≈ share of real releases): CN — DeepSeek,
+  Qwen, Kimi, GLM, MiniMax, Doubao, Ernie, Hunyuan, Yi; US — GPT, Claude, Gemini, Llama, Grok,
+  Phi, Nova, Command (Cohere is CA — counts as non-EU); EU — **Mistral** only (≈ 3–5 % of pops).
+  `models.json` so the list is data.
+- **Rules**: 45 s round; pop-up lifetime starts ~1.1 s and shrinks to ~0.45 s; up to 3 holes
+  live at once later on. Hit non-EU = +100 × combo (combo grows each consecutive hit, resets
+  on a miss or a Mistral hit); stamping Mistral = −500 + big red "YOU BANNED THE ONLY ONE WE
+  HAD" + screen shake; a non-EU model that escapes = −25 ("escaped into the single market").
+  Stamp words random per hit: REFUSÉ, VERBOTEN, INTERDIT, BANNED, PROHIBITED ART. 5,
+  NON-CONFORME, VIETATO, PROHIBIDO, ZAKAZANE, SEE ANNEX III, PENDING DELEGATED ACT. Ink splat,
+  stamp sound (WebAudio, synthesized), haptic `navigator.vibrate(15)` where supported.
+- **End screen**: score, hits, Mistral accidents, best combo, **rank title** by score
+  (Intern (stagiaire) → Desk Officer → Head of Unit → Director → Director-General →
+  Commissioner → "President of the Commission"), the Meanwhile joke ("During your 45 s,
+  China released 2 more models"), share card PNG (Web Share API / download), "play again",
+  and link back to the roast.
+- **Leaderboard** (server, Lane G owns it as a Fastify plugin `gamePlugin` in
+  `packages/game/server/`, helm registers it at merge): `POST /api/game/score`
+  `{ name: string (≤ 24), score, hits, mistralHits, bestCombo, durationMs, seed, token }` →
+  `{ rank }`; `GET /api/game/leaderboard?limit=20` → top scores today; light anti-cheat:
+  server-issued `GET /api/game/start` → `{ seed, token }` (HMAC, 2 min TTL), score capped by
+  a plausible max for the seed/duration; per-IP rate limit. Stored in SQLite under DATA_DIR
+  (own table/file — don't touch the roast DB schema).
