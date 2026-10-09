@@ -6,7 +6,7 @@
   "NIS2": 49,
   "DORA": 64,
   "NIST AI RMF": 72,
-  "ISO/IEC 27001": 74,
+  "ISO/IEC 27001": 76,
   "ISO/IEC 42001": 19,
   "SOC 2": 13,
   "OWASP LLM Top 10": 10
@@ -3883,6 +3883,22 @@
    "url": "https://www.iso.org/standard/27001",
    "framework": "ISO/IEC 27001",
    "text": "ISO/IEC 27001:2022 Annex A control 8.34 (theme: Secure development life cycle; application security requirements; secure architecture; secure coding; security testing; outsourced development; environment separation; change management; test information; audit-testing protection). Control text not reproduced — copyright ISO/IEC."
+  },
+  {
+   "id": "iso27001-6.1.2",
+   "label": "ISO/IEC 27001 cl. 6.1.2",
+   "title": "Plan actions for risks and opportunities; define and apply an information-security risk assessment process",
+   "url": "https://www.iso.org/standard/27001",
+   "framework": "ISO/IEC 27001",
+   "text": "ISO/IEC 27001:2022 clause 6.1.2 (requirement area: Plan actions for risks and opportunities; define and apply an information-security risk assessment process). Clause text not reproduced — copyright ISO/IEC."
+  },
+  {
+   "id": "iso27001-9.2",
+   "label": "ISO/IEC 27001 cl. 9.2",
+   "title": "Internal audit programme",
+   "url": "https://www.iso.org/standard/27001",
+   "framework": "ISO/IEC 27001",
+   "text": "ISO/IEC 27001:2022 clause 9.2 (requirement area: Internal audit programme). Clause text not reproduced — copyright ISO/IEC."
   },
   {
    "id": "iso42001-a.2",
