@@ -29,10 +29,10 @@ export async function flap(el: HTMLElement, text: string, ms = 1400): Promise<vo
 }
 
 /** Gag 2 + the allocation board. */
-export function queueTicket(root: HTMLElement, officers: [Persona, Persona], pair: string): Promise<void> {
+export function queueTicket(root: HTMLElement, officers: [Persona, Persona], pair: string, caseTicket: number): Promise<void> {
   return new Promise((resolve) => {
-    let pos = 4812;
-    const num = h("span", { class: "ticket-num" }, fmtInt(pos));
+    const num = h("span", { class: "ticket-num" }, fmtInt(caseTicket));
+    const serving = h("b", null, "0003");
     const note = h("p", { class: "ticket-note" });
     const ticket = h(
       "div",
@@ -41,7 +41,7 @@ export function queueTicket(root: HTMLElement, officers: [Persona, Persona], pai
       h("p", null, "You are number"),
       num,
       h("p", { class: "ticket-wait" }, "Estimated wait: ", h("b", null, "the next Multiannual Financial Framework"), "."),
-      h("p", { class: "ticket-serving" }, "Now serving: ", h("b", null, "0003")),
+      h("p", { class: "ticket-serving" }, "Now serving: ", serving),
       note,
       h("div", { class: "ticket-tear" }),
     );
@@ -67,9 +67,8 @@ export function queueTicket(root: HTMLElement, officers: [Persona, Persona], pai
     root.replaceChildren(chrome(h("div", { class: "queue" }, ticket, board), "Q(2026) 4812 final"));
 
     const bump = setInterval(() => {
-      pos++;
-      num.textContent = fmtInt(pos);
-      note.textContent = "Your position has been updated for procedural reasons.";
+      serving.textContent = "0002";
+      note.textContent = "Now serving has been revised downwards for procedural reasons.";
     }, 1300);
 
     (async () => {

@@ -56,6 +56,41 @@ export interface PlayableAudio {
   readonly duration?: number;
 }
 
+/**
+ * Late TTS (`{type:"audio", id, audioUrl}` after a line sent with audioUrl:null). Fed outside
+ * the line queue so the URL is there by the time the line plays; `wait` gives it a grace period.
+ */
+export class LateAudio {
+  private readonly urls = new Map<string, string>();
+  private readonly waiters = new Map<string, (url: string) => void>();
+
+  deliver(id: string, url: string): void {
+    this.urls.set(id, url);
+    this.waiters.get(id)?.(url);
+    this.waiters.delete(id);
+  }
+
+  get(id: string): string | null {
+    return this.urls.get(id) ?? null;
+  }
+
+  wait(id: string, ms: number, sleep: (ms: number) => Promise<void>): Promise<string | null> {
+    const have = this.get(id);
+    if (have) return Promise.resolve(have);
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (url: string | null) => {
+        if (done) return;
+        done = true;
+        this.waiters.delete(id);
+        resolve(url);
+      };
+      this.waiters.set(id, finish);
+      void sleep(ms).then(() => finish(this.get(id)));
+    });
+  }
+}
+
 export interface LinePlayerDeps {
   createAudio: (url: string) => PlayableAudio;
   sleep: (ms: number) => Promise<void>;
@@ -93,7 +128,8 @@ export function makeLinePlayer(deps: LinePlayerDeps) {
     }
     const spoken = deps.speak?.(line.text, line.speaker);
     if (spoken) {
-      await Promise.race([spoken.catch(() => undefined), deps.sleep(maxMs)]);
+      // some browsers never fire `end` (no voices installed): cap at 3× reading time
+      await Promise.race([spoken.catch(() => undefined), deps.sleep(Math.min(maxMs, readingTimeMs(line.text) * 3))]);
       return "speech";
     }
     await deps.sleep(readingTimeMs(line.text));

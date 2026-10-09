@@ -38,11 +38,12 @@ async function main() {
   if (!SKIP_INTRO) await cookieBanner(root);
   const { pair, officers } = await allocation;
   const name = pairName(pair.id);
-  if (!SKIP_INTRO) await queueTicket(root, officers, name);
   for (;;) {
     const sub = await submitScreen(root, api);
     try {
       const kase = await api.createCase(sub, pair.officers);
+      // the queue number is the server's case ticket, so the ticket comes after filing
+      if (!SKIP_INTRO) await queueTicket(root, officers, name, kase.ticket);
       hearing(root, api, kase, officers, name, sub);
       return;
     } catch (err) {

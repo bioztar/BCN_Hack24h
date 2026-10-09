@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeLinePlayer, readingTimeMs, Sequencer, type PlayableAudio } from "../src/sequencer";
+import { makeLinePlayer, readingTimeMs, Sequencer, type PlayableAudio, LateAudio } from "../src/sequencer";
 
 const tick = (ms = 0) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -95,5 +95,20 @@ describe("audio queue (Sequencer + line player)", () => {
     [0, 1, 2].forEach((n) => seq.enqueue(n));
     await seq.idle();
     expect(done).toEqual([0, 2]);
+  });
+});
+
+describe("LateAudio", () => {
+  it("returns a URL delivered before or during the wait, else null after the grace period", async () => {
+    const late = new LateAudio();
+    late.deliver("a", "/a.mp3");
+    expect(await late.wait("a", 1500, () => new Promise(() => undefined))).toBe("/a.mp3");
+    let fire = () => {};
+    const p = late.wait("b", 1500, () => new Promise<void>((r) => (fire = r)));
+    late.deliver("b", "/b.mp3");
+    expect(await p).toBe("/b.mp3");
+    const q = late.wait("c", 1500, () => new Promise<void>((r) => (fire = r)));
+    fire();
+    expect(await q).toBeNull();
   });
 });

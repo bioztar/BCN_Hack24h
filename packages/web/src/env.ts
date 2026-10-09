@@ -3,8 +3,8 @@ const params = new URLSearchParams(location.search);
 export const MOCK = params.get("mock") === "1";
 /** `?skip=intro` jumps over cookie banner + queue ticket (rehearsals). */
 export const SKIP_INTRO = params.get("skip") === "intro";
-/** `?speak=1` reads lines without audioUrl through the browser's speech synthesis. */
-export const SPEAK = params.get("speak") === "1";
+/** `?speak=1` (default in `?mock=1`, off with `speak=0`) reads lines without audioUrl through the browser's speech synthesis. */
+export const SPEAK = params.get("speak") === "1" || (MOCK && params.get("speak") !== "0");
 
 /** Keeps the mock flag (and friends) when linking between the stage and the wall. */
 export function withFlags(path: string): string {

@@ -5,9 +5,9 @@ import { h, safeUrl, sleep } from "../dom";
 import { SPEAK, withFlags } from "../env";
 import { mockBroadcastLine } from "../mock";
 import { initialState, reduce, type LineEvent, type StageAction, type StageState } from "../reducer";
-import { Sequencer, makeLinePlayer } from "../sequencer";
+import { Sequencer, makeLinePlayer, LateAudio } from "../sequencer";
 import { OfficialView } from "../stage/official";
-import { analyse, council, speak, thud } from "../stage/sfx";
+import { analyse, chime, council, speak, thud } from "../stage/sfx";
 import { slam } from "../stage/stamp3d";
 import { chrome } from "./chrome";
 import { noticeView } from "./notice";
@@ -49,6 +49,8 @@ function inkSplat(host: HTMLElement, text: string): void {
 export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Persona, Persona], pair: string, sub: Submission): void {
   let state: StageState = initialState(officers);
   let views: OfficialView[] = [];
+  const late = new LateAudio();
+  let stampedThisRound = false;
 
   const tierBanner = h("div", { class: "tier-banner" });
   const ladder = h("ol", { class: "ladder" }, TIER_NAMES.map((n, i) => h("li", { dataset: { t: String(i + 1) } }, n)));
@@ -59,7 +61,7 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
   const intake = h("aside", { class: "intake", hidden: true });
   const minutes = h("ol", { class: "minutes-list" });
   const controls = h("div", { class: "controls" });
-  const room = h("div", { class: "room" }, h("div", { class: "backdrop", "aria-hidden": "true" }, h("div", { class: "window" }), h("div", { class: "flag" }), h("div", { class: "cabinet" }), h("div", { class: "plant" })), officials, watermark, inkLayer, subtitle, intake);
+  const room = h("div", { class: "room" }, h("div", { class: "backdrop", "aria-hidden": "true" }, h("div", { class: "window" }), h("div", { class: "flag" }), h("div", { class: "cabinet" }), h("div", { class: "plant" })), officials, watermark, inkLayer, intake);
   const stage = h(
     "div",
     { class: "hearing" },
@@ -67,6 +69,8 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
     ladder,
     h("div", { class: "hearing-body" }, h("div", { class: "stage-col" }, room, controls), h("section", { class: "minutes" }, h("h3", null, "Minutes of the hearing"), minutes)),
   );
+  room.after(subtitle);
+
   root.replaceChildren(chrome(stage, `H(2026) ${kase.ticket} final`));
 
   function mountOfficials(ps: [Persona, Persona]) {
@@ -134,8 +138,15 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
   }
 
   async function showTier(tier: number, name: string) {
-    council();
-    const flash = h("div", { class: "tier-flash" }, h("small", null, `Escalated to tier ${tier}`), h("strong", null, name));
+    if (tier === 3) council();
+    else chime();
+    const flash = h(
+      "div",
+      { class: "tier-flash" },
+      h("small", null, `Escalated to tier ${tier}`),
+      h("strong", null, name),
+      tier === 3 ? h("small", null, "The Council of the European Union has entered the room.") : null,
+    );
     room.append(flash);
     await sleep(1600);
     flash.remove();
@@ -157,13 +168,16 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
         const p = who(e.speaker);
         const line = state.current;
         if (!line || line.id !== e.id) return;
-        subtitle.replaceChildren(h("b", { style: `color:${p?.color ?? "#ffd617"}` }, `${p?.name ?? e.speaker}:`), " ", e.text, chips(line) ?? "");
+        subtitle.style.setProperty("--accent", p?.color ?? "#ffd617");
+        subtitle.replaceChildren(h("b", { class: "sub-name" }, `${p?.name ?? e.speaker}:`), " ", e.text, chips(line) ?? "");
         subtitle.classList.add("on");
         addMinute(p?.name ?? e.speaker, e.text, p?.color ?? "#003399", chips(line));
         if (api.mock) mockBroadcastLine({ speaker: e.speaker, text: e.text, at: new Date().toISOString() });
         const stamp = e.stamp;
+        if (stamp) stampedThisRound = true;
         level = null;
-        await Promise.all([playLine(e), stamp ? sleep(500).then(() => slam(stamp, () => impact(stamp))) : null]);
+        const audioUrl = e.audioUrl ?? (api.mock ? null : await late.wait(e.id, 1500, sleep));
+        await Promise.all([playLine({ ...e, audioUrl }), stamp ? sleep(500).then(() => slam(stamp, () => impact(stamp))) : null]);
         if (isCurrent()) dispatch({ type: "line-end", id: e.id });
         await sleep(350);
         return;
@@ -230,7 +244,7 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
     if (!notice) return;
     controls.replaceChildren(h("p", { class: "verdict-wait" }, "The notice is being printed…"));
     setTimeout(async () => {
-      const view = noticeView(notice, state.officers ?? officers);
+      const view = noticeView(notice, state.officers ?? officers, sub.text);
       stage.append(view);
       view.scrollIntoView({ behavior: "smooth", block: "start" });
       await sleep(900);
@@ -250,12 +264,16 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
     const ctl = new AbortController();
     let failure: string | null = null;
     try {
-      await api.stream(kase.caseId, (e) => queue.enqueue(e), ctl.signal);
+      stampedThisRound = false;
+      await api.stream(kase.caseId, (e) => (e.type === "audio" ? late.deliver(e.id, e.audioUrl) : queue.enqueue(e)), ctl.signal);
     } catch (err) {
       failure = (err as Error).message || "connection lost";
     }
     await queue.idle();
-    if (state.phase === "awaiting") return showReply();
+    if (state.phase === "awaiting") {
+      if (!stampedThisRound) await slam("INCOMPLET", () => impact("INCOMPLET"));
+      return showReply();
+    }
     if (state.phase === "verdict") return showVerdict();
     if (state.phase !== "error") dispatch({ type: "connection-lost", message: failure ?? "the stream closed without a decision" });
     showError();

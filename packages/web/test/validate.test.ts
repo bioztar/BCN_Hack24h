@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cutoutUrl, pickVisual } from "../src/assets";
 import { levelFromSamples } from "../src/stage/level";
 import type { Persona } from "../src/contract";
-import { parseRepoUrl, parseRevenue } from "../src/validate";
+import { parseRepoUrl, parseRevenue, quoteClaim } from "../src/validate";
 
 describe("parseRepoUrl", () => {
   it("accepts github.com owner/repo", () => {
@@ -58,5 +58,14 @@ describe("levelFromSamples", () => {
     expect(quiet).toBeGreaterThan(0);
     expect(loud).toBeGreaterThan(quiet);
     expect(levelFromSamples(Uint8Array.from({ length: 256 }, (_, i) => (i % 2 ? 255 : 0)))).toBe(1);
+  });
+});
+
+describe("quoteClaim", () => {
+  it("quotes at most 12 words", () => {
+    expect(quoteClaim("Swipely: Tinder for regulatory filings.")).toBe("Swipely: Tinder for regulatory filings");
+    expect(quoteClaim("one two three four five six seven eight nine ten eleven twelve thirteen")).toBe("one two three four five six seven eight nine ten eleven twelve…");
+    expect(quoteClaim("   ")).toBeNull();
+    expect(quoteClaim(undefined)).toBeNull();
   });
 });

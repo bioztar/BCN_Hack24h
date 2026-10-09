@@ -129,15 +129,29 @@ export function council(): void {
 }
 
 /** Mock/rehearsal only (`?speak=1`): Web Speech for lines that have no audioUrl. */
+/** Mock-mode voices: one pitch/rate per officer so the pair is told apart by ear. */
+const VOICE: Record<string, { pitch: number; rate: number; female?: boolean }> = {
+  formblatt: { pitch: 0.55, rate: 0.82 },
+  annexe: { pitch: 1.25, rate: 1.08, female: true },
+  "grandma-gdpr": { pitch: 1.45, rate: 0.8, female: true },
+  "auditor-9000": { pitch: 0.1, rate: 1.15 },
+  "de-vries": { pitch: 0.8, rate: 1.0 },
+  "the-cookie": { pitch: 1.9, rate: 1.25 },
+};
+const FEMALE = /female|woman|zira|samantha|victoria|karen|moira|tessa|fiona|susan|serena|libby|sonia|aria|jenny/i;
+
 export function speak(text: string, speaker: string): Promise<void> | null {
   if (typeof speechSynthesis === "undefined") return null;
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
     const hash = [...speaker].reduce((a, ch) => a + ch.charCodeAt(0), 0);
-    const voices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"));
+    const v = VOICE[speaker] ?? { pitch: 0.6 + (hash % 7) / 10, rate: 0.95 };
+    const en = speechSynthesis.getVoices().filter((x) => x.lang.startsWith("en"));
+    const pool = en.filter((x) => FEMALE.test(x.name) === !!v.female);
+    const voices = pool.length ? pool : en;
     if (voices.length) u.voice = voices[hash % voices.length]!;
-    u.pitch = 0.6 + (hash % 7) / 10;
-    u.rate = 0.95;
+    u.pitch = v.pitch;
+    u.rate = v.rate;
     u.onend = () => resolve();
     u.onerror = () => resolve();
     speechSynthesis.speak(u);

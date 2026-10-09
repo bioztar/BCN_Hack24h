@@ -37,3 +37,11 @@ describe("toWallEntry", () => {
     expect(toWallEntry({ event: "message", data: '[{"speaker":"a","text":"b","at":""},{"nope":1}]' })).toHaveLength(1);
   });
 });
+
+describe("late audio", () => {
+  it("accepts the unnamed audio event", () => {
+    const p = new SseParser();
+    const [m] = p.feed('data: {"type":"audio","id":"l1","audioUrl":"/assets/tts/l1.mp3"}\n\n');
+    expect(toRoastEvent(m!)).toEqual({ type: "audio", id: "l1", audioUrl: "/assets/tts/l1.mp3" });
+  });
+});

@@ -1,3 +1,4 @@
+import { quoteClaim } from "../validate";
 import type { Notice, Persona } from "../contract";
 import { h, fmtEur, safeUrl } from "../dom";
 import { POCKET_URL, REPORT_URL, withFlags } from "../env";
@@ -36,7 +37,8 @@ export function ombudsman(): HTMLElement {
 }
 
 /** The Notice of Non-Compliance. Returns the document node too, for PNG export. */
-export function noticeView(notice: Notice, officers: Persona[]): HTMLElement {
+export function noticeView(notice: Notice, officers: Persona[], pitch?: string): HTMLElement {
+  const claim = quoteClaim(pitch);
   const issued = new Date(notice.issuedAt);
   const date = isNaN(issued.getTime()) ? notice.issuedAt : issued.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
   const first = notice.findings.map((f) => safeUrl(f.provision.url)).find(Boolean) ?? null;
@@ -56,6 +58,7 @@ export function noticeView(notice: Notice, officers: Persona[]): HTMLElement {
     h("h1", null, "NOTICE OF NON-COMPLIANCE"),
     h("p", { class: "nd-sub" }, "issued pursuant to everything, in respect of"),
     h("p", { class: "nd-startup" }, notice.startup),
+    claim ? h("p", { class: "nd-recital" }, `Having regard to the applicant's claim that “${claim}”,`) : null,
     h("p", null, "Having regard to the Treaty on the Functioning of the European Union, having regard to the pitch, and whereas the pitch was heard in its entirety, against advice, the Directorate-General finds as follows:"),
     h(
       "ol",
@@ -70,7 +73,7 @@ export function noticeView(notice: Notice, officers: Persona[]): HTMLElement {
     h(
       "footer",
       { class: "nd-sign" },
-      [a, b].map((p) => h("div", { class: "sig" }, h("span", { class: "sig-ink", style: `color:${p.color}` }, p.name), h("i"), h("b", null, p.name), h("small", null, p.title))),
+      [a, b].map((p) => h("div", { class: "sig", style: `--accent:${p.color}` }, h("span", { class: "sig-ink" }, p.name), h("i"), h("b", null, p.name), h("small", null, p.title))),
       qr,
     ),
     h("div", { class: "nd-stamp s1" }, "REFUSÉ"),

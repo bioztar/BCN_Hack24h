@@ -9,6 +9,14 @@ export function parseRepoUrl(input: string): { owner: string; repo: string; url:
   return { owner, repo, url: `https://github.com/${owner}/${repo}` };
 }
 
+/** ≤ `max` words of the visitor's pitch for the Notice recital (never the wall); null if empty. */
+export function quoteClaim(text: string | undefined, max = 12): string | null {
+  const words = (text ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return null;
+  const head = words.slice(0, max).join(" ").replace(/[\s,;:.!?…-]+$/, "");
+  return words.length > max ? `${head}…` : head;
+}
+
 export function parseRevenue(input: string): number | undefined {
   const cleaned = input.replace(/[€\s,_]/g, "").replace(/eur$/i, "");
   if (!cleaned) return undefined;
