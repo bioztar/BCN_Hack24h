@@ -1,6 +1,6 @@
 import Foundation
 
-/// One seam between the app and the server. `MockBackend` = fixtures, `LiveBackend` = roast.pro7ocol.com.
+/// One seam between the app and the server. `MockBackend` = fixtures, `LiveBackend` = eurocrat.pro7ocol.com.
 protocol RoastBackend {
     func personas() async throws -> [Persona]
     func pairs() async throws -> [Pair]
@@ -21,7 +21,7 @@ enum BackendFactory {
             ?? bundle.object(forInfoDictionaryKey: "RoastBackend") as? String
             ?? "mock"
         guard mode == "live" else { return MockBackend() }
-        let base = bundle.object(forInfoDictionaryKey: "RoastBaseURL") as? String ?? "https://roast.pro7ocol.com"
+        let base = bundle.object(forInfoDictionaryKey: "RoastBaseURL") as? String ?? "https://eurocrat.pro7ocol.com"
         return LiveBackend(base: URL(string: base)!)
     }
 }

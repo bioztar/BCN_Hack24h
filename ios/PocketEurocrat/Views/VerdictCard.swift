@@ -17,7 +17,7 @@ struct VerdictCard: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                Link(destination: URL(string: "https://roast.pro7ocol.com/analyze/")!) {
+                Link(destination: URL(string: "https://warden.pro7ocol.com/analyze/")!) {
                     Label("Get the real report", systemImage: "doc.text.magnifyingglass")
                 }
                 .buttonStyle(.bordered)

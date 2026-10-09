@@ -11,9 +11,9 @@ settings:
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    # Config flip: "mock" = fixture backend (no server), "live" = https://roast.pro7ocol.com
+    # Config flip: "mock" = fixture backend (no server), "live" = https://eurocrat.pro7ocol.com
     ROAST_BACKEND: mock
-    ROAST_BASE_URL: https://roast.pro7ocol.com
+    ROAST_BASE_URL: https://eurocrat.pro7ocol.com
 targets:
   PocketEurocrat:
     type: application

@@ -8,7 +8,7 @@
 - Nothing half-done. Placeholder capsule officer (`Scene/BoxScene.swift` buildOfficer).
 ## Next steps (ordered)
 1. Plug in/unlock iPhone, run from Xcode, tune `MotionService.shakeThreshold` and `BoxScene.gravityScale`.
-2. When roast.pro7ocol.com is live: set ROAST_BACKEND=live, run dictate→roast→audio→share. Check `/api/stt` accepts audio/mp4 (m4a).
+2. When eurocrat.pro7ocol.com is live: set ROAST_BACKEND=live, run dictate→roast→audio→share. Check `/api/stt` accepts audio/mp4 (m4a).
 3. Convert assets/generated/3d/<id>.glb → USDZ, replace placeholder officer; use stills for portraits.
 ## Blockers / needs human
 - iPhone unavailable; live API not up.
