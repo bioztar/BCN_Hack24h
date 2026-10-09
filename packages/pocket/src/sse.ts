@@ -1,4 +1,4 @@
-import type { RoastEvent } from "./types";
+import type { AnyRoastEvent } from "./types";
 
 export interface SseMessage { event: string; data: string; }
 
@@ -47,10 +47,10 @@ export class SseParser {
   }
 }
 
-const TYPES = new Set(["officers", "intake", "tier", "line", "audio", "verdict", "awaiting", "error"]);
+const TYPES = new Set(["officers", "intake", "tier", "line", "audio", "verdict", "awaiting", "error", "fine", "meltdown", "analyzing", "meanwhile"]);
 
 /** Turns an SSE message into a RoastEvent; tolerates servers that put the type only in `event:`. */
-export function toRoastEvent(msg: SseMessage): RoastEvent | null {
+export function toRoastEvent(msg: SseMessage): AnyRoastEvent | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(msg.data);
@@ -61,5 +61,5 @@ export function toRoastEvent(msg: SseMessage): RoastEvent | null {
   const obj = parsed as Record<string, unknown>;
   const type = typeof obj.type === "string" ? obj.type : msg.event;
   if (!TYPES.has(type)) return null;
-  return { ...obj, type } as RoastEvent;
+  return { ...obj, type } as AnyRoastEvent;
 }
