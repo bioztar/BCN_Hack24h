@@ -10,12 +10,16 @@ struct RootView: View {
         _board = State(initialValue: LeaderboardModel(backend: flow.backend))
     }
 
+    @State private var tab = ProcessInfo.processInfo.arguments.contains("-tab-board") ? 1 : 0   // -tab-board: screenshot aid
+
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             applyTab
                 .tabItem { Label("Apply", systemImage: "doc.text") }
+                .tag(0)
             LeaderboardView(model: board)
                 .tabItem { Label("Hall of Shame", systemImage: "list.number") }
+                .tag(1)
         }
     }
 

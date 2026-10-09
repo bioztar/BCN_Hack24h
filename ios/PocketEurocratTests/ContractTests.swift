@@ -48,6 +48,50 @@ final class ContractTests: XCTestCase {
         XCTAssertNoThrow(try AVAudioPlayer(data: data))
     }
 
+    func testDecodesV2Events() throws {
+        let dec = JSONDecoder()
+        let fine = #"{"type":"fine","id":"f1","provision":{"id":"gdpr-33","label":"GDPR Art. 33","title":"t","url":"u"},"amountEur":20000000,"jailMonths":36,"totalEur":55000000,"totalJailMonths":36,"caption":"gag"}"#
+        guard case .fine(let f) = try dec.decode(RoastEvent.self, from: Data(fine.utf8)) else { return XCTFail("not a fine") }
+        XCTAssertEqual(f.totalEur, 55_000_000)
+        XCTAssertEqual(f.jailMonths, 36)
+        XCTAssertEqual(try dec.decode(RoastEvent.self, from: Data(#"{"type":"meltdown","totalEur":1.2e9,"totalJailMonths":1300}"#.utf8)),
+                       .meltdown(totalEur: 1_200_000_000, totalJailMonths: 1300))
+        XCTAssertEqual(try dec.decode(RoastEvent.self, from: Data(#"{"type":"analyzing","stage":"Cloning","progress":0.25}"#.utf8)),
+                       .analyzing(stage: "Cloning", progress: 0.25))
+    }
+
+    /// register → better-place → case with applicant → fines → meltdown → verdict → on the leaderboard (mock).
+    func testMockV2Flow() async throws {
+        let b = MockBackend(lineDelay: .milliseconds(1))
+        let ticket = try await b.register(ApplicantInput(startupName: "TestCo", founderName: "T. Ester", oneLiner: nil, photo: nil))
+        XCTAssertGreaterThan(ticket.position, 1_000_000)
+        let skip = try await b.betterPlace(applicantId: ticket.applicantId, cause: .climate)
+        XCTAssertEqual(skip.position, 1)
+        let c = try await b.createCase(.repo("https://github.com/x/y"), officers: ["de-vries", "the-cookie"], applicantId: ticket.applicantId)
+        var fines = 0, melted = false, verdict: Notice?
+        for try await ev in b.stream(caseID: c.caseId) {
+            switch ev {
+            case .fine: fines += 1
+            case .meltdown: melted = true
+            case .verdict(let n): verdict = n
+            default: break
+            }
+        }
+        XCTAssertGreaterThan(fines, 3)
+        XCTAssertTrue(melted)
+        XCTAssertEqual(verdict?.startupName, "TestCo")
+        XCTAssertEqual(verdict?.meltdown, true)
+        let board = try await b.leaderboard(sort: .fines, limit: 50)
+        XCTAssertTrue(board.contains { $0.caseId == c.caseId })
+    }
+
+    func testRepoUrlIsClassifiedAsRepo() {
+        if case .repo = Submission.classify("https://github.com/bioztar/warden", dictated: false) {} else { XCTFail("url not a repo") }
+        if case .text = Submission.classify("an app for dogs", dictated: false) {} else { XCTFail("text not text") }
+        XCTAssertEqual(Money.short(1_240_000_000), "€1.24bn")
+        XCTAssertEqual(Money.jail(1_200), "100 y")
+    }
+
     func testEveryOfficerIsInAPair() {
         XCTAssertEqual(Set(Roster.pairs.flatMap(\.officers)), Set(Roster.officers.map(\.id)))
     }
