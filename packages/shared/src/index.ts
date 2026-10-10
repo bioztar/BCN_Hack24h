@@ -21,7 +21,9 @@ export interface RepoIntake { repo: string; description: string; stars: number; 
 
 export interface Provision { id: string; label: string; title: string; url: string; }   // id "gdpr-33", label "GDPR Art. 33"
 
-export interface Case { caseId: string; ticket: number; officers: [PersonaId, PersonaId]; }
+export interface Case { caseId: string; ticket: number; officers: [PersonaId, PersonaId]; mode?: CaseMode; }
+/** "staged" (default): 5 rounds with replies. "express" (server flag EXPRESS_MODE): one stream, tiers 1→5, verdict; optional appeal. */
+export type CaseMode = "staged" | "express";
 
 // Server-sent events on GET /api/case/:caseId/stream
 export type RoastEvent =
@@ -91,6 +93,7 @@ export interface NoticeV2 extends Notice {
   reportUrl: string;                            // /api/case/:caseId/report.pdf
   badgeUrl: string;                             // /api/case/:caseId/badge.png  (1080×1080, shareable)
   meanwhile?: Meanwhile;                        // "While you were being processed…" — see CONTRACT v2 "Meanwhile"
+  turnoverEstimate?: { eur: number; basis: string };  // set when no revenue was given: the Commission's estimate (TAM × share) used for the %-of-turnover caps
 }
 
 /** "While you were being processed": the global race, scaled to how long this case took. */

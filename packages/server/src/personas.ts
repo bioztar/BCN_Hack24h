@@ -2,6 +2,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "yaml";
+import type { VoiceSpec } from "./voice.js";
 import type { ClipSlot, Persona, PersonaId, Tier } from "@dg-roast/shared";
 
 export interface CannedLine {
@@ -17,7 +18,7 @@ export interface PersonaSpec {
   title: string;
   color: string;
   partner?: PersonaId;
-  voice: { model: string; voice: string };
+  voice: VoiceSpec;
   register: string;
   pinch: string[];
   signature: string[];

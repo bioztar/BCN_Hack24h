@@ -20,10 +20,10 @@ voices:
   annexe-alt-carol: {provider: slng, model: cartesia/sonic:3, unit: minute, unit_cost_usd: 0.035, voice_id: bf991597-6c13-47e4-8411-91ec2de5c466}  # Cartesia 'Carol'
   formblatt-alt-alaric: {provider: slng, model: cartesia/sonic:3, unit: minute, unit_cost_usd: 0.035, voice_id: 87748186-23bb-4158-a1eb-332911b0b708}  # Cartesia 'Alaric'
   council: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-zeus-en}  # Deepgram Aura-2 'Zeus'
-  grandma-gdpr: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-cora-en}  # Deepgram Aura-2 'Cora: smooth, melodic, caring storyteller'
-  auditor-9000: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-orion-en}  # Deepgram Aura-2 'Orion: calm, polite, informative; flat machine read'
-  de-vries: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-arcas-en}  # Deepgram Aura-2 'Arcas: clear, natural, clipped delivery'
-  the-cookie: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-delia-en}  # Deepgram Aura-2 'Delia: young, breathy, cheerful; plays wounded'
+  grandma-gdpr: {provider: slng, model: fish/tts:s2.1-pro, unit: minute, unit_cost_usd: 0.005, voice_id: 15259c52cf5d41c28ea4394080e5e593}  # Fish 'Marion' at prosody.speed 0.85 + elderly cues (content/voices.md)
+  auditor-9000: {provider: slng, model: fish/tts:s2.1-pro, unit: minute, unit_cost_usd: 0.005, voice_id: 0b96bf70a20d47f6b9e825d9cfe0e8c8}  # Fish 'Elin' at 0.9: synthetic, flat
+  de-vries: {provider: slng, model: fish/tts:s2.1-pro, unit: minute, unit_cost_usd: 0.005, voice_id: bf322df2096a46f18c579d0baa36f41d}  # Fish 'Adrian' (deep) at 1.15: clipped
+  the-cookie: {provider: slng, model: deepgram/aura:2, unit: minute, unit_cost_usd: 0.005, voice_id: aura-2-iris-en}  # Deepgram Aura-2 'Iris: cheerful, bright' — highest small/thin score
 
 assets:
   # --- persona stills: neutral is text-to-image; the other four are edits of the approved neutral (identity anchor)

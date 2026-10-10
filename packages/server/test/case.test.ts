@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { TURNOVER_LINE } from "../src/engine.js";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -103,7 +104,7 @@ describe("full case, tier 1 → 5 (mocked Nebius + SLNG)", () => {
     const c = (await app.inject({ method: "POST", url: "/api/case", payload: { submission: { kind: "dictation", text: "An AI for cats" }, officers: ["formblatt", "annexe"] } })).json() as { caseId: string };
     const events = await stream(app, c.caseId);
     const lines = events.filter((e) => e.type === "line");
-    expect(lines.length).toBe(3);
+    expect(lines.filter((l) => l.text !== TURNOVER_LINE).length).toBe(3);
     for (const l of lines) expect(l.audioUrl).toBeNull();
     assertProvisions(events);
     expect(events.at(-1)!.type).toBe("awaiting");
@@ -197,7 +198,7 @@ describe("misc endpoints", () => {
     const t0 = Date.now();
     const events = await stream(app, c.caseId);
     expect(Date.now() - t0).toBeLessThan(3000);
-    expect(events.filter((e) => e.type === "line").length).toBe(3);
+    expect(events.filter((e) => e.type === "line" && e.text !== TURNOVER_LINE).length).toBe(3);
     expect(events.at(-1)!.type).toBe("awaiting");
     expect((await app.inject({ method: "POST", url: `/api/case/${c.caseId}/reply`, payload: { text: "hello?" } })).statusCode).toBe(204);
   });

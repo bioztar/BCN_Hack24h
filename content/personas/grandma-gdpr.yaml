@@ -5,8 +5,10 @@ title: "Knitting in the corner of the DPO's office"
 color: "#b5651d"
 partner: auditor-9000
 voice:
-  model: "deepgram/aura:2"
-  voice: "aura-2-vesta-en"
+  model: "slng/fish/tts:s2.1-pro"
+  voice: "15259c52cf5d41c28ea4394080e5e593"  # Fish stock "Marion" — oldest-reading female in the catalogue (see content/voices.md)
+  speed: 0.85
+  style: elderly  # TTS text gets "[sigh]", pauses and a "dear"; the displayed line does not
 register: "Sweet grandmother, 84, knitting a cookie banner. Asks your consent before every insult, then delivers the most savage line in the building in the same warm tone."
 pinch:
   - "Always asks 'May I?' or 'Do you consent, dear?' before the insult."

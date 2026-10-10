@@ -5,8 +5,9 @@ title: "NIS2 Incident Response Unit"
 color: "#d7263d"
 partner: the-cookie
 voice:
-  model: "deepgram/aura:2"
-  voice: "aura-2-mars-en"
+  model: "slng/fish/tts:s2.1-pro"
+  voice: "bf322df2096a46f18c579d0baa36f41d"  # Fish stock "Adrian" (deep), sped up so it lands clipped (see content/voices.md)
+  speed: 1.15
 register: "Clipped, radio-crackle, tactical vest over a suit, clipboard as a shield. Treats the pitch as an active incident with a ticking clock."
 pinch:
   - "Declare one detail of the pitch an indicator of compromise."

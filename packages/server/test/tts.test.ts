@@ -21,7 +21,8 @@ describe("TTS coverage", () => {
       const ev = await stream(app, caseId);
       const lines = lineIds(ev);
       expect(lines.length).toBeGreaterThanOrEqual(3);
-      expect(new Set(audioIds(ev)), `round ${t}`).toEqual(new Set(lines));
+      const voiced = new Set([...audioIds(ev), ...ev.flatMap((e) => (e.type === "line" && e.audioUrl ? [e.id] : []))]);
+      expect(voiced, `round ${t}`).toEqual(new Set(lines));
       expect(ev.at(-1)!.type).toBe(t < 5 ? "awaiting" : "verdict");
       if (t < 5) expect((await reply(app, caseId)).statusCode).toBe(204);
     }
@@ -35,7 +36,7 @@ describe("TTS coverage", () => {
     const r1 = await stream(app, caseId);
     const missing = lineIds(r1).filter((id) => !audioIds(r1).includes(id));
     expect(missing.length).toBeGreaterThan(0);
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 900));
     await reply(app, caseId);
     const r2 = await stream(app, caseId);
     const firstTier = r2.findIndex((e) => e.type === "tier");

@@ -7,13 +7,15 @@ import Fastify, { type FastifyInstance, type FastifyPluginAsync, type FastifyRep
 import { MELTDOWN_EUR, MELTDOWN_JAIL_MONTHS, TIER_NAMES, type ApplicantInput, type Case, type LeaderboardSort, type NoticeV2, type PersonaId, type RoastEvent, type RoastEventV2, type Submission, type Tier } from "@dg-roast/shared";
 import { ApplicantStore, InputError } from "./applicants.js";
 import { addFine, emptyMeter, extractRevenueHeuristic, provisionFine, topLaws } from "./fine.js";
+import { expressModeEnabled } from "./config.js";
+import { fallbackTurnover, type TurnoverEstimate } from "./turnover.js";
 import { Leaderboard, SORTS, decodeCursor } from "./leaderboard.js";
 import { meanwhileAt } from "./meanwhile.js";
 import { buildNoticeV2, fallbackExtras, type Extras } from "./notice2.js";
 import type { Corpus } from "./corpus.js";
 import { nextCounter, type Db } from "./db.js";
 import { CaseStore } from "./cases.js";
-import type { CaseState, Engine, LineOut } from "./engine.js";
+import { TURNOVER_LINE, type CaseState, type Engine, type LineOut } from "./engine.js";
 import type { Roster } from "./personas.js";
 import { quotesVisitor } from "./visitor.js";
 import type { RateLimiter } from "./ratelimit.js";
@@ -52,6 +54,14 @@ export interface AppDeps {
   arcade?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDirs?: Partial<Record<ArcadeRoute, string>> };
   /** Max wait for TTS before a line goes out with `audioUrl: null` (a later `audio` event follows). */
   ttsBudgetMs?: number;
+  /** Round 1: the first two lines wait this long for inline audio (cold voices), default 8000. */
+  firstLinesTtsBudgetMs?: number;
+  /** `mode: "express"` accepted; default EXPRESS_MODE env (off). */
+  expressMode?: boolean;
+  /** Express: model time per tier before canned lines fill, default 3500. */
+  expressTierMs?: number;
+  /** Max wait for the turnover estimate before the deterministic one is used, default 2500. */
+  turnoverBudgetMs?: number;
   /** Before `awaiting`/`verdict`, wait at most this long for all of the round's outstanding audio; the rest is replayed at the start of the next stream. */
   lateAudioMs?: number;
   /** A canned opener speaks if no model line arrives by then. */
@@ -250,13 +260,16 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     return r;
   });
 
-  app.post<{ Body: { submission?: Submission; officers?: [PersonaId, PersonaId]; applicantId?: string; applicantToken?: string } }>("/api/case", async (req, reply) => {
+  app.post<{ Body: { submission?: Submission; officers?: [PersonaId, PersonaId]; applicantId?: string; applicantToken?: string; mode?: unknown } }>("/api/case", async (req, reply) => {
     const sub = req.body?.submission;
     if (!sub || !["text", "dictation", "repo"].includes(sub.kind)) return fail(reply, 400, "submission.kind must be text, dictation or repo");
     if (sub.revenueEur !== undefined && (typeof sub.revenueEur !== "number" || !Number.isFinite(sub.revenueEur) || sub.revenueEur < 0)) return fail(reply, 400, "submission.revenueEur must be a non-negative number");
     if (sub.kind !== "repo" && (typeof sub.text !== "string" || !sub.text.trim())) return fail(reply, 400, "submission.text is required");
     if (typeof sub.text === "string" && sub.text.length > 4000) return fail(reply, 400, "submission.text is longer than 4000 characters");
     if (sub.kind === "repo" && typeof sub.repoUrl !== "string") return fail(reply, 400, "submission.repoUrl is required");
+    const mode = req.body.mode;
+    if (mode !== undefined && mode !== "staged" && mode !== "express") return fail(reply, 400, 'mode must be "staged" or "express"');
+    if (mode === "express" && !(d.expressMode ?? expressModeEnabled())) return fail(reply, 400, "express mode is off on this server (EXPRESS_MODE)");
     let officers = req.body.officers;
     if (officers !== undefined) {
       if (!Array.isArray(officers) || officers.length !== 2 || officers[0] === officers[1] || !officers.every((o) => d.roster.get(o))) return fail(reply, 400, "officers must be two distinct persona ids");
@@ -272,7 +285,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       }
       // One case per applicant: a second POST returns the existing case.
       const existing = applicant.caseId ? cases.get(applicant.caseId) : null;
-      if (existing) return reply.code(200).send({ caseId: existing.caseId, ticket: existing.ticket, officers: existing.officers } satisfies Case);
+      if (existing) return reply.code(200).send({ caseId: existing.caseId, ticket: existing.ticket, officers: existing.officers, ...(existing.mode ? { mode: existing.mode } : {}) } satisfies Case);
     }
     if (limited(req, reply)) return reply;
 
@@ -293,9 +306,16 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         return fail(reply, 502, "GitHub could not be reached; try a text pitch");
       }
     }
+    if (mode === "express") state.mode = "express";
+    // No revenue given (field or pitch): the Commission estimates it — never ask the applicant.
+    if (sub.revenueEur === undefined && extractRevenueHeuristic(visitorTexts(state).join("\n")) === null) {
+      state.estimateTurnover = true;
+      if (turnoverJobs.size >= 1000) turnoverJobs.delete(turnoverJobs.keys().next().value as string);
+      turnoverJobs.set(state.caseId, d.engine.estimateTurnover(state));
+    }
     cases.save(state);
     if (applicant) applicants.setCase(applicant.id, state.caseId);
-    const out: Case = { caseId: state.caseId, ticket: state.ticket, officers: state.officers };
+    const out: Case = { caseId: state.caseId, ticket: state.ticket, officers: state.officers, ...(state.mode ? { mode: state.mode } : {}) };
     return reply.code(201).send(out);
   });
 
@@ -305,6 +325,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     const text = req.body?.text;
     if (typeof text !== "string" || !text.trim()) return fail(reply, 400, "text is required");
     if (text.length > 2000) return fail(reply, 400, "text is longer than 2000 characters");
+    if (state.mode === "express") return fail(reply, 409, "express cases take no replies; lodge an appeal after the verdict");
     if (state.done) return fail(reply, 409, "the Notice has been published; the case is closed");
     if (state.roundPending) return fail(reply, 409, "the current round has not been heard yet; open the stream first");
     if (limited(req, reply)) return reply;
@@ -316,6 +337,48 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     cases.save(state);
     return reply.code(204).send();
   });
+
+  /** Express: one appeal after the verdict → one short tier-5 round and a new verdict on the next stream. */
+  app.post<{ Params: { caseId: string }; Body: { text?: unknown; applicantToken?: unknown } }>("/api/case/:caseId/appeal", async (req, reply) => {
+    const state = cases.get(req.params.caseId);
+    if (!state) return fail(reply, 404, "unknown case");
+    if (state.mode !== "express") return fail(reply, 409, "only express cases can be appealed");
+    if (state.applicantId) {
+      try {
+        applicants.authorize(state.applicantId, tokenOf(req, req.body ?? {}));
+      } catch (err) {
+        if (err instanceof InputError) return fail(reply, err.status, err.message);
+        throw err;
+      }
+    }
+    if (!state.done) return fail(reply, 409, "the verdict has not been issued yet");
+    if (state.appealed) return fail(reply, 409, "the appeal has been lodged and, naturally, rejected");
+    const text = req.body?.text;
+    if (text !== undefined && (typeof text !== "string" || text.length > 2000)) return fail(reply, 400, "text must be a string of at most 2000 characters");
+    if (limited(req, reply)) return reply;
+    if (typeof text === "string" && text.trim()) state.replies.push(text.trim());
+    state.appealed = true;
+    state.done = false;
+    state.roundPending = true;
+    state.round++;
+    runtimes.delete(state.caseId);
+    reports.forget(state.caseId);
+    cases.save(state);
+    return reply.code(204).send();
+  });
+
+  /** Per case: the in-flight turnover estimate, started at case creation. */
+  const turnoverJobs = new Map<string, Promise<TurnoverEstimate | null>>();
+  /** The case's turnover estimate: model if it answers within turnoverBudgetMs, else deterministic; cached on the case. */
+  async function turnoverFor(state: CaseState): Promise<TurnoverEstimate> {
+    if (state.turnover) return state.turnover;
+    const job = turnoverJobs.get(state.caseId) ?? d.engine.estimateTurnover(state);
+    const got = await withTimeout(job, d.turnoverBudgetMs ?? 2500, null);
+    turnoverJobs.delete(state.caseId);
+    state.turnover ??= got ?? fallbackTurnover(state.caseId, visitorTexts(state).join("\n"));
+    return state.turnover;
+  }
+  const estimated = (s: CaseState) => Boolean(s.estimateTurnover) && s.submission.revenueEur === undefined && extractRevenueHeuristic(visitorTexts(s).join("\n")) === null;
 
   /** Per case: `audio` events that landed after their round closed, waiting for the next stream. */
   const carried = new Map<string, { events: AnyEvent[]; push: ((e: AnyEvent) => void) | null }>();
@@ -355,8 +418,11 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       if (c.push) c.push(e);
       else c.events.push(e);
     };
+    const express = state.mode === "express";
+    const appeal = express && Boolean(state.appealed);
+    const plan: Tier[] = express && !appeal ? [1, 2, 3, 4, 5] : [state.tier];
     const started = Date.now();
-    const deadline = started + (d.roundDeadlineMs ?? 20000);
+    const deadline = started + (d.roundDeadlineMs ?? 20000) * plan.length;
     const lateAudio: Promise<void>[] = [];
     let chain: Promise<void> = Promise.resolve();
     let meta: { revenueEur: number; startup: string } | null = null;
@@ -364,24 +430,28 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     let count = 0;
     const meter = (state.meter ??= emptyMeter());
     const cited = new Set(meter.items.map((i) => i.provisionId));
-    const revenue = state.submission.revenueEur ?? extractRevenueHeuristic(visitorTexts(state).join("\n")) ?? 0;
+    const revenueP: Promise<number> = (async () => state.submission.revenueEur ?? extractRevenueHeuristic(visitorTexts(state).join("\n")) ?? (await turnoverFor(state)).eur)();
     const elapsed = () => Math.max(0, (now() - (state.startedAt ?? now())) / 1000);
     let ticker: ReturnType<typeof setInterval> | null = null;
     let extras: Promise<Extras> | null = null;
     const emit = (line: LineOut) => {
       const id = `${state.caseId}-${state.round}-${n++}`;
+      // The first two lines of a case (often a voice's first synthesis) wait longer for inline audio.
+      const ttsBudget = state.round === 0 && n <= 2 ? (d.firstLinesTtsBudgetMs ?? 8000) : (d.ttsBudgetMs ?? 2500);
       const spec = d.roster.get(line.speaker)!;
+      const lineTier = state.tier;
       const render = d.audio.render(line.text, spec.voice, lineSeq++);
       const arrived = Date.now();
       const provisions = line.provisions.map((pid) => d.corpus.provision(pid)).filter((p): p is NonNullable<typeof p> => Boolean(p));
       state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
       count++;
       chain = chain.then(async () => {
-        const audioUrl = await withTimeout(render, Math.max(0, arrived + (d.ttsBudgetMs ?? 2500) - Date.now()), null);
+        const audioUrl = await withTimeout(render, Math.max(0, arrived + ttsBudget - Date.now()), null);
         push({ type: "line", id, speaker: line.speaker, text: line.text, provisions, clip: line.clip, audioUrl, ...(line.stamp ? { stamp: line.stamp } : {}) });
+        const revenue = provisions.length ? await revenueP : 0;
         provisions.forEach((p, k) => {
           const jailBases = new Set(meter.items.flatMap((i) => (i.jailBasis ? [i.jailBasis] : [])));
-          const fine = provisionFine({ caseId: state.caseId, index: meter.items.length, provisionId: p.id, label: p.label, tier: state.tier, revenueEur: revenue, repeat: cited.has(p.id), jailBases });
+          const fine = provisionFine({ caseId: state.caseId, index: meter.items.length, provisionId: p.id, label: p.label, tier: lineTier, revenueEur: revenue, repeat: cited.has(p.id), jailBases });
           if (!fine) return;
           const item = { id: `${id}-f${k}`, ...fine };
           cited.add(p.id);
@@ -405,35 +475,45 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
           push({ type: "intake", repo: state.intake });
         }
       }
-      push({ type: "tier", tier: state.tier, name: TIER_NAMES[state.tier - 1]! });
-      if (state.tier === 5) {
-        meta = await withTimeout(d.engine.extractMeta(state), d.metaBudgetMs ?? 1500, d.engine.metaFallback(state));
-        state.fine = d.engine.previewFine(state, meta);
-        state.meanwhile = meanwhileAt(state.caseId, elapsed() + VERDICT_ROUND_SEC);
-        const startup = meta.startup;
-        extras = d.engine.reportExtras(state, d.engine.notice(state, meta).findings, startup);
-      }
-      // Ticks never overtake the final (tier-5) value; tier 5 ticks show the climb towards it.
-      const final = state.tier === 5 ? state.meanwhile : null;
-      const tick = () => push({ type: "meanwhile", meanwhile: final ? meanwhileAt(state.caseId, Math.min(elapsed(), final.elapsedSec - 1)) : meanwhileAt(state.caseId, elapsed()) });
-      tick();
-      ticker = setInterval(tick, d.meanwhileTickMs ?? 5000);
-      const firstLineMs = Math.max(300, (d.firstLineMs ?? 3500) - (Date.now() - started));
-      const it = d.engine.lines(state, { firstLineMs, roundMs: Math.max(1000, deadline - Date.now() - 1000) })[Symbol.asyncIterator]();
-      try {
-        for (;;) {
-          const r = await withTimeout<IteratorResult<LineOut> | typeof STOP>(it.next(), Math.max(0, deadline - Date.now()), STOP);
-          if (r === STOP) {
-            app.log.warn({ caseId: state.caseId, tier: state.tier }, "round deadline hit; closing with canned lines");
-            break;
-          }
-          if (r.done) break;
-          emit(r.value);
+      for (const tier of plan) {
+        state.tier = tier;
+        push({ type: "tier", tier: state.tier, name: TIER_NAMES[state.tier - 1]! });
+        if (state.tier === 5) {
+          if (state.estimateTurnover) await turnoverFor(state);
+          meta = await withTimeout(d.engine.extractMeta(state), d.metaBudgetMs ?? 1500, d.engine.metaFallback(state));
+          state.fine = d.engine.previewFine(state, meta);
+          state.meanwhile = meanwhileAt(state.caseId, elapsed() + (express ? 5 : VERDICT_ROUND_SEC));
+          const startup = meta.startup;
+          extras = d.engine.reportExtras(state, d.engine.notice(state, meta).findings, startup);
         }
-      } finally {
-        void it.return(undefined).catch(() => undefined);
+        // Ticks never overtake the final (tier-5) value; tier 5 ticks show the climb towards it.
+        const final = state.tier === 5 ? state.meanwhile : null;
+        const tick = () => push({ type: "meanwhile", meanwhile: final ? meanwhileAt(state.caseId, Math.min(elapsed(), final.elapsedSec - 1)) : meanwhileAt(state.caseId, elapsed()) });
+        tick();
+        if (ticker) clearInterval(ticker);
+        ticker = setInterval(tick, d.meanwhileTickMs ?? 5000);
+        // Express: each tier gets a short model window and 1 line (appeal: 2), the tier-5 closer on top.
+        const tierDeadline = express ? Math.min(deadline, Date.now() + (d.expressTierMs ?? 3500) * (appeal ? 2 : 1) + 1000) : deadline;
+        const firstLineMs = express ? Math.min(2000, d.firstLineMs ?? 2000) : Math.max(300, (d.firstLineMs ?? 3500) - (Date.now() - started));
+        const shape = express ? { minLines: appeal ? 2 : 1, maxLines: appeal ? 2 : 1 } : {};
+        const before = count;
+        const it = d.engine.lines(state, { firstLineMs, roundMs: Math.max(1000, tierDeadline - Date.now() - 1000), ...shape })[Symbol.asyncIterator]();
+        try {
+          for (;;) {
+            const r = await withTimeout<IteratorResult<LineOut> | typeof STOP>(it.next(), Math.max(0, tierDeadline - Date.now()), STOP);
+            if (r === STOP) {
+              app.log.warn({ caseId: state.caseId, tier: state.tier }, "round deadline hit; closing with canned lines");
+              break;
+            }
+            if (r.done) break;
+            emit(r.value);
+          }
+        } finally {
+          void it.return(undefined).catch(() => undefined);
+        }
+        while (count - before < (express ? 1 : 3)) emit(d.engine.fill(state, d.engine.partner(state, state.lines.at(-1)?.speaker), state.lines.map((l) => l.text)));
+        if (state.round === 0 && tier === 1 && estimated(state)) emit({ speaker: d.engine.partner(state, state.lines.at(-1)?.speaker), text: TURNOVER_LINE, provisions: [], clip: "talking" });
       }
-      while (count < 3) emit(d.engine.fill(state, d.engine.partner(state, state.lines.at(-1)?.speaker), state.lines.map((l) => l.text)));
       await chain;
       if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 10000, undefined);
     } catch (err) {
@@ -455,7 +535,8 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         const merged: Extras = { tldr: fb.tldr.map((t) => got.tldr.find((g) => g.law === t.law) ?? t), recommendations: got.recommendations.length ? got.recommendations : fb.recommendations };
         const a = state.applicantId ? applicants.get(state.applicantId) : null;
         state.meanwhile ??= meanwhileAt(state.caseId, elapsed());
-        const notice: NoticeV2 = buildNoticeV2(base, { caseId: state.caseId, applicant: a, meter, extras: merged, meanwhile: state.meanwhile });
+        const turnoverEstimate = estimated(state) ? await turnoverFor(state) : undefined;
+        const notice: NoticeV2 = buildNoticeV2(base, { caseId: state.caseId, applicant: a, meter, extras: merged, meanwhile: state.meanwhile, turnoverEstimate });
         state.notice = notice;
         state.done = true;
         push({ type: "meanwhile", meanwhile: state.meanwhile });

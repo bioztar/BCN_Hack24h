@@ -5,8 +5,9 @@ title: "1987 mainframe, Berlaymont basement"
 color: "#33ff66"
 partner: grandma-gdpr
 voice:
-  model: "deepgram/aura:2"
-  voice: "aura-2-orpheus-en"
+  model: "slng/fish/tts:s2.1-pro"
+  voice: "0b96bf70a20d47f6b9e825d9cfe0e8c8"  # Fish stock "Elin" — the most synthetic-sounding stock voice (see content/voices.md)
+  speed: 0.9
 register: "Monotone machine. Short declarative sentences, error codes, line numbers. Only accepts fax. Prints non-compliance on forty metres of perforated paper."
 pinch:
   - "Parse one detail of the pitch as a syntax error."

@@ -26,12 +26,14 @@ export function chunked(text: string, size = 17): AsyncIterable<string> {
 export class FakeLlm implements Llm {
   readonly calls: LlmRequest[] = [];
   failRoast = false;
+  turnover: unknown = { tamEur: 8e9, sharePct: 0.5, estimatedTurnoverEur: 40_000_000, basis: "EU HR-tech TAM €8 bn × 0.5 % = €40 M" };
   constructor(readonly revenue: number | null = 1_000_000_000) {}
 
   stream(req: LlmRequest): AsyncIterable<string> {
     this.calls.push(req);
     const sys = req.messages[0]!.content;
     if (sys.includes("Extract from the pitch")) return chunked(JSON.stringify({ revenueEur: this.revenue, startup: "Fridgely" }));
+    if (sys.includes("Estimate the annual turnover")) return chunked(JSON.stringify(this.turnover));
     if (this.failRoast) return (async function* () { throw new Error("nebius 503"); })();
     const ids = [...sys.matchAll(/- id "([^"]+)"/g)].map((m) => m[1]!);
     const tier = Number(/CURRENT TIER (\d)/.exec(sys)![1]);
@@ -51,8 +53,16 @@ export class FakeTts implements Tts {
   calls = 0;
   fail = false;
   delayMs = 0;
-  async synthesize(text: string) {
+  /** First synthesis per voice takes this long (provider cold start). */
+  coldMs = 0;
+  readonly texts: { text: string; voice: string }[] = [];
+  private readonly warm = new Set<string>();
+  async synthesize(text: string, voice?: { voice: string }) {
     this.calls++;
+    this.texts.push({ text, voice: voice?.voice ?? "" });
+    const cold = this.coldMs && !this.warm.has(voice?.voice ?? "");
+    this.warm.add(voice?.voice ?? "");
+    if (cold) await new Promise((r) => setTimeout(r, this.coldMs));
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     if (this.fail) throw new Error("SLNG_API_KEY is not set");
     return { audio: Buffer.from(`mp3:${text}`), contentType: "audio/mpeg" };
@@ -110,16 +120,17 @@ export function entries(dir: string, names: string[]) {
   });
 }
 
-export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; reportsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number; lateAudioMs?: number; arcade?: AppDeps["arcade"] } = {}) {
+export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; reportsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number; lateAudioMs?: number; arcade?: AppDeps["arcade"]; expressMode?: boolean; firstLinesTtsBudgetMs?: number; expressTierMs?: number } = {}) {
   const db = openDb(":memory:");
   const llm = (opts.llm === undefined ? new FakeLlm() : opts.llm) as FakeLlm | null;
   const tts = opts.tts ?? new FakeTts();
   const engine = new Engine({ llm, corpus, roster, profile: profiles.roast, cheap: profiles.cheap, gags: () => [], timings: opts.timings });
   const wall = new Wall(db);
+  const audio = new AudioCache(tts, null);
   const app = buildApp({
     db, corpus, roster, engine, wall,
     limiter: new RateLimiter(db, () => opts.perHour ?? 1000),
-    audio: new AudioCache(tts, null),
+    audio,
     stt: new FakeStt(),
     intake: new GitHubIntake(opts.github ?? fakeGitHub({ tree: { "": [] }, files: {} }).impl, () => undefined),
     rand: () => 0,
@@ -132,6 +143,9 @@ export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof
     ttsBudgetMs: opts.ttsBudgetMs,
     lateAudioMs: opts.lateAudioMs,
     arcade: opts.arcade,
+    expressMode: opts.expressMode,
+    firstLinesTtsBudgetMs: opts.firstLinesTtsBudgetMs ?? opts.ttsBudgetMs,
+    expressTierMs: opts.expressTierMs,
   });
-  return { app, db, llm, tts, wall, engine };
+  return { app, db, llm, tts, wall, engine, audio };
 }

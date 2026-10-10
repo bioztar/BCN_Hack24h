@@ -9,6 +9,7 @@ import { TIER_NAMES, type ClipSlot, type Meanwhile, type Notice, type PersonaId,
 import type { Profile } from "./config.js";
 import type { Corpus } from "./corpus.js";
 import { calculateFine, extractRevenueHeuristic, type FineMeter } from "./fine.js";
+import { parseTurnover, TURNOVER_PROMPT, type TurnoverEstimate } from "./turnover.js";
 import { isMeanwhileLine, meanwhileLine, meanwhilePrompt } from "./meanwhile.js";
 import { fallbackExtras, modelExtras, type Extras } from "./notice2.js";
 import type { Llm, LlmRequest } from "./llm.js";
@@ -55,6 +56,13 @@ export interface CaseState {
   meter?: FineMeter;
   /** v2, tier 5: the final Meanwhile numbers the closing line and the Notice both state. */
   meanwhile?: Meanwhile;
+  /** "express": one stream runs tiers 1→5 and the verdict, no replies. */
+  mode?: "express";
+  /** Express: the one appeal has been lodged. */
+  appealed?: boolean;
+  /** No revenue given (field or pitch): the Commission estimates turnover; cached here once chosen. */
+  estimateTurnover?: boolean;
+  turnover?: TurnoverEstimate;
 }
 
 export interface LineOut {
@@ -195,6 +203,8 @@ export interface Timings {
   /** Hard cap for the whole round; canned lines fill whatever is missing. */
   roundMs: number;
 }
+export const TURNOVER_LINE = "The Commission has estimated your turnover generously, as is our custom.";
+
 export const DEFAULT_TIMINGS: Timings = { firstLineMs: 3500, firstTokenMs: 8000, idleMs: 3000, roundMs: 15000 };
 
 const TIMEOUT = Symbol("timeout");
@@ -354,9 +364,21 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     return { speaker, text, provisions: g.provisions, clip: stamp ? "stamp" : "talking", ...(stamp ? { stamp } : {}) };
   }
 
+  /** What can open round 1 for each official of the fixed pairs: own tier-1 line, generic tier-1 line, the turnover jibe. */
+  openerLines(): { speaker: PersonaId; text: string }[] {
+    const out = new Map<string, { speaker: PersonaId; text: string }>();
+    for (const pair of this.d.roster.pairs()) {
+      for (const speaker of pair.officers) {
+        const st = { tier: 1, officers: pair.officers } as CaseState;
+        for (const text of [this.canned(st, speaker).text, speakable(validateLine(GENERIC_CANNED[1], this.d.corpus).text), TURNOVER_LINE]) out.set(`${speaker}|${text}`, { speaker, text });
+      }
+    }
+    return [...out.values()];
+  }
+
   /** Every canned/fallback line the officials of the fixed pairs can speak, for TTS pre-rendering at boot. */
   cannedLines(): { speaker: PersonaId; text: string }[] {
-    const out = new Map<string, { speaker: PersonaId; text: string }>();
+    const out = new Map<string, { speaker: PersonaId; text: string }>(this.openerLines().map((l) => [`${l.speaker}|${l.text}`, l]));
     for (const pair of this.d.roster.pairs()) {
       for (const speaker of pair.officers) {
         for (const tier of [1, 2, 3, 4, 5] as Tier[]) {
@@ -403,7 +425,7 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
    * `idleMs` is abandoned (its request aborted) and canned lines fill. If nothing has arrived after
    * `firstLineMs`, a canned opener goes first and the model's lines follow, opposite speaker first.
    */
-  async *lines(state: CaseState, opts: Partial<Timings> = {}): AsyncGenerator<LineOut> {
+  async *lines(state: CaseState, opts: Partial<Timings> & { minLines?: number; maxLines?: number } = {}): AsyncGenerator<LineOut> {
     const t = { ...DEFAULT_TIMINGS, ...this.d.timings, ...opts };
     const deadline = Date.now() + t.roundMs;
     const produced: LineOut[] = [];
@@ -412,7 +434,8 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     const first = this.firstSpeaker(state);
     // Tier 5 with Meanwhile numbers: the last line is the Meanwhile closer (model's, or a canned one).
     const closer = state.tier === 5 && state.meanwhile ? state.meanwhile : null;
-    const max = closer ? 4 : 5;
+    const max = opts.maxLines ?? (closer ? 4 : 5);
+    const min = Math.min(max, opts.minLines ?? (closer ? 2 : 3));
     let closed = false;
     const abandon = new AbortController();
     const model = this.modelLines(state, produced, deadline, t, abandon.signal)[Symbol.asyncIterator]();
@@ -447,12 +470,12 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     }
     if (closed) return;
     // From tier 2 every round lands at least one stamp: if the model forgot, a stamped canned line closes it.
-    if (!closer && state.tier >= 2 && !produced.some((l) => l.stamp) && produced.length < 5) {
+    if (!closer && state.tier >= 2 && !produced.some((l) => l.stamp) && produced.length < max) {
       const line = this.fill(state, this.partner(state, last()), said());
       produced.push(line);
       yield line;
     }
-    while (produced.length < (closer ? 2 : 3)) {
+    while (produced.length < min) {
       const line = this.fill(state, this.partner(state, last()), said());
       produced.push(line);
       yield line;
@@ -527,7 +550,7 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
   metaFallback(state: CaseState): { revenueEur: number; startup: string } {
     const text = [state.submission.text ?? "", ...state.replies].join("\n").slice(0, 4000);
     const startup = state.intake?.repo.split("/")[1] ?? (text.match(/\b([A-Z][a-zA-Z0-9]{2,20})\b/)?.[1] ?? "Unnamed Startup");
-    const revenueEur = typeof state.submission.revenueEur === "number" ? state.submission.revenueEur : (extractRevenueHeuristic(text) ?? 0);
+    const revenueEur = typeof state.submission.revenueEur === "number" ? state.submission.revenueEur : (extractRevenueHeuristic(text) ?? state.turnover?.eur ?? 0);
     return { revenueEur, startup };
   }
 
@@ -563,8 +586,27 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
         this.d.log?.("meta extraction failed", { error: err instanceof Error ? err.message : String(err) });
       }
     }
-    if (revenue === null) revenue = extractRevenueHeuristic(text) ?? 0;
+    if (revenue === null) revenue = extractRevenueHeuristic(text) ?? state.turnover?.eur ?? 0;
     return { revenueEur: revenue, startup };
+  }
+
+  /** Turnover estimate (TAM × plausible early share) from one cheap model call; null without a model or on failure. */
+  async estimateTurnover(state: CaseState, signal?: AbortSignal): Promise<TurnoverEstimate | null> {
+    const text = [state.submission.text ?? "", state.intake?.description ?? "", state.readme?.slice(0, 1500) ?? ""].filter(Boolean).join("\n").slice(0, 4000);
+    if (!this.d.llm || !text.trim()) return null;
+    const c = this.d.cheap();
+    try {
+      let out = "";
+      for await (const d of this.d.llm.stream({
+        model: c.model,
+        messages: [{ role: "system", content: TURNOVER_PROMPT }, { role: "user", content: `<pitch>\n${text}\n</pitch>` }],
+        temperature: 0, maxOutputTokens: c.maxOutputTokens, timeoutMs: c.timeoutMs, extraBody: c.extraBody, stream: false, ...(signal ? { signal } : {}),
+      })) out += d;
+      return parseTurnover(extractObjects(out, true)[0]);
+    } catch (err) {
+      this.d.log?.("turnover estimate failed", { error: err instanceof Error ? err.message : String(err) });
+      return null;
+    }
   }
 
   notice(state: CaseState, meta: { revenueEur: number; startup: string }): Notice {
