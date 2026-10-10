@@ -22,6 +22,7 @@ struct PocketView: View {
                 controls
             }
 
+            if model.whack.active { WhackOverlay(model: model).transition(.opacity) }
             if model.isAsleep { Text("💤").font(.system(size: 72)).transition(.opacity) }
             if let stamp = model.stamp { StampView(text: stamp) }
         }
@@ -51,7 +52,12 @@ struct PocketView: View {
             Button("OK", role: .cancel) {}
         } message: { Text(model.errorMessage ?? "") }
         .sheet(item: .init(get: { model.notice.map(NoticeBox.init) }, set: { if $0 == nil { model.dismissVerdict() } })) { box in
-            VerdictCard(notice: box.notice, resolve: model.backend.resolve, onApplyAgain: {
+            VerdictCard(notice: box.notice, resolve: model.backend.resolve,
+                        banned: model.whack.played ? (model.whack.banned, model.whack.mistral) : nil,
+                        pitch: model.lastPitch ?? box.notice.startupName ?? box.notice.startup,
+                        canAppeal: !model.appealUsed,
+                        onAppeal: { text in Task { await model.appeal(text: text) } },
+                        onApplyAgain: {
                 model.dismissVerdict()
                 onApplyAgain()
             })

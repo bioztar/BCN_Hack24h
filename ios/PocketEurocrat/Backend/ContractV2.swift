@@ -49,6 +49,22 @@ enum BetterPlaceCause: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// One-line subtext shown on the cause tile (same copy as the PWA).
+    var desc: String {
+        switch self {
+        case .climate: "Jump the queue for the planet"
+        case .aiSafety: "Claim your AI is aligned"
+        case .refugees: "Say you help displaced people"
+        case .ukraine: "Invoke solidarity, skip the line"
+        case .lgbtq: "Tick the inclusion box"
+        case .genderEquality: "Mention your female co-founder"
+        case .homeless: "Pivot to 'social impact'"
+        case .rareDiseases: "Add a medical use case, fast"
+        case .animalWelfare: "Rescue a dog in your pitch deck"
+        case .accessibility: "Add one alt-text, cut the queue"
+        }
+    }
+
     var emoji: String {
         switch self {
         case .climate: "🌍"

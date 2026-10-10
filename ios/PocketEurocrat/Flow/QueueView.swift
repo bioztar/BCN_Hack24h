@@ -22,7 +22,8 @@ struct QueueView: View {
     private func position(_ t: QueueTicket, now: Date) -> Int {
         if let skip = flow.skipResult { return skipped ? skip.position : t.position }
         let p = min(max(now.timeIntervalSince(started) / max(t.countdownSec, 1), 0), 1)
-        return Int(Double(t.position) * pow(1 - p, 2.2))
+        // Short (5–10 s demo) countdowns need a gentle curve or the number is gone in the first second.
+        return Int(Double(t.position) * pow(1 - p, t.countdownSec <= 10 ? 1.15 : 2.4))
     }
 
     private func content(_ t: QueueTicket, position: Int, now: Date) -> some View {
@@ -87,6 +88,8 @@ struct QueueView: View {
                         VStack(spacing: 4) {
                             Text(cause.emoji).font(.largeTitle)
                             Text(cause.label).font(.subheadline.weight(.semibold))
+                            Text(cause.desc).font(.caption2).foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center).padding(.horizontal, 6)
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 14)
                         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))

@@ -29,8 +29,9 @@ final class ContractTests: XCTestCase {
     }
 
     /// Live end-to-end of the client path: text -> case -> SSE stream -> lines + late audio -> clip decodes.
-    /// Skipped when the server is unreachable.
+    /// Opt-in (EUROCRAT_LIVE_TEST=1): it files a real case on the public server, so it never runs by default.
     func testLiveRoundTrip() async throws {
+        guard ProcessInfo.processInfo.environment["EUROCRAT_LIVE_TEST"] == "1" else { throw XCTSkip("live test is opt-in") }
         let live = LiveBackend(base: URL(string: "https://eurocrat.pro7ocol.com")!)
         guard (try? await live.pairs()) != nil else { throw XCTSkip("live API unreachable") }
         let ticket = try await live.createCase(.text("An app that matches dogs with remote jobs."), officers: ["formblatt", "annexe"])
@@ -87,6 +88,36 @@ final class ContractTests: XCTestCase {
         XCTAssertNotNil(verdict?.meanwhile)
         let board = try await b.leaderboard(sort: .fines, limit: 50)
         XCTAssertTrue(board.contains { $0.caseId == c.caseId })
+    }
+
+    /// express case → verdict with turnoverEstimate → ONE appeal → short tier-5 round + new, larger verdict; second appeal is 409.
+    func testMockExpressAppeal() async throws {
+        let b = MockBackend(lineDelay: .milliseconds(1))
+        let t = try await b.register(ApplicantInput(startupName: "Faceify", founderName: "A. Nonymous", oneLiner: nil, photo: nil))
+        let c = try await b.createCase(.text("an app"), officers: ["formblatt", "annexe"], applicantId: t.applicantId,
+                                       applicantToken: t.applicantToken, express: true)
+        XCTAssertEqual(c.mode, "express")
+        func verdict() async throws -> Notice {
+            var n: Notice?
+            for try await ev in b.stream(caseID: c.caseId) { if case .verdict(let v) = ev { n = v } }
+            return try XCTUnwrap(n)
+        }
+        let first = try await verdict()
+        XCTAssertEqual(first.turnoverEstimate?.eur, 40_000_000)
+        try await b.appeal(caseID: c.caseId, applicantToken: t.applicantToken, text: nil)
+        let second = try await verdict()
+        XCTAssertGreaterThan(second.totalEur ?? 0, first.totalEur ?? 0)
+        do { try await b.appeal(caseID: c.caseId, applicantToken: t.applicantToken, text: nil); XCTFail("second appeal") }
+        catch let e as LiveBackend.ServerError { XCTAssertEqual(e.status, 409) }
+    }
+
+    /// A wiped server forgets the applicant: the case create 404s (the flow then returns to Register).
+    func testUnknownApplicantIs404() async {
+        let b = MockBackend(lineDelay: .milliseconds(1))
+        do { _ = try await b.createCase(.text("x"), officers: ["formblatt", "annexe"], applicantId: "app-gone", applicantToken: "t", express: true); XCTFail() }
+        catch let e as LiveBackend.ServerError { XCTAssertEqual(e.status, 404) } catch { XCTFail("\(error)") }
+        XCTAssertEqual(FlowModel.pivotName("Faceify"), "Faceify (pivot 2)")
+        XCTAssertEqual(FlowModel.pivotName("Faceify (pivot 2)"), "Faceify (pivot 3)")
     }
 
     func testRepoUrlIsClassifiedAsRepo() {

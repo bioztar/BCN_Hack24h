@@ -5,7 +5,10 @@ protocol RoastBackend {
     func personas() async throws -> [Persona]
     func pairs() async throws -> [Pair]
     /// `applicantId` + `applicantToken` come from `register`; the token authorises attaching the case to that applicant.
-    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket
+    /// `express`: one stream (tiers 1→5, verdict) and one appeal; falls back to staged if the server says no.
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?, express: Bool) async throws -> CaseTicket
+    /// Express only, once, after the verdict: the next stream is a short tier-5 round and a new verdict.
+    func appeal(caseID: String, applicantToken: String?, text: String?) async throws
     func stream(caseID: String) -> AsyncThrowingStream<RoastEvent, Error>
     func reply(caseID: String, text: String) async throws
     /// Raw recorded audio -> transcript.
@@ -23,7 +26,11 @@ protocol RoastBackend {
 
 extension RoastBackend {
     func createCase(_ submission: Submission, officers: [String]) async throws -> CaseTicket {
-        try await createCase(submission, officers: officers, applicantId: nil, applicantToken: nil)
+        try await createCase(submission, officers: officers, applicantId: nil, applicantToken: nil, express: false)
+    }
+
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket {
+        try await createCase(submission, officers: officers, applicantId: applicantId, applicantToken: applicantToken, express: false)
     }
 }
 

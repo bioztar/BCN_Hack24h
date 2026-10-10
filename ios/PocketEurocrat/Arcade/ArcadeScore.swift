@@ -6,6 +6,9 @@ struct ArcadeScore: Equatable {
     let game: String
     let score: Int
     let rank: String?
+    /// Whack-a-Model extras: models banned / Mistral stamped by mistake.
+    var hits: Int = 0
+    var mistralHits: Int = 0
 
     init(game: String, score: Int, rank: String?) {
         self.game = game; self.score = score; self.rank = rank
@@ -16,6 +19,8 @@ struct ArcadeScore: Equatable {
         guard let score = Self.int(dict["score"]) else { return nil }
         self.score = score
         game = dict["game"] as? String ?? "whack"
+        hits = max(0, Self.int(dict["hits"]) ?? 0)
+        mistralHits = max(0, Self.int(dict["mistralHits"]) ?? 0)
         // A rank title ("Head of Unit") — or a leaderboard position when the game sends a number.
         if let title = dict["rank"] as? String, !title.isEmpty { rank = title }
         else if let pos = Self.int(dict["rank"]) { rank = "#\(pos)" }
@@ -50,6 +55,25 @@ enum Arcade {
     /// `<RoastBaseURL>/game/?embed=1` — the arcade landing in embed mode (no site chrome, posts scores to us).
     static func url(base: URL) -> URL {
         URL(string: "game/?embed=1", relativeTo: base)?.absoluteURL ?? base
+    }
+
+    /// Whack-a-Model alone, embedded (played while a repo is audited).
+    static func whackURL(base: URL) -> URL {
+        URL(string: "game/whack/?embed=1", relativeTo: base)?.absoluteURL ?? base
+    }
+
+    /// "While we audited your repo you banned 12 American/Chinese models — and stamped Mistral ×1. The only one we had."
+    static func whackLine(banned: Int, mistral: Int) -> String {
+        let base = "While we audited your repo you banned \(banned) American/Chinese model\(banned == 1 ? "" : "s")"
+        return mistral > 0 ? "\(base) — and stamped Mistral ×\(mistral). The only one we had." : "\(base)."
+    }
+
+    /// The real compliance analyzer, prefilled with the pitch.
+    static func wardenURL(pitch: String) -> URL {
+        let idea = String(pitch.trimmingCharacters(in: .whitespacesAndNewlines).prefix(1500))
+        var c = URLComponents(string: "https://warden.pro7ocol.com/analyze/")!
+        if !idea.isEmpty { c.queryItems = [URLQueryItem(name: "idea", value: idea)] }
+        return c.url!
     }
 
     /// The arcade's own paths stay inside the web view; anything else on the site closes it, other hosts open in Safari.

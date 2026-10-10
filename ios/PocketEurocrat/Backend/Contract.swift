@@ -57,6 +57,8 @@ struct CaseTicket: Codable {
     let caseId: String
     let ticket: Int
     let officers: [String]
+    /// "express" when the server accepted `mode: "express"` (one stream, one appeal); nil = staged.
+    var mode: String? = nil
 }
 
 struct RoastLine: Decodable, Equatable {
@@ -112,7 +114,10 @@ struct Notice: Codable, Equatable {
     var reportUrl: String? = nil
     var badgeUrl: String? = nil
     var meanwhile: Meanwhile? = nil
+    /// Server's market-based guess; the app never asks for turnover.
+    var turnoverEstimate: TurnoverEstimate? = nil
 
+    struct TurnoverEstimate: Codable, Equatable { let eur: Double; var basis: String? = nil }
     struct TLDR: Codable, Equatable { let law: String; let oneLine: String }
     struct Recommendation: Codable, Equatable { let text: String; var provision: Provision? = nil }
 }

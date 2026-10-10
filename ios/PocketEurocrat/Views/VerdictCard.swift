@@ -6,11 +6,25 @@ struct VerdictCard: View {
     let notice: Notice
     /// Resolves a server-relative path (badgeUrl / reportUrl) against the API base; nil for the mock.
     var resolve: (String) -> URL? = { _ in nil }
+    /// Whack-a-Model result from the repo audit (banned, Mistral stamped), shown as one line.
+    var banned: (Int, Int)? = nil
+    /// First pitch text / repo URL: prefills the full compliance analyzer.
+    var pitch = ""
+    var canAppeal = false
+    var onAppeal: (String?) -> Void = { _ in }
     var onApplyAgain: () -> Void = {}
 
     @State private var badge: Image?
+    @State private var grounds = ""
+    @State private var appealed = false
     @Environment(\.displayScale) private var scale
     @Environment(\.dismiss) private var dismiss
+
+    private var turnoverLine: String? {
+        guard let t = notice.turnoverEstimate, t.eur.isFinite, t.eur >= 0 else { return nil }
+        let basis = t.basis?.trimmingCharacters(in: .whitespaces) ?? ""
+        return "Estimated turnover (by the Commission, generously): \(Money.short(t.eur))" + (basis.isEmpty ? "" : " — \(basis)")
+    }
 
     var body: some View {
         ScrollView {
@@ -23,9 +37,27 @@ struct VerdictCard: View {
                     }
                 }
 
-                if let m = notice.meanwhile { MeanwhileCard(meanwhile: m) }
+                if let line = turnoverLine {
+                    Text(line).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }
+                if let b = banned {
+                    Text(Arcade.whackLine(banned: b.0, mistral: b.1)).font(.footnote.weight(.semibold))
+                        .foregroundStyle(.orange).multilineTextAlignment(.center)
+                }
+
+                if canAppeal && !appealed { appealBlock }
+
+                Button("🔁 Pitch another startup", action: onApplyAgain)
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+
+                fixes
 
                 actions
+
+                Text("Free today · Full compliance dossier €49 · Accelerators: roast your whole cohort — [contact](mailto:hello@pro7ocol.com?subject=Eurocrat%20%E2%80%94%20roast%20our%20cohort)")
+                    .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+
+                if let m = notice.meanwhile { MeanwhileCard(meanwhile: m) }
 
                 PlayArcadeButton(title: "Play while you appeal")
 
@@ -42,22 +74,52 @@ struct VerdictCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                if let recs = notice.recommendations, !recs.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("How to adjust the idea").font(.headline)
-                        ForEach(Array(recs.enumerated()), id: \.offset) { _, r in
-                            Text("• " + r.text).font(.callout)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Button("Apply again with another startup", action: onApplyAgain).buttonStyle(.bordered)
                 Button("Close", action: dismiss.callAsFunction).font(.footnote)
             }
             .padding()
         }
         .task(id: notice) { await loadBadge() }
+    }
+
+    /// One appeal, once: optional grounds (ignored), then a short tier-5 round and a new verdict.
+    private var appealBlock: some View {
+        VStack(spacing: 8) {
+            TextField("Grounds for appeal (optional, will be ignored)", text: $grounds)
+                .textFieldStyle(.roundedBorder)
+            Button {
+                appealed = true
+                let text = grounds.trimmingCharacters(in: .whitespaces)
+                dismiss()
+                onAppeal(text.isEmpty ? nil : text)
+            } label: {
+                Text("⚖️ Appeal (one chance)").fontWeight(.semibold).frame(maxWidth: .infinity).padding(.vertical, 4)
+            }
+            .buttonStyle(.bordered).controlSize(.large)
+        }
+    }
+
+    /// Top 3 fixes + the real compliance report (warden) prefilled with the pitch.
+    private var fixes: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("How to make it legal — top 3 fixes").font(.headline)
+            ForEach(Array((notice.recommendations ?? []).prefix(3).enumerated()), id: \.offset) { i, r in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(i + 1).").font(.callout.weight(.bold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(r.text).font(.callout)
+                        if let p = r.provision, let url = URL(string: p.url) {
+                            Link(p.label, destination: url).font(.caption2.monospaced())
+                        }
+                    }
+                }
+            }
+            Link(destination: Arcade.wardenURL(pitch: pitch)) {
+                Label("Get the full compliance report →", systemImage: "doc.text.magnifyingglass")
+                    .frame(maxWidth: .infinity).padding(.vertical, 4)
+            }
+            .buttonStyle(.bordered).controlSize(.large)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var actions: some View {
@@ -74,10 +136,6 @@ struct VerdictCard: View {
                         .buttonStyle(.bordered)
                 }
             }
-            Link(destination: URL(string: "https://warden.pro7ocol.com/analyze/")!) {
-                Label("Get the real report", systemImage: "doc.text.magnifyingglass")
-            }
-            .font(.footnote)
         }
     }
 

@@ -21,11 +21,10 @@ struct PitchView: View {
     @State private var text = ""
     @State private var dictated = false
     @State private var repo = ""
-    @State private var turnover = ""
     @State private var error: String?
     @State private var transcribing = false
     @FocusState private var focus: Field?
-    private enum Field { case text, repo, turnover }
+    private enum Field { case text, repo }
 
     private static let github = try! NSRegularExpression(pattern: #"^(https?://)?(www\.)?github\.com/[\w.-]+/[\w.-]+/?(\.git)?$"#, options: .caseInsensitive)
 
@@ -45,12 +44,6 @@ struct PitchView: View {
                 if mode == .voice { mic }
                 if mode != .repo { editor } else { repoField }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Annual turnover (€)").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                    TextField("Optional — we'll take a percentage", text: $turnover)
-                        .keyboardType(.numberPad).focused($focus, equals: .turnover)
-                        .textFieldStyle(.roundedBorder)
-                }
                 if let error { Text(error).font(.footnote).foregroundStyle(.red) }
             }
             .padding(.horizontal, 20).padding(.top, 20).padding(.bottom, 24)
@@ -143,8 +136,7 @@ struct PitchView: View {
     }
 
     private func submit() {
-        let eur = Double(turnover.trimmingCharacters(in: .whitespaces)).flatMap { $0 >= 0 ? $0 : nil }
-        func wrap(_ s: Submission) -> Submission { eur.map { .turnover($0, s) } ?? s }
+        func wrap(_ s: Submission) -> Submission { s }   // turnover is estimated by the server now
         if mode == .repo {
             let url = repo.trimmingCharacters(in: .whitespacesAndNewlines)
             let ok = Self.github.firstMatch(in: url, range: NSRange(url.startIndex..., in: url)) != nil

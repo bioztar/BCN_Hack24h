@@ -14,21 +14,15 @@ struct RegisterView: View {
             VStack(spacing: 18) {
                 VStack(spacing: 6) {
                     Text("🇪🇺").font(.system(size: 54))
-                    Text("Register your startup and build a real business in the EU!")
+                    Text("Pitch your startup. The EU will refuse it. In 15 seconds.")
                         .font(.system(.title2, design: .serif, weight: .bold))
                         .multilineTextAlignment(.center)
-                    Text("Form 17b · Takes 2 minutes · Decision in 2–6 years")
+                    Text("Eurocrat Commission · DG ROAST · Form A-1")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding(.top, 24)
 
-                VStack(spacing: 12) {
-                    field("Startup name", text: $flow.startupName, id: .startup)
-                    field("Founder name", text: $flow.founderName, id: .founder)
-                    field("One-liner (optional)", text: $flow.oneLiner, id: .oneLiner)
-                }
-
-                selfie
+                field("Startup name", text: $flow.startupName, id: .startup)
 
                 Button {
                     focus = nil
@@ -36,7 +30,7 @@ struct RegisterView: View {
                 } label: {
                     HStack {
                         if flow.busy { ProgressView().tint(.white) }
-                        Text("Submit to the Commission").fontWeight(.semibold)
+                        Text("Get refused →").fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
@@ -45,8 +39,12 @@ struct RegisterView: View {
                 .controlSize(.large)
                 .disabled(!flow.canRegister || flow.busy)
 
-                Text("By submitting you consent to being consented to.")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                field("Founder (optional)", text: $flow.founderName, id: .founder)
+
+                selfie
+
+                Text("☑ I have read and accepted the 4,212 pages of terms. ☑ I consent to consenting. Satire — your data is used for the joke and the leaderboard only.")
+                    .font(.caption2).foregroundStyle(.tertiary).multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
@@ -71,7 +69,7 @@ struct RegisterView: View {
             .focused($focus, equals: id)
             .textFieldStyle(.roundedBorder)
             .submitLabel(.next)
-            .onSubmit { focus = id == .startup ? .founder : id == .founder ? .oneLiner : nil }
+            .onSubmit { focus = id == .startup ? .founder : nil }
     }
 
     private var selfie: some View {
@@ -88,7 +86,7 @@ struct RegisterView: View {
             .overlay(Circle().stroke(.secondary.opacity(0.4)))
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Founder photo (optional)").font(.subheadline.weight(.semibold))
+                Text("Mugshot for the leaderboard (optional)").font(.subheadline.weight(.semibold))
                 HStack {
                     if UIImagePickerController.isSourceTypeAvailable(.camera) {
                         Button("Take selfie") { showCamera = true }.buttonStyle(.bordered)

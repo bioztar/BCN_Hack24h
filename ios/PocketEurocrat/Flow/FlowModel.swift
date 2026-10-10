@@ -26,10 +26,18 @@ final class FlowModel {
     init(pocket: PocketModel) {
         self.pocket = pocket
         self.backend = pocket.backend
+        pocket.onStaleApplicant = { [weak self] in self?.staleApplicant() }
     }
 
-    var canRegister: Bool {
-        !startupName.trimmingCharacters(in: .whitespaces).isEmpty && !founderName.trimmingCharacters(in: .whitespaces).isEmpty
+    /// Name is the only required field (60-second register); the founder defaults like the PWA's.
+    var canRegister: Bool { !startupName.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    /// The server forgot this applicant (data wipe → 404 on case create): drop the ticket, back to Register.
+    private func staleApplicant() {
+        pocket.newApplication()
+        ticket = nil; skipResult = nil; registeredAt = nil
+        stage = .register
+        errorMessage = "The Commission has lost your file. Again. This is, statistically, the most European thing that could happen — please register once more."
     }
 
     func register() async {
@@ -38,10 +46,11 @@ final class FlowModel {
         errorMessage = nil
         defer { busy = false }
         do {
+            let founder = String(founderName.trimmingCharacters(in: .whitespaces).prefix(60))
             let input = ApplicantInput(
                 startupName: String(startupName.trimmingCharacters(in: .whitespaces).prefix(60)),
-                founderName: String(founderName.trimmingCharacters(in: .whitespaces).prefix(60)),
-                oneLiner: oneLiner.isEmpty ? nil : String(oneLiner.prefix(140)),
+                founderName: founder.isEmpty ? "A. Nonymous" : founder,
+                oneLiner: nil,
                 photo: photo.flatMap(Self.dataURL))
             ticket = try await backend.register(input)
             registeredAt = Date()
@@ -79,6 +88,38 @@ final class FlowModel {
     func submitPitch(_ submission: Submission, label: String, dictated: Bool = false) {
         stage = .play
         Task { await pocket.submit(label, dictated: dictated, as: submission) }
+    }
+
+    /// "Pitch another startup": re-register the same founder as a pivot ("Faceify (pivot 2)"), straight to the pitch
+    /// with the same officers (one case per applicant). Falls back to pitching anonymously if registering fails.
+    func pitchAgain() async {
+        let name = startupName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, !busy else { return applyAgain() }
+        busy = true
+        defer { busy = false }
+        let pairID = pocket.pairID
+        pocket.newApplication()
+        startupName = Self.pivotName(name)
+        let founder = founderName.trimmingCharacters(in: .whitespaces)
+        let input = ApplicantInput(startupName: startupName, founderName: founder.isEmpty ? "A. Nonymous" : founder,
+                                   oneLiner: nil, photo: photo.flatMap(Self.dataURL))
+        ticket = try? await backend.register(input)
+        pocket.select(pair: pairID)
+        pocket.applicantId = ticket?.applicantId
+        pocket.applicantToken = ticket?.applicantToken
+        skipResult = nil
+        stage = .pitch
+    }
+
+    /// "Faceify" → "Faceify (pivot 2)" → "Faceify (pivot 3)", within the 60-char name limit.
+    nonisolated static func pivotName(_ name: String) -> String {
+        var base = name, n = 2
+        if let r = name.range(of: #" \(pivot (\d+)\)$"#, options: .regularExpression) {
+            base = String(name[..<r.lowerBound])
+            n = (Int(name[r].filter(\.isNumber)) ?? 1) + 1
+        }
+        let tag = " (pivot \(n))"
+        return String(base.trimmingCharacters(in: .whitespaces).prefix(60 - tag.count)) + tag
     }
 
     func applyAgain() {

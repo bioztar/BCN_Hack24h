@@ -13,11 +13,25 @@ struct LiveBackend: RoastBackend {
     func personas() async throws -> [Persona] { try await get("api/personas") }
     func pairs() async throws -> [Pair] { try await get("api/pairs") }
 
-    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket {
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?, express: Bool) async throws -> CaseTicket {
         var body: [String: Any] = ["submission": submission.json, "officers": officers]
         if let applicantId { body["applicantId"] = applicantId }
         if let applicantToken { body["applicantToken"] = applicantToken }
-        return try await send("api/case", json: body, token: applicantToken)
+        guard express else { return try await send("api/case", json: body, token: applicantToken) }
+        do {
+            return try await send("api/case", json: body.merging(["mode": "express"]) { $1 }, token: applicantToken)
+        } catch let e as ServerError where e.status == 400 {
+            return try await send("api/case", json: body, token: applicantToken)   // server runs without EXPRESS_MODE: staged
+        }
+    }
+
+    func appeal(caseID: String, applicantToken: String?, text: String?) async throws {
+        var body: [String: Any] = [:]
+        if let text, !text.isEmpty { body["text"] = text }
+        if let applicantToken { body["applicantToken"] = applicantToken }
+        var req = request("api/case/\(caseID)/appeal", method: "POST", body: try JSONSerialization.data(withJSONObject: body), type: "application/json")
+        if let applicantToken { req.setValue(applicantToken, forHTTPHeaderField: "x-applicant-token") }
+        _ = try await raw(req)
     }
 
     // MARK: v2

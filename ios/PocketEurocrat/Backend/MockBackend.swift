@@ -10,6 +10,7 @@ struct MockBackend: RoastBackend {
     private final class Store: @unchecked Sendable {
         let lock = NSLock()
         var cases: [String: (pitch: Submission, applicantId: String?, officers: [String])] = [:]
+        var appealed: Set<String> = []
         var applicants: [String: ApplicantInput] = [:]
         var tokens: [String: String] = [:]
         var board: [LeaderboardEntry] = MockBackend.seedBoard
@@ -20,11 +21,25 @@ struct MockBackend: RoastBackend {
     func personas() async throws -> [Persona] { Roster.officers }
     func pairs() async throws -> [Pair] { Roster.pairs }
 
-    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket {
-        if let applicantId { try Self.authorise(applicantId, applicantToken) }
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?, express: Bool) async throws -> CaseTicket {
+        if let applicantId {
+            guard Self.store.lock.withLock({ Self.store.tokens[applicantId] }) != nil else {
+                throw LiveBackend.ServerError(status: 404, message: "unknown applicant")   // like a wiped server
+            }
+            try Self.authorise(applicantId, applicantToken)
+        }
         let id = "mock-\(officers.joined(separator: "+"))-\(UUID().uuidString.prefix(6))"
         Self.store.lock.withLock { Self.store.cases[id] = (submission, applicantId, officers) }
-        return CaseTicket(caseId: id, ticket: 4812, officers: officers)
+        return CaseTicket(caseId: id, ticket: 4812, officers: officers, mode: express ? "express" : nil)
+    }
+
+    /// One appeal per case; the stream afterwards is a short tier-5 round and a new verdict.
+    func appeal(caseID: String, applicantToken: String?, text: String?) async throws {
+        try await Task.sleep(for: .milliseconds(300))
+        let applicantId = Self.store.lock.withLock { Self.store.cases[caseID]?.applicantId }
+        if let applicantId { try Self.authorise(applicantId, applicantToken) }
+        let fresh = Self.store.lock.withLock { Self.store.appealed.insert(caseID).inserted }
+        if !fresh { throw LiveBackend.ServerError(status: 409, message: "the appeal has been lodged and, naturally, rejected") }
     }
 
     func reply(caseID: String, text: String) async throws {}
@@ -140,6 +155,15 @@ struct MockBackend: RoastBackend {
         script.append(.line(RoastLine(id: "m4", speaker: b, text: "Breach notification within 72 hours. You have not noticed the breach. This is the breach.", provisions: [Self.gdpr], stamp: "REFUSÉ")))
         fine(4, Self.nis2, "Supply chain: one dog.")
         fine(5, Self.aiAct, wantsMeltdown ? "Cumulative: you have exceeded the European budget." : "Rounding error in your disfavour.")
+        if Self.store.lock.withLock({ Self.store.appealed.contains(caseID) }) {
+            // Appeal: a short tier-5 round that makes it worse.
+            total += 12_000_000
+            script = [.tier(5, name: "Appeal — denied"),
+                      .line(RoastLine(id: "ap1", speaker: a, text: "We have read your appeal. We read it aloud. It did not improve.", stamp: "REJETÉ")),
+                      .fine(Fine(id: "fap", provision: Self.aiAct, amountEur: 12_000_000, jailMonths: 0, totalEur: total,
+                                 totalJailMonths: jail, caption: "Costs of the appeal, payable in triplicate.")),
+                      .line(RoastLine(id: "ap2", speaker: b, text: "The court of appeal is this room. The room agrees with us."))]
+        }
         let melted = total >= meltdownEur || jail >= meltdownJailMonths
         if melted { script.append(.meltdown(totalEur: total, totalJailMonths: jail)) }
 
@@ -153,7 +177,8 @@ struct MockBackend: RoastBackend {
                    .init(law: "GDPR", oneLine: "No lawful basis for the dog; no breach process.")],
             recommendations: [.init(text: "Document the Article 6(3) derogation before launch.", provision: Self.aiAct),
                               .init(text: "Appoint a DPO. The dog does not qualify.", provision: Self.gdpr)],
-            reportUrl: nil, badgeUrl: nil, meanwhile: final)
+            reportUrl: nil, badgeUrl: nil, meanwhile: final,
+            turnoverEstimate: .init(eur: 40_000_000, basis: "EU HR-tech TAM €8 bn × 0.5 %"))
         script.append(.meanwhile(final))
         script.append(.verdict(notice))
 

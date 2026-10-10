@@ -32,7 +32,7 @@ struct RootView: View {
         case .queue: QueueView(flow: flow)
         case .select: DuoSelectView(flow: flow)
         case .pitch: PitchView(flow: flow)
-        case .play: PocketView(model: flow.pocket, onApplyAgain: { flow.applyAgain() })
+        case .play: PocketView(model: flow.pocket, onApplyAgain: { Task { await flow.pitchAgain() } })
         }
     }
 }

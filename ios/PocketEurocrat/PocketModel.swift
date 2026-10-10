@@ -26,6 +26,16 @@ final class PocketModel {
     var lastFine: Fine?
     var meltedDown = false
     var analyzing: (stage: String, progress: Double)?
+    /// Whack-a-Model overlay while a GitHub repo is audited; officer lines wait behind it.
+    struct Whack: Equatable { var active = false; var auditDone = false; var banned = 0; var mistral = 0; var played = false }
+    var whack = Whack()
+    /// One appeal per case, after the verdict (express mode).
+    var appealUsed = false
+    /// The first pitch text / repo URL: prefills the full compliance analyzer from the verdict.
+    var lastPitch: String?
+    /// Server forgot the applicant (404 on case create): the flow drops the ticket and returns to Register.
+    @ObservationIgnored var onStaleApplicant: (() -> Void)?
+    @ObservationIgnored private var lastCaseID: String?
     /// v2 "Meanwhile" counters: latest server tick (applied as it arrives, not queued behind the lines).
     var meanwhile: Meanwhile?
     /// Set by the flow once the founder registered; sent with the case so the verdict lands on the leaderboard.
@@ -217,19 +227,59 @@ final class PocketModel {
                 id = existing
             } else {
                 resetCase()
-                if case .repo = submission?.base { puppet.setExpression(.outrage) }   // outraged while the repo is read
-                id = try await backend.createCase(submission ?? Submission.classify(pitch, dictated: dictated),
-                                                  officers: pair.officers, applicantId: applicantId,
-                                                  applicantToken: applicantToken).caseId
+                let sub = submission ?? Submission.classify(pitch, dictated: dictated)
+                lastPitch = pitch
+                if case .repo = sub.base {
+                    puppet.setExpression(.outrage)   // outraged while the repo is read
+                    whack = .init(active: true)      // …and the audience plays Whack-a-Model meanwhile
+                }
+                id = try await backend.createCase(sub, officers: pair.officers, applicantId: applicantId,
+                                                  applicantToken: applicantToken, express: true).caseId
                 caseID = id
             }
             phase = .roasting
             try await consume(backend.stream(caseID: id))
             if phase == .roasting { phase = .idle }
         } catch {
-            errorMessage = error.localizedDescription
+            whack.active = false
             phase = .idle
+            if applicantId != nil, (error as? LiveBackend.ServerError)?.status == 404 {
+                // Server forgot this applicant (data wipe): drop the ticket, back to Register.
+                onStaleApplicant?()
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
+    }
+
+    /// One appeal after the verdict: the stream continues with a short tier-5 round and a new verdict.
+    func appeal(text: String?) async {
+        guard let id = lastCaseID, !appealUsed, phase == .idle else { return }
+        appealUsed = true
+        do {
+            try await backend.appeal(caseID: id, applicantToken: applicantToken, text: text)
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+        notice = nil
+        subtitle = nil
+        caseID = id
+        phase = .roasting
+        do {
+            try await consume(backend.stream(caseID: id))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        if phase == .roasting { phase = .idle }
+    }
+
+    /// Stop the audit game (user tapped "Face the officers", or the round ended + 2.5 s).
+    func closeWhack() { whack.active = false }
+
+    /// Wait behind the game overlay: the officers do not start until the audience is done.
+    private func waitForWhack() async {
+        while whack.active, !Task.isCancelled { try? await Task.sleep(for: .milliseconds(150)) }
     }
 
     /// Events are played strictly in order by one consumer, while the network reader keeps filing late
@@ -267,8 +317,12 @@ final class PocketModel {
 
     private func handle(_ event: RoastEvent) async {
         switch event {
-        case .tier(_, let name): tierName = name
+        case .tier(_, let name):
+            tierName = name
+            if whack.active { whack.auditDone = true }   // the audit is over; the game may stay until the audience is done
         case .line(let line):
+            if whack.active { whack.auditDone = true }
+            await waitForWhack()
             subtitle = line
             puppet.setSpeaker(line.speaker)
             if let s = line.stamp { showStamp(s, by: line.speaker) }
@@ -277,7 +331,9 @@ final class PocketModel {
                 played = await audio.play(url) { [puppet] open, wide in puppet.setMouth(open: open, wide: wide, speaker: line.speaker) }
             }
             if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6), speaker: line.speaker) }
-        case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()
+        case .verdict(let n):
+            await waitForWhack()
+            notice = n; phase = .idle; lastCaseID = caseID ?? lastCaseID; caseID = nil; showSmug()
         case .analyzing(let stage, let progress):
             analyzing = (stage, progress)
             puppet.setExpression(.outrage)   // outrage cut-outs while the repo is read (falls back to appalled)
@@ -313,6 +369,9 @@ final class PocketModel {
         analyzing = nil
         meanwhile = nil
         notice = nil
+        whack = Whack()
+        appealUsed = false
+        lastCaseID = nil
         puppet.extinguish()
     }
 
