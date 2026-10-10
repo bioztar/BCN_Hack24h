@@ -1,4 +1,4 @@
-# HANDOVER — BCN_Hack24h (Eurocrat / DG ROAST) — 2026-10-10 01:45 CEST
+# HANDOVER — BCN_Hack24h (Eurocrat / DG ROAST) — 2026-10-10 02:40 CEST
 ## State: v1 live on eurocrat.pro7ocol.com + warden.pro7ocol.com; v2 building in 4 Devin sessions; demo today ~17:00–18:00
 
 ## Live (uk-lon-1, container `dg-roast`, compose in this repo, host port 127.0.0.1:8806)
@@ -8,13 +8,10 @@
 - `.env` (0600, gitignored): NEBIUS_API_KEY + SLNG_API_KEY copied server-side from karen; NEBIUS_MODEL=deepseek-ai/DeepSeek-V4-Pro, fallback Kimi-K3; RATE_LIMIT_PER_HOUR=1000
 - Redeploy: `cd /home/coder/DEV/BCN_Hack24h && git pull && docker compose up -d --build`
 
-## In flight (helm VPS owns; missions in helm/fleet/missions/20261010-eurocrat-*.md)
-- server-v2 — Devin c3ab27e5 (applicants, queue, fines meter, meltdown, leaderboard)
-- report-badge — Devin 1b8f0d7d (report.pdf + badge.png)
-- stage-v2 — Devin 1eb289fb (QR intro, live leaderboard, live case; Q/L/C keys)
-- pwa-v2 — Devin 8b14c812 (audience flow from the QR)
-- Merge order: server-v2 → report-badge → stage-v2 → pwa-v2, then deploy + live E2E
-- Mac helm owns: iOS app v2 (PR #3, local crewmate), Picsart art v2 (branch `assets-picsart-v2`)
+## In flight (helm VPS)
+- LIVE on main 5e4ca9a: server v2 (applicants+token, fines/jail, meltdown, Meanwhile, leaderboard, /api/live, /api/stats, TTS coverage), report.pdf + badge.png, corpus 879 provisions, stage v2 (Q/L/C/A), Arcade (/game/, /game/whack/, /swipe/, /flappy/, /triplicate/, /api/game/*)
+- Open: pwa-v2 PR #15 (Devin 8b14c812, live test), QA/E2E suite (Devin c1ca863d), iOS PR #20 into ios-native (Mac helm — uncompiled)
+- Integration helper used tonight: /tmp/integrate.sh (merge main into PR branch, regenerate lockfile, test, push) — lockfile conflicts on every new workspace
 
 ## Next steps (ordered)
 1. Review each v2 PR as it opens (live-test with real keys), consolidated fix list → Devin
