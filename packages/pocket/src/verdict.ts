@@ -1,5 +1,14 @@
 import { lawOf } from "./fines";
-import type { FineEvent, Meanwhile, Notice, NoticeV2 } from "./types";
+import { formatEurShort } from "./meter";
+import type { FineEvent, Meanwhile, Notice, NoticeV2, TurnoverEstimate } from "./types";
+
+/** "Estimated turnover (by the Commission, generously): €40 M — EU HR-tech TAM €8 bn × 0.5 %" */
+export function turnoverLine(t: TurnoverEstimate | undefined): string | null {
+  if (!t || !Number.isFinite(t.eur) || t.eur < 0) return null;
+  const amount = formatEurShort(t.eur).replace(/\.0 /, " ");
+  const basis = (t.basis ?? "").trim();
+  return `Estimated turnover (by the Commission, generously): ${amount}${basis ? ` — ${basis}` : ""}`;
+}
 
 export function isNoticeV2(n: Notice): n is NoticeV2 {
   const v = n as Partial<NoticeV2>;

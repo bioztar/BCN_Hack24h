@@ -232,6 +232,8 @@ body.jolt .box { animation: jolt 0.25s; }
 .v-totals div { background: #fff; border: 2px solid #e1e5f2; border-radius: 6px; padding: 8px; text-align: center; }
 .v-totals b { display: block; font: 900 20px Arial; color: var(--ink); word-break: break-all; }
 .v-totals small { color: #666; font-size: 11px; text-transform: uppercase; }
+.v-turnover { margin: 4px 0 8px; font-size: 13px; line-height: 1.35; color: #444; }
+.v-turnover b { color: var(--ink); }
 .v-actions { display: grid; gap: 8px; margin: 12px 0; }
 .v-actions .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .v-list h3 { color: var(--eu); margin: 18px 0 6px; font-size: 16px; }

@@ -515,11 +515,6 @@ function openSheet(mode: "pitch" | "reply"): void {
   ta.placeholder = mode === "pitch" ? "We're building Uber for… (or hold the microphone)" : "But it's actually compliant because…";
   ta.rows = 4;
   ta.maxLength = 1200;
-  const rev = el("input");
-  rev.type = "number";
-  rev.inputMode = "numeric";
-  rev.min = "0";
-  rev.placeholder = "Annual turnover in € (optional, used against you)";
   const mic = el("button", "btn mic", "Hold to dictate");
   mic.type = "button";
   const status = el("div", "sheet-status");
@@ -530,7 +525,6 @@ function openSheet(mode: "pitch" | "reply"): void {
   submit.type = "submit";
   row.append(cancel, submit);
   sheet.append(ta);
-  if (mode === "pitch") sheet.append(rev);
   sheet.append(mic, status, row);
   modal.append(sheet);
   app.append(modal);
@@ -553,7 +547,7 @@ function openSheet(mode: "pitch" | "reply"): void {
       return;
     }
     close();
-    if (mode === "pitch") void startCase(text, dictated, rev.value ? Number(rev.value) : undefined);
+    if (mode === "pitch") void startCase(text, dictated);
     else void sendReply(text);
   });
 }
@@ -658,14 +652,14 @@ function officersFor(id: PersonaId): [PersonaId, PersonaId] {
   return [id, other?.id ?? id];
 }
 
-async function startCase(text: string, dictated: boolean, revenueEur?: number): Promise<void> {
+async function startCase(text: string, dictated: boolean): Promise<void> {
   if (!me) return;
   resetCase();
   dispatch({ type: "submit" });
   say(me.id, "Submission received. Please take a number.", [], 0);
   sound.ding();
   try {
-    const c = await api.createCase({ kind: dictated ? "dictation" : "text", text, ...(revenueEur !== undefined && Number.isFinite(revenueEur) ? { revenueEur } : {}) }, officersFor(me.id));
+    const c = await api.createCase({ kind: dictated ? "dictation" : "text", text }, officersFor(me.id));
     dispatch({ type: "case", caseId: c.caseId, ticket: c.ticket });
     await openStream(c.caseId);
   } catch (err) {
