@@ -49,13 +49,9 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
       h("button", { type: "button", role: "tab", class: "tab", dataset: { k }, onclick: () => setKind(k) }, tabNames[k]),
     );
 
-    const boxes = CONSENTS.map((text, i) => {
-      const input = h("input", { type: "checkbox", id: `c${i}`, onchange: () => update() });
-      return { input, row: h("label", { class: "consent", for: `c${i}` }, input, h("span", null, text), h("small", null, "mandatory")) };
-    });
-    const selectAll = h("button", { type: "button", class: "btn small", disabled: true, title: "pending implementing act" }, "Select all (pending implementing act)");
+    const consentRows = CONSENTS.map((text) => h("p", { class: "consent-note" }, "☑ ", text));
     const missing = h("p", { class: "missing", role: "status" });
-    const submit = h("button", { type: "submit", class: "btn primary big", disabled: true }, "Submit for refusal ▸");
+    const submit = h("button", { type: "submit", class: "btn primary big" }, "Submit for refusal ▸");
 
     const form = h(
       "form",
@@ -64,7 +60,7 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
       h("p", { class: "form-sub" }, "Form SUB-1 (rev. 14) — to be completed in block capitals, in your head."),
       h("div", { class: "tabs", role: "tablist" }, tabs),
       h("div", { class: "panels" }, Object.values(panels)),
-      h("fieldset", { class: "consents" }, h("legend", null, "Consent to be insulted — all seven are mandatory"), boxes.map((b) => b.row), selectAll),
+      h("fieldset", { class: "consents" }, h("legend", null, "Consent to be insulted — deemed given by showing up"), consentRows),
       missing,
       submit,
     );
@@ -89,9 +85,8 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
           ? `✓ ${r.owner}/${r.repo} — admissible. It will be read. All of it.`
           : "Inadmissible. Only https://github.com/<owner>/<repo>. Other hosts are a third country.";
       repoMsg.classList.toggle("bad", !!repo.value.trim() && !r);
-      const consented = boxes.filter((b) => b.input.checked).length;
       const sub = current();
-      const problems = [typeof sub === "string" ? sub : null, consented < 7 ? `Consent ${consented}/7 given. All seven are mandatory.` : null].filter(Boolean);
+      const problems = [typeof sub === "string" ? sub : null].filter(Boolean);
       missing.textContent = problems.join(" ");
       submit.disabled = problems.length > 0;
     }
@@ -107,7 +102,7 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const sub = current();
-      if (typeof sub === "string" || boxes.some((b) => !b.input.checked)) return update();
+      if (typeof sub === "string") return update();
       unlockAudio();
       submit.disabled = true;
       submit.textContent = "Registering your file…";
