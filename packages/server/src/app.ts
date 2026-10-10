@@ -45,7 +45,7 @@ export interface AppDeps {
   analyzer?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDir?: string };
   /** Max wait for TTS before a line goes out with `audioUrl: null` (a later `audio` event follows). */
   ttsBudgetMs?: number;
-  /** Before `awaiting`/`verdict`, wait at most this long for late audio. */
+  /** Before `awaiting`/`verdict`, wait at most this long for all of the round's outstanding audio; the rest is replayed at the start of the next stream. */
   lateAudioMs?: number;
   /** A canned opener speaks if no model line arrives by then. */
   firstLineMs?: number;
@@ -288,6 +288,18 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     return reply.code(204).send();
   });
 
+  /** Per case: `audio` events that landed after their round closed, waiting for the next stream. */
+  const carried = new Map<string, { events: AnyEvent[]; push: ((e: AnyEvent) => void) | null }>();
+  const carry = (caseId: string) => {
+    let c = carried.get(caseId);
+    if (!c) {
+      if (carried.size >= 1000) carried.delete(carried.keys().next().value as string);
+      carried.set(caseId, (c = { events: [], push: null }));
+    }
+    return c;
+  };
+  let lineSeq = 0;
+
   const visitorTexts = (s: CaseState) => [s.submission.text ?? "", ...s.replies, s.intake?.description ?? "", s.readme ?? ""].filter(Boolean);
 
   /**
@@ -299,6 +311,20 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     const push = (e: AnyEvent) => {
       rt.events.push(e);
       rt.bus.emit("event", e);
+    };
+    // Late audio from earlier rounds: replay what finished, route the rest into this stream as it lands.
+    const prev = carried.get(state.caseId);
+    if (prev) {
+      prev.push = push;
+      for (const e of prev.events.splice(0)) push(e);
+    }
+    let open = true;
+    const deliverLate = (e: AnyEvent) => {
+      if (open) return push(e);
+      if (state.done) return void rt.events.push(e);
+      const c = carry(state.caseId);
+      if (c.push) c.push(e);
+      else c.events.push(e);
     };
     const started = Date.now();
     const deadline = started + (d.roundDeadlineMs ?? 20000);
@@ -316,7 +342,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     const emit = (line: LineOut) => {
       const id = `${state.caseId}-${state.round}-${n++}`;
       const spec = d.roster.get(line.speaker)!;
-      const render = d.audio.render(line.text, spec.voice);
+      const render = d.audio.render(line.text, spec.voice, lineSeq++);
       const arrived = Date.now();
       const provisions = line.provisions.map((pid) => d.corpus.provision(pid)).filter((p): p is NonNullable<typeof p> => Boolean(p));
       state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
@@ -335,7 +361,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
           if (crossed) push({ type: "meltdown", totalEur: meter.totalEur, totalJailMonths: meter.totalJailMonths });
         });
         if (!quotesVisitor(line.text, visitorTexts(state))) d.wall.add({ speaker: line.speaker, text: line.text, at: new Date().toISOString() });
-        if (!audioUrl) lateAudio.push(render.then((url) => (url ? push({ type: "audio", id, audioUrl: url }) : undefined), () => undefined));
+        if (!audioUrl) lateAudio.push(render.then((url) => (url ? deliverLate({ type: "audio", id, audioUrl: url }) : undefined), () => undefined));
       });
     };
     try {
@@ -380,11 +406,17 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       }
       while (count < 3) emit(d.engine.fill(state, d.engine.partner(state, state.lines.at(-1)?.speaker), state.lines.map((l) => l.text)));
       await chain;
-      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 6000, undefined);
+      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 10000, undefined);
     } catch (err) {
       app.log.error({ err }, "round failed; closing it anyway");
     } finally {
       if (ticker) clearInterval(ticker);
+    }
+    open = false;
+    const c = carried.get(state.caseId);
+    if (c) {
+      c.push = null;
+      if (!c.events.length) carried.delete(state.caseId);
     }
     try {
       if (state.tier === 5) {

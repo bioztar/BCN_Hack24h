@@ -110,7 +110,7 @@ export function entries(dir: string, names: string[]) {
   });
 }
 
-export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; reportsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number } = {}) {
+export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; reportsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number; lateAudioMs?: number } = {}) {
   const db = openDb(":memory:");
   const llm = (opts.llm === undefined ? new FakeLlm() : opts.llm) as FakeLlm | null;
   const tts = opts.tts ?? new FakeTts();
@@ -130,6 +130,7 @@ export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof
     reportsDir: opts.reportsDir,
     roundDeadlineMs: opts.roundDeadlineMs,
     ttsBudgetMs: opts.ttsBudgetMs,
+    lateAudioMs: opts.lateAudioMs,
   });
   return { app, db, llm, tts, wall, engine };
 }
