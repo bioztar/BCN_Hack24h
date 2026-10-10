@@ -22,11 +22,13 @@ npm run build -w packages/flappy      # → packages/flappy/dist, base /flappy/
 ## Rules
 
 - Score = pillars passed (one point per pillar).
-- Difficulty: speed `min(285, 150 + 4.5 × score)` world units/s; gap of pillar *i*
-  `max(128, 200 − 3.2 × i)`; pillars are spaced 240 units apart (world height 640, so pacing is
-  the same on every screen).
+- Difficulty: speed `min(230, 150 + 2 × score)` world units/s; gap of pillar *i*
+  `max(155, 225 − 1.6 × i)` (+20 per pillar for the first 3, which also sit near mid-height);
+  pillars are spaced 270 units apart; a gap moves at most 100 up / 160 down from the previous one
+  (world height 640, so pacing is the same on every screen). Tuned with a reaction-delay bot:
+  casual (110 ms lag) ≈ 6, good (70 ms) ≈ 30 median.
 - **Regulatory sandbox** (AI Act Art. 57): 3 s of immunity — pass through pillars, bounce off the floor.
-- **Delegated act** (AI Act Art. 7): the next 4 pillars start moving up and down.
+- **Delegated act** (AI Act Art. 7): the next 3 pillars start moving up and down (±45 units, 0.35 Hz).
 - Ceiling is soft; the floor (the Official Journal) kills, blamed on the next pillar's provision.
 - Rank ladder: Rejected at reception (0) → Stagiaire (unpaid) (1) → Desk Officer (3) → Head of
   Unit (8) → Director (15) → Director-General (25) → Commissioner (40) → President of the
@@ -35,13 +37,13 @@ npm run build -w packages/flappy      # → packages/flappy/dist, base /flappy/
 
 ## Leaderboard cap (for Lane G's `gamePlugin`)
 
-Forward speed never exceeds `vMax = 285` units/s and pillars are `spacing = 240` units apart, so
+Forward speed never exceeds `vMax = 230` units/s and pillars are `spacing = 270` units apart, so
 
 ```
-maxScore(durationMs) = floor(durationMs / 1000 × 285 / 240) + 1   // ≈ 1.1875 pillars per second
+maxScore(durationMs) = floor(durationMs / 1000 × 230 / 270) + 1   // ≈ 0.852 pillars per second
 ```
 
-e.g. 60 s → 72. A test runs the game with permanent immunity and asserts no run exceeds it.
+e.g. 60 s → 52. A test runs the game with permanent immunity and asserts no run exceeds it.
 Score submissions: `POST /api/game/score {game:"flappy", name, score, durationMs, seed, token,
 stats:{flaps, sandboxes, delegatedActs, killedBy, cause}}`. The course is deterministic for a seed
 (`newGame(seed)` in `src/logic.ts`), so a server could replay it if ever needed.

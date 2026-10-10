@@ -23,19 +23,24 @@ export const C = {
   maxFall: 720,
   radius: 13,
   pillarW: 68,
-  spacing: 240,
+  spacing: 270,
   firstX: 420,
   v0: 150,
-  vMax: 285,
-  vStep: 4.5,
-  gap0: 200,
-  gapMin: 128,
-  gapStep: 3.2,
+  vMax: 230,
+  vStep: 2,
+  gap0: 225,
+  gapMin: 155,
+  gapStep: 1.6,
   edge: 70,
+  warmup: 3,
+  warmupGap: 20,
+  warmupBand: 70,
+  maxUp: 100,
+  maxDown: 160,
   sandboxMs: 3000,
-  movingCount: 4,
-  moveAmp: 70,
-  moveHz: 0.55,
+  movingCount: 3,
+  moveAmp: 45,
+  moveHz: 0.35,
   sandboxChance: 0.12,
   delegatedChance: 0.1,
   stepMs: 1000 / 120,
@@ -134,12 +139,14 @@ export function newGame(seed: string | number): State {
 
 function addPillar(st: State): void {
   const index = st.pillars.length ? st.pillars[st.pillars.length - 1].index + 1 : 0;
-  const gap = gapAt(index);
+  const warm = Math.max(0, C.warmup - index);
+  const gap = gapAt(index) + warm * C.warmupGap;
   const lo = C.edge + gap / 2;
   const hi = GROUND_Y - C.edge - gap / 2;
   const prev = st.pillars[st.pillars.length - 1];
   let baseY = lo + st.rng() * (hi - lo);
-  if (prev) baseY = clamp(baseY, prev.baseY - 210, prev.baseY + 210);
+  if (prev) baseY = clamp(baseY, prev.baseY - C.maxUp, prev.baseY + C.maxDown);
+  if (warm) baseY = clamp(baseY, WORLD_H * 0.42 - C.warmupBand, WORLD_H * 0.42 + C.warmupBand);
   let reg = Math.floor(st.rng() * PILLAR_REGS.length);
   if (prev && reg === prev.reg) reg = (reg + 1) % PILLAR_REGS.length;
   const p: Pillar = { index, x: C.firstX + index * C.spacing, baseY, gap, reg, passed: false, moveFrom: null, moveAmp: 0 };
