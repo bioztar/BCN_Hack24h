@@ -1,5 +1,5 @@
-import { TIER_NAMES, type Case, type Notice, type Persona, type PersonaId, type Provision, type RoastEvent, type Submission, type Tier, type WallEntry } from "./contract";
-import { FIXED_PAIRS, type Api } from "./api";
+import { TIER_NAMES, type Case, type CaseMode, type Notice, type Persona, type PersonaId, type Provision, type RoastEvent, type Submission, type Tier, type WallEntry } from "./contract";
+import { ApiError, FIXED_PAIRS, type Api } from "./api";
 import { fmtEur, sleep } from "./dom";
 
 const AI_ACT = "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689";
@@ -44,6 +44,11 @@ export const MOCK_PERSONAS: Persona[] = [
 ];
 
 type ScriptLine = { by: 0 | 1; text: string; cite?: string[]; clip?: Extract<RoastEvent, { type: "line" }>["clip"]; stamp?: Extract<RoastEvent, { type: "line" }>["stamp"] };
+
+const APPEAL_LINES: ScriptLine[] = [
+  { by: 0, clip: "tier5", text: "Your appeal has been received and read in full. It has been added to the evidence against you.", cite: ["aiact-57"] },
+  { by: 1, text: "Appeal rejected. The fine has been recalculated, upwards, for the inconvenience.", stamp: "REFUSÉ" },
+];
 
 const ROUNDS: Record<Tier, { lines: ScriptLine[]; prompt: string }> = {
   1: {
@@ -125,18 +130,18 @@ const wallChannel = typeof BroadcastChannel !== "undefined" && typeof window !==
 
 export function mockApi(opts: { pace?: number } = {}): Api {
   const pace = opts.pace ?? 1;
-  const cases = new Map<string, { c: Case; sub: Submission; tier: Tier; cited: Set<string>; replies: string[] }>();
+  const cases = new Map<string, { c: Case; sub: Submission; tier: Tier; cited: Set<string>; replies: string[]; mode: CaseMode; appealed: boolean; done: boolean }>();
   const persona = (id: PersonaId) => MOCK_PERSONAS.find((p) => p.id === id) ?? MOCK_PERSONAS[0]!;
 
   return {
     mock: true,
     personas: async () => MOCK_PERSONAS,
     pairs: async () => FIXED_PAIRS,
-    async createCase(submission, officers) {
+    async createCase(submission, officers, mode) {
       await sleep(400 * pace);
       const ticket = 4812 + Math.floor(Math.random() * 90);
-      const c: Case = { caseId: `mock-${Date.now().toString(36)}`, ticket, officers: officers ?? FIXED_PAIRS[Math.floor(Math.random() * FIXED_PAIRS.length)]!.officers };
-      cases.set(c.caseId, { c, sub: submission, tier: 1, cited: new Set(), replies: [] });
+      const c: Case = { caseId: `mock-${Date.now().toString(36)}`, ticket, officers: officers ?? FIXED_PAIRS[Math.floor(Math.random() * FIXED_PAIRS.length)]!.officers, ...(mode === "express" ? { mode } : {}) };
+      cases.set(c.caseId, { c, sub: submission, tier: 1, cited: new Set(), replies: [], mode: mode ?? "staged", appealed: false, done: false });
       return c;
     },
     async stream(caseId, onEvent, signal) {
@@ -155,6 +160,35 @@ export function mockApi(opts: { pace?: number } = {}): Api {
         await sleep(wait * pace);
         onEvent(e);
       };
+      const lineEvent = (l: ScriptLine, id: string): RoastEvent => {
+        const provisions = (l.cite ?? []).map((pid) => PROVISIONS[pid]!).filter(Boolean);
+        provisions.forEach((p) => st.cited.add(p.id));
+        const text = l.text.replace(/\{(\w+)\}/g, (_, k: keyof typeof vars) => vars[k] ?? "");
+        return { type: "line", id, speaker: c.officers[l.by], text, provisions, clip: l.clip ?? (l.stamp ? "stamp" : "talking"), audioUrl: null, ...(l.stamp ? { stamp: l.stamp } : {}) };
+      };
+      const noticeOf = (mult: number): Notice => ({
+        serial: `L-2026/${String(c.ticket).padStart(5, "0")}`,
+        startup: vars.startup,
+        officers: c.officers,
+        fineEur: fineFor(sub.revenueEur) * mult,
+        fineBasis: "€35M or 7% of worldwide annual turnover, whichever is higher — AI Act Art. 99(3)",
+        findings: [...st.cited].map((id) => PROVISIONS[id]!).map((provision) => ({ text: FINDING_TEXT[provision.id] ?? provision.title, provision })),
+        issuedAt: new Date().toISOString(),
+        ...MOCK_TURNOVER,
+      });
+      if (st.mode === "express") {
+        if (st.done) return void (await emit({ type: "verdict", notice: noticeOf(st.appealed ? 2 : 1) }, 0));
+        if (!st.appealed) await emit({ type: "officers", officers: [persona(c.officers[0]), persona(c.officers[1])], ticket: c.ticket }, 300);
+        const plan = st.appealed ? [{ tier: 5 as Tier, lines: APPEAL_LINES }] : ([1, 2, 3, 4, 5] as Tier[]).map((t) => ({ tier: t, lines: t === 5 ? ROUNDS[5].lines : ROUNDS[t].lines.slice(0, 1) }));
+        let i = 0;
+        for (const { tier, lines } of plan) {
+          await emit({ type: "tier", tier, name: TIER_NAMES[tier - 1] });
+          for (const l of lines) await emit(lineEvent(l, `${caseId}-${st.appealed ? "a" : "x"}-${i++}`));
+        }
+        st.done = true;
+        await emit({ type: "verdict", notice: noticeOf(st.appealed ? 2 : 1) }, 400);
+        return;
+      }
       if (st.tier === 1) {
         await emit({ type: "officers", officers: [persona(c.officers[0]), persona(c.officers[1])], ticket: c.ticket }, 300);
       }
@@ -182,43 +216,30 @@ export function mockApi(opts: { pace?: number } = {}): Api {
         lines.splice(1, 0, ...REPO_LINES);
       }
       let i = 0;
-      for (const l of lines) {
-        const provisions = (l.cite ?? []).map((id) => PROVISIONS[id]!).filter(Boolean);
-        provisions.forEach((p) => st.cited.add(p.id));
-        const text = l.text.replace(/\{(\w+)\}/g, (_, k: keyof typeof vars) => vars[k] ?? "");
-        await emit({
-          type: "line",
-          id: `${caseId}-${st.tier}-${i++}`,
-          speaker: c.officers[l.by],
-          text,
-          provisions,
-          clip: l.clip ?? (l.stamp ? "stamp" : "talking"),
-          audioUrl: null,
-          ...(l.stamp ? { stamp: l.stamp } : {}),
-        });
-      }
+      for (const l of lines) await emit(lineEvent(l, `${caseId}-${st.tier}-${i++}`));
       if (st.tier < 5) {
         await emit({ type: "awaiting", prompt: ROUNDS[st.tier].prompt });
         return;
       }
-      const findings = [...st.cited].map((id) => PROVISIONS[id]!).map((provision) => ({ text: FINDING_TEXT[provision.id] ?? provision.title, provision }));
-      const notice: Notice = {
-        serial: `L-2026/${String(c.ticket).padStart(5, "0")}`,
-        startup: vars.startup,
-        officers: c.officers,
-        fineEur: fineFor(sub.revenueEur),
-        fineBasis: "€35M or 7% of worldwide annual turnover, whichever is higher — AI Act Art. 99(3)",
-        findings,
-        issuedAt: new Date().toISOString(),
-        ...MOCK_TURNOVER,
-      };
-      await emit({ type: "verdict", notice }, 400);
+      await emit({ type: "verdict", notice: noticeOf(1) }, 400);
     },
     async reply(caseId, text) {
       const st = cases.get(caseId);
       if (!st) throw new Error("unknown case");
+      if (st.mode === "express") throw new ApiError("express cases take no replies; lodge an appeal after the verdict", 409);
       st.replies.push(text);
       st.tier = Math.min(5, st.tier + 1) as Tier;
+      await sleep(200 * pace);
+    },
+    async appeal(caseId, text) {
+      const st = cases.get(caseId);
+      if (!st) throw new ApiError("unknown case", 404);
+      if (st.mode !== "express") throw new ApiError("only express cases can be appealed", 409);
+      if (!st.done) throw new ApiError("the verdict has not been issued yet", 409);
+      if (st.appealed) throw new ApiError("the appeal has been lodged and, naturally, rejected", 409);
+      if (text?.trim()) st.replies.push(text.trim());
+      st.appealed = true;
+      st.done = false;
       await sleep(200 * pace);
     },
     async stt() {

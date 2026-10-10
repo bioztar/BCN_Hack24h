@@ -1,4 +1,4 @@
-import type { Case, Persona, PersonaId, RoastEvent, Submission, WallEntry } from "./contract";
+import type { Case, CaseMode, Persona, PersonaId, RoastEvent, Submission, WallEntry } from "./contract";
 import { readSse, toRoastEvent, toWallEntry } from "./sse";
 import { sleep } from "./dom";
 
@@ -38,7 +38,9 @@ export interface Api {
   readonly mock: boolean;
   personas(): Promise<Persona[]>;
   pairs(): Promise<Pair[]>;
-  createCase(submission: Submission, officers?: [PersonaId, PersonaId]): Promise<Case>;
+  createCase(submission: Submission, officers?: [PersonaId, PersonaId], mode?: CaseMode): Promise<Case>;
+  /** Express only: one appeal after the verdict; the next `stream` is the appeal round. */
+  appeal(caseId: string, text?: string): Promise<void>;
   /** One round of events; resolves when the server closes the stream. */
   stream(caseId: string, onEvent: (e: RoastEvent) => void, signal?: AbortSignal): Promise<void>;
   reply(caseId: string, text: string): Promise<void>;
@@ -66,12 +68,12 @@ export function httpApi(base = ""): Api {
     mock: false,
     personas: async () => json<Persona[]>(await fetch(`${base}/api/personas`)),
     pairs: async () => json<Pair[]>(await fetch(`${base}/api/pairs`)),
-    createCase: async (submission, officers) =>
+    createCase: async (submission, officers, mode) =>
       json<Case>(
         await fetch(`${base}/api/case`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(officers ? { submission, officers } : { submission }),
+          body: JSON.stringify({ submission, ...(officers ? { officers } : {}), ...(mode === "express" ? { mode } : {}) }),
         }),
       ),
     async stream(caseId, onEvent, signal) {
@@ -90,6 +92,14 @@ export function httpApi(base = ""): Api {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text }),
+      });
+      if (!res.ok) await json(res);
+    },
+    async appeal(caseId, text) {
+      const res = await fetch(`${base}/api/case/${encodeURIComponent(caseId)}/appeal`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(text ? { text } : {}),
       });
       if (!res.ok) await json(res);
     },

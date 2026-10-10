@@ -28,6 +28,7 @@ export type StageAction =
   | RoastEvent
   | { type: "line-end"; id: string }
   | { type: "reply"; text: string }
+  | { type: "appeal" }
   | { type: "connection-lost"; message: string };
 
 export function initialState(officers: [Persona, Persona] | null = null): StageState {
@@ -92,6 +93,8 @@ export function reduce(s: StageState, a: StageAction): StageState {
       return { ...s, phase: "error", error: a.message };
     case "connection-lost":
       return s.phase === "verdict" || s.phase === "awaiting" ? s : { ...s, phase: "error", error: a.message };
+    case "appeal":
+      return { ...s, phase: "connecting", notice: null, error: null, current: null, round: s.round + 1, clip: "listening" };
     case "reply":
       return { ...s, phase: "connecting", awaiting: null, error: null, current: null, round: s.round + 1, clip: "listening" };
     default:

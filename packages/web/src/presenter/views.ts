@@ -1,3 +1,4 @@
+import { ratesFrom, talkMeanwhile } from "../live/meanwhile";
 import { portraitCandidates, initials } from "../assets";
 import type { BetterPlaceCause, LeaderboardEntry, Persona } from "../contract";
 import { fmtInt, h, safeUrl } from "../dom";
@@ -412,4 +413,22 @@ export function caseView(root: HTMLElement, hub: Hub): Dispose {
     analyzing?.dispose();
     views.forEach((v) => v.dispose());
   };
+}
+
+/** E — closing slide: a giant MEANWHILE "during this talk", at today's server rates. */
+export function endView(root: HTMLElement, hub: Hub, talk: { start: number }): Dispose {
+  const mw = new MeanwhileBoard("talk");
+  root.replaceChildren(
+    h(
+      "div",
+      { class: "pv pv-end" },
+      h("div", { class: "end-kicker" }, "Eurocrat Commission · DG ROAST · Closing statement"),
+      mw.el,
+      h("p", { class: "end-foot" }, "Thank you for your attention. It has been filed, in triplicate."),
+    ),
+  );
+  const render = () => mw.set(talkMeanwhile((Date.now() - talk.start) / 1000, ratesFrom(hub.stats?.meanwhileToday ?? null)));
+  render();
+  const t = setInterval(render, 500);
+  return () => clearInterval(t);
 }

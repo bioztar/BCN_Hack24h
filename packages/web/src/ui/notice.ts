@@ -38,7 +38,7 @@ export function ombudsman(): HTMLElement {
 }
 
 /** The Notice of Non-Compliance. Returns the document node too, for PNG export. */
-export function noticeView(notice: Notice, officers: Persona[], pitch?: string): HTMLElement {
+export function noticeView(notice: Notice, officers: Persona[], pitch?: string, opts: { onAppeal?: () => Promise<void> } = {}): HTMLElement {
   const claim = quoteClaim(pitch);
   const issued = new Date(notice.issuedAt);
   const date = isNaN(issued.getTime()) ? notice.issuedAt : issued.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
@@ -110,7 +110,20 @@ export function noticeView(notice: Notice, officers: Persona[], pitch?: string):
       dl.disabled = false;
     }
   });
-  const appeal = h("button", { class: "btn", type: "button", onclick: () => document.body.append(ombudsman()) }, "Appeal");
+  const onAppeal = opts.onAppeal;
+  const appeal = onAppeal
+    ? h("button", { class: "btn primary appeal-once", type: "button" }, "Appeal (one chance)")
+    : h("button", { class: "btn", type: "button", onclick: () => document.body.append(ombudsman()) }, "Appeal");
+  if (onAppeal)
+    appeal.addEventListener("click", async () => {
+      appeal.disabled = true;
+      status.textContent = "Appeal lodged. The Commission will now reconsider, briefly.";
+      try {
+        await onAppeal();
+      } catch (err) {
+        status.textContent = `Appeal inadmissible: ${(err as Error).message}`;
+      }
+    });
   const again = h("a", { class: "btn", href: withFlags("/") }, "Submit another startup");
   const wall = h("a", { class: "btn", href: withFlags("/wall/"), target: "_blank" }, "Official Journal — Series R ↗");
 

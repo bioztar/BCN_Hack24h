@@ -34,6 +34,8 @@ export class Hub {
   private readonly seq = new Sequencer<{ caseId: string; e: AnyEvent }>((j, cur) => this.apply(j, cur));
   private readonly late = new LateAudio();
   private awaitingSince = 0;
+  /** Line events queued but not yet shown (express streams land faster than reading time). */
+  private pendingLines = 0;
   private lineEnd: (() => void) | null = null;
   private readonly playLine = makeLinePlayer({
     createAudio: (url) => new Audio(url),
@@ -148,11 +150,11 @@ export class Hub {
   }
 
   /** Which case to show: `?case=` pin → `GET /api/live` → newest leaderboard entry. */
-  private async target(): Promise<{ caseId: string; ticket: number | null; startupName: string | null } | null> {
+  private async target(): Promise<{ caseId: string; ticket: number | null; startupName: string | null; inProgress?: boolean } | null> {
     if (this.pinned) return { caseId: this.pinned, ticket: null, startupName: null };
     try {
       const l = await this.api.live();
-      if (l !== "missing") return l;
+      if (l !== "missing") return l && { ...l, inProgress: true };
     } catch {
       /* fall through */
     }
@@ -171,14 +173,26 @@ export class Hub {
       const t = await this.target();
       if (t && t.caseId !== this.live.caseId && (this.switchable() || this.pinned === t.caseId)) {
         this.seq.clear();
+        this.pendingLines = 0;
         this.lineEnd?.();
         this.live = emptyLive(t.caseId, t.ticket, t.startupName);
+        this.emit("live");
+      } else if (t?.inProgress && t.caseId === this.live.caseId && this.live.notice) {
+        // express appeal: the decided case is live again → follow its appeal round to the new verdict
+        this.live = { ...this.live, notice: null, awaiting: null, error: null };
         this.emit("live");
       }
       const id = this.live.caseId;
       if (id && !this.live.notice) {
         try {
-          await this.api.caseStream(id, (e) => this.seq.enqueue({ caseId: id, e }), this.ac.signal);
+          await this.api.caseStream(
+            id,
+            (e) => {
+              if (e.type === "line") this.pendingLines++;
+              this.seq.enqueue({ caseId: id, e });
+            },
+            this.ac.signal,
+          );
         } catch (err) {
           if (err instanceof HttpStatusError && err.status === 404 && this.live.caseId === id) {
             this.live = { ...this.live, error: "File not found. It has been lost, as is customary." };
@@ -204,6 +218,7 @@ export class Hub {
   }
 
   private async apply(j: { caseId: string; e: AnyEvent }, isCurrent: () => boolean): Promise<void> {
+    if (j.e.type === "line") this.pendingLines = Math.max(0, this.pendingLines - 1);
     if (j.caseId !== this.live.caseId || !isCurrent()) return;
     const e = j.e;
     if (e.type === "audio") this.late.deliver(e.id, e.audioUrl);
@@ -217,14 +232,14 @@ export class Hub {
     if (e.type !== "line") return;
     this.addCaption(e.text);
     // joined late / replay: catch up quickly instead of reading the whole backlog aloud
-    if (this.seq.size > 4) return void (await sleep(250));
+    if (this.pendingLines > 3) return void (await sleep(250));
     this.speaking = true;
     this.emit("live");
     try {
       if (this.sound) {
         const audioUrl = e.audioUrl ?? (await this.late.wait(e.id, LATE_AUDIO_MS, sleep));
         await this.playLine({ text: e.text, audioUrl, speaker: e.speaker });
-      } else await this.hold(readingTimeMs(e.text));
+      } else await this.hold(this.pendingLines > 0 ? Math.min(readingTimeMs(e.text), 2500) : readingTimeMs(e.text));
     } finally {
       this.speaking = false;
       this.emit("live");

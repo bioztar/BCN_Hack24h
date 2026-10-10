@@ -8,14 +8,14 @@ import { unlockAudio } from "../stage/sfx";
 import { Hub } from "./hub";
 import { firstRun, navHidden, playHref, REPORT_URL, safeStore, setNavHidden } from "./nav";
 import { KEYS, parseView, type View } from "./view";
-import { arcadeView, boardView, caseView, qrView, type Dispose } from "./views";
+import { arcadeView, boardView, caseView, endView, qrView, type Dispose } from "./views";
 
 export { parseView, type View } from "./view";
 
-const NAV: [View, string, string][] = [["qr", "QR", "Q"], ["board", "Leaderboard", "L"], ["case", "Live case", "C"], ["arcade", "Arcade", "A"]];
-const TIP = "Presenter? Keys Q L C A · F full screen · H hide bar";
+const NAV: [View, string, string][] = [["qr", "QR", "Q"], ["board", "Leaderboard", "L"], ["case", "Live case", "C"], ["arcade", "Arcade", "A"], ["end", "End", "E"]];
+const TIP = "Presenter? Keys Q L C A E · F full screen · H hide bar";
 
-/** The big-screen presenter: Q = QR intro, L = leaderboard, C = live case, A = arcade. */
+/** The big-screen presenter: Q = QR intro, L = leaderboard, C = live case, A = arcade, E = closing MEANWHILE. */
 export function presenter(root: HTMLElement): void {
   const params = new URLSearchParams(location.search);
   const pace = Number(params.get("pace")) || 1;
@@ -51,6 +51,8 @@ export function presenter(root: HTMLElement): void {
   };
   nav.hidden = navHidden(store);
 
+  /** E counts "during this talk" from page open; 0 restarts it. */
+  const talk = { start: Date.now() };
   const sort: { sort: BoardSort } = { sort: params.get("sort") === "jail" ? "jail" : "fines" };
   let view: View = parseView(params.get("view"));
   let dispose: (Dispose & { toggle?: () => void }) | null = null;
@@ -59,7 +61,7 @@ export function presenter(root: HTMLElement): void {
     dispose?.();
     view = v;
     screen.dataset.view = v;
-    dispose = v === "qr" ? qrView(screen, hub) : v === "board" ? boardView(screen, hub, sort) : v === "case" ? caseView(screen, hub) : arcadeView(screen, api);
+    dispose = v === "qr" ? qrView(screen, hub) : v === "board" ? boardView(screen, hub, sort) : v === "case" ? caseView(screen, hub) : v === "end" ? endView(screen, hub, talk) : arcadeView(screen, api);
     views.replaceChildren(...NAV.map(([k, name, key]) => h("button", { class: k === v ? "on" : "", title: `${name} (${key})`, onclick: () => show(k) }, name, h("kbd", null, key))));
     const u = new URL(location.href);
     u.searchParams.set("view", v);
@@ -82,6 +84,10 @@ export function presenter(root: HTMLElement): void {
     if (k === "m") {
       hub.toggleSound();
       return flash(hub.sound ? "🔊 Stage sound on" : "🔇 Stage sound off");
+    }
+    if (k === "0") {
+      talk.start = Date.now();
+      return flash("⏱ MEANWHILE: counting from now");
     }
     if (k === "p") {
       hub.togglePin();
