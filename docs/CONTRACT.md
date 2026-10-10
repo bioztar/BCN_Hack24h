@@ -312,3 +312,26 @@ lands in the matching DG (colour + label). Filling a row of three matched forms 
 "APPROVED IN TRIPLICATE" and clears it; a wrong inbox sends the form "back to the queue"
 (adds a grey junk block). Speeds up; game over when the stack hits the ceiling ("Your file
 has been archived"). Touch: swipe to move, tap to rotate; keyboard on desktop.
+
+### v2 amendment — applicant token + photo id (2026-10-10 02:45, helm review of #14)
+
+`applicantId` is public (leaderboard), so it can't authorise anything. Registration
+(`POST /api/applicants`) now also returns `applicantToken` (random, 32+ bytes base64url),
+returned **only** there. `POST /api/case` with an `applicantId` and
+`POST /api/applicants/:id/better-place` require the matching `applicantToken` (JSON body
+field, or header `x-applicant-token`) → 403 otherwise; one case per applicant (a second
+`POST /api/case` returns the existing caseId). Photos are served under a separate random
+`photoId` (`/api/photos/:photoId.jpg`), never the applicantId. `GET
+/api/leaderboard/:caseId` returns `{ entry: LeaderboardEntry, findings: … }` as specified.
+Clients (pocket PWA, iOS) keep the token in memory/session storage for the session only.
+
+### v2 amendment — stage feeds (2026-10-10 02:25, from stage-v2 #21)
+
+- `GET /api/live` → `{ caseId: string | null, startedAt: string | null }` — the most recently
+  *started* case still in progress (null if none in the last 10 min). The stage opens that
+  case's stream read-only (replay + live) for its C view. Stream replay must be safe for
+  multiple concurrent readers.
+- `GET /api/stats` → `{ inQueue: number, refusedToday: number, totalEurToday: number,
+  totalJailMonthsToday: number, meanwhileToday: Meanwhile }` — Q view counter and the
+  day-total MEANWHILE board. `GET /api/stats/stream` SSE pushes it on every change
+  (throttled to ≤ 1/s).

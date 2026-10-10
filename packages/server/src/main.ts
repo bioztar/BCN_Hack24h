@@ -2,6 +2,7 @@
 import path from "node:path";
 import { paths, port, profiles, rateLimitPerHour, slngConfig } from "./config.js";
 import { analyzerPlugin, WEB_DIST as ANALYZER_WEB } from "@dg-roast/analyzer";
+import { gamePlugin, GAME_WEB_DIST } from "@dg-roast/game";
 import { buildApp } from "./app.js";
 import { Corpus } from "./corpus.js";
 import { openDb } from "./db.js";
@@ -10,7 +11,7 @@ import { NebiusLlm } from "./nebius.js";
 import { Roster } from "./personas.js";
 import { RateLimiter } from "./ratelimit.js";
 import { GitHubIntake } from "./repo.js";
-import { AudioCache, SlngStt, SlngTts } from "./voice.js";
+import { AudioCache, SlngStt, SlngTts, PRIORITY_IDLE } from "./voice.js";
 import { Wall } from "./wall.js";
 
 if (!process.env.NEBIUS_API_KEY) console.warn("NEBIUS_API_KEY is not set — officials will use canned lines only");
@@ -39,7 +40,9 @@ const app = buildApp({
   webDir: paths.web(),
   pocketDir: paths.pocket(),
   assetsDir: paths.assets(),
+  reportsDir: path.join(dataDir, "reports"),
   analyzer: { plugin: analyzerPlugin, options: { corpusPath: paths.corpus() }, webDir: ANALYZER_WEB },
+  arcade: { plugin: gamePlugin, webDirs: { game: GAME_WEB_DIST, ...Object.fromEntries((["swipe", "flappy", "triplicate"] as const).map((id) => [id, paths.pkgDist(id)])) } },
   logger: true,
 });
 
@@ -54,7 +57,7 @@ if (process.env.SLNG_API_KEY) {
   const worker = async () => {
     while (next < jobs.length) {
       const j = jobs[next++]!;
-      if (await audio.render(j.text, roster.get(j.speaker)!.voice)) ok++;
+      if (await audio.render(j.text, roster.get(j.speaker)!.voice, PRIORITY_IDLE)) ok++;
     }
   };
   void Promise.all([worker(), worker(), worker()]).then(() => console.log(`pre-rendered ${ok}/${jobs.length} canned lines`));

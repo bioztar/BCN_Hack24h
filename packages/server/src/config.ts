@@ -26,6 +26,7 @@ export const paths = {
   assets: () => path.join(REPO_ROOT, "assets", "generated"),
   web: () => path.join(REPO_ROOT, "packages", "web", "dist"),
   pocket: () => path.join(REPO_ROOT, "packages", "pocket", "dist"),
+  pkgDist: (pkg: string) => path.join(REPO_ROOT, "packages", pkg, "dist"),
   data: () => process.env.DATA_DIR || path.join(REPO_ROOT, "data"),
 };
 
@@ -59,6 +60,14 @@ export const profiles = {
     timeoutMs: positive("NEBIUS_CHEAP_TIMEOUT_MS", 4000),
     extraBody: { chat_template_kwargs: { thinking: false } },
   }),
+  /** v2 Notice: TL;DR per law + recommendations. Runs alongside the tier-5 round. */
+  report: (): Profile => ({
+    model: process.env.NEBIUS_REPORT_MODEL || process.env.NEBIUS_CHEAP_MODEL || "deepseek-ai/DeepSeek-V4.1-Flash",
+    temperature: 0.3,
+    maxOutputTokens: 900,
+    timeoutMs: positive("NEBIUS_REPORT_TIMEOUT_MS", 12000),
+    extraBody: { chat_template_kwargs: { thinking: false } },
+  }),
 };
 
 export interface SlngConfig {
@@ -75,7 +84,7 @@ export function slngConfig(): SlngConfig {
   return {
     apiKey: requireEnv("SLNG_API_KEY"),
     baseUrl: process.env.SLNG_BASE_URL || "https://eu-west.api.slng.ai",
-    timeoutMs: positive("SLNG_TTS_TIMEOUT_MS", 5000),
+    timeoutMs: positive("SLNG_TTS_TIMEOUT_MS", 12000),
     sttModel: process.env.SLNG_STT_MODEL || "deepgram/nova:3",
     sttLanguage: process.env.SLNG_STT_LANGUAGE || "en",
     sttTimeoutMs: positive("SLNG_STT_TIMEOUT_MS", 15000),

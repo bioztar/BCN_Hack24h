@@ -1,0 +1,35 @@
+{
+  "name": "@dg-roast/game",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./server/index.ts",
+  "types": "./server/index.ts",
+  "exports": {
+    ".": "./server/index.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "build": "npm run typecheck && vite build"
+  },
+  "dependencies": {
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  },
+  "files": [
+    "server",
+    "src/core",
+    "dist"
+  ]
+}
