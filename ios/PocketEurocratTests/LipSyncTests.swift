@@ -45,7 +45,7 @@ final class LipSyncTests: XCTestCase {
 
     func testEveryCutoutHasAMouth() {
         for officer in Roster.officers {
-            for e in DummyScene.Expression.allCases {
+            for e in DummyScene.Expression.base {
                 XCTAssertNotNil(MouthStore.rect(for: "\(officer.id)-\(e.rawValue)"), "\(officer.id)-\(e.rawValue)")
             }
         }

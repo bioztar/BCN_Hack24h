@@ -4,7 +4,11 @@ import UIKit
 /// The toy: the case officers (a duo) as photo-relief busts on weighted pivots, plus loose papers.
 /// The dummies are hand-integrated springs (see `Puppet`); only the papers use SpriteKit physics.
 final class DummyScene: SKScene {
-    enum Expression: String, CaseIterable { case neutral, stamping, smug, appalled, asleep }
+    /// `burning` (meltdown) and `outrage` (repo analysis) are extra Picsart cut-outs; missing ones fall back to `appalled`.
+    enum Expression: String, CaseIterable {
+        case neutral, stamping, smug, appalled, asleep, burning, outrage
+        static let base: [Expression] = [.neutral, .stamping, .smug, .appalled, .asleep]
+    }
 
     var onImpact: ((Float) -> Void)?
     /// Calibration knobs (real-device feel).
@@ -106,7 +110,23 @@ final class DummyScene: SKScene {
     }
 
     /// Meltdown: both officers burn (particle fire + soot + panic). `extinguish()` puts them out.
-    func ignite() { puppets.forEach { $0.ignite() } }
+    func ignite() {
+        puppets.forEach { $0.ignite() }
+        shakeScreen()
+    }
+
+    /// Whole-scene jolt at ignition: a decaying random shake (~0.7 s) of the figure layer.
+    private func shakeScreen() {
+        var steps: [SKAction] = []
+        var amp: CGFloat = 16
+        while amp > 1 {
+            let dx = CGFloat.random(in: -amp...amp), dy = CGFloat.random(in: -amp...amp)
+            steps.append(.moveBy(x: dx, y: dy, duration: 0.035))
+            steps.append(.moveBy(x: -dx, y: -dy, duration: 0.035))
+            amp *= 0.82
+        }
+        figureRoot.run(.sequence(steps), withKey: "quake")
+    }
     func extinguish() { puppets.forEach { $0.extinguish() } }
 
     func shake() {

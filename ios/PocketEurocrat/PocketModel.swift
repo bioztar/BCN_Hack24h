@@ -265,7 +265,7 @@ final class PocketModel {
         case .verdict(let n): notice = n; phase = .idle; caseID = nil; showSmug()
         case .analyzing(let stage, let progress):
             analyzing = (stage, progress)
-            puppet.setExpression(.appalled)   // officers hold their heads while the repo is read
+            puppet.setExpression(.outrage)   // outrage cut-outs while the repo is read (falls back to appalled)
         case .fine(let fine):
             if analyzing != nil { analyzing = nil; refreshExpression() }
             totalEur = fine.totalEur
@@ -277,7 +277,8 @@ final class PocketModel {
             totalJailMonths = jail
             meltedDown = true
             puppet.ignite()
-            haptics.rumble(seconds: 3)
+            haptics.stamp()                 // the heavy hit at ignition…
+            haptics.rumble(seconds: 3)      // …then the crackle
             try? await Task.sleep(for: .seconds(5))   // let them burn before the verdict card covers the screen
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle

@@ -138,7 +138,8 @@ final class Puppet {
         let rate: CGFloat = mouthTarget > mouthOpen ? 40 : 18   // snappy open, softer close
         mouthOpen += (mouthTarget - mouthOpen) * min(1, dt * rate)
         mouthWide += (mouthWideTarget - mouthWide) * min(1, dt * 20)
-        charNow = burning ? min(1, charNow + dt / 5) : max(0, charNow - dt)   // chars over ~5 s, recovers fast
+        charNow = burning ? min(0.7, charNow + dt / 12) : max(0, charNow - dt)   // slow char-darkening, recovers fast
+        stepCrossfade(dt: dt)
         if burning, case .upright = stance {
             panicClock += dt
             if panicClock > 0.14 { panicClock = 0; omega += CGFloat.random(in: -1.6...1.6) }   // frantic flailing
@@ -217,78 +218,123 @@ final class Puppet {
     private var fireNodes: [SCNNode] = []
 
     /// Particle fire in front of the bust (SceneKit particles inside the figure scene, so they are depth-sorted
-    /// with the relief — SpriteKit emitters get painted over by the SK3DNode), plus soot and a frantic wobble.
+    /// with the relief — SpriteKit emitters get painted over by the SK3DNode), plus soot, a crossfade to the
+    /// "burning" cut-out and a frantic wobble.
     func ignite() {
         guard !burning else { return }
         burning = true
-        // (y, width of the emitter strip, birth rate) — body, chest, head; figure is 2.0 units tall.
-        let layers: [(y: Float, width: CGFloat, rate: CGFloat)] = [(-0.80, 1.5, 110), (-0.15, 1.0, 80), (0.50, 0.6, 60)]
-        for l in layers {
-            let ps = SCNParticleSystem()
-            ps.particleImage = Puppet.flameImage
-            ps.birthRate = l.rate
-            ps.particleLifeSpan = 1.0
-            ps.particleLifeSpanVariation = 0.4
-            ps.emitterShape = SCNPlane(width: l.width, height: 0.1)
-            ps.emittingDirection = SCNVector3(0, 1, 0)
-            ps.spreadingAngle = 28
-            ps.particleVelocity = 1.5
-            ps.particleVelocityVariation = 0.6
-            ps.particleSize = 0.2
-            ps.particleSizeVariation = 0.25
-            ps.particleColor = UIColor(red: 1, green: 0.55, blue: 0.1, alpha: 1)
-            ps.particleColorVariation = SCNVector4(0.08, 0.3, 0.05, 0.1)
-            ps.blendMode = .additive
-            ps.isLightingEnabled = false
-            ps.isAffectedByGravity = false
-            ps.loops = true
-            let sizeOverLife = CAKeyframeAnimation()
-            sizeOverLife.values = [0.08, 0.24, 0.04]   // absolute sizes in figure units over the particle life
-            sizeOverLife.keyTimes = [0, 0.3, 1]
-            ps.propertyControllers = [
-                .size: SCNParticlePropertyController(animation: sizeOverLife),
-                .opacity: SCNParticlePropertyController(animation: {
-                    let a = CAKeyframeAnimation()
-                    a.values = [0.0, 0.8, 0.5, 0.0]
-                    a.keyTimes = [0, 0.15, 0.6, 1]
-                    return a
-                }()),
-            ]
-            let n = SCNNode()
-            n.position = SCNVector3(0, l.y, 1.1)   // in front of the nearest relief point (≤ 0.9)
-            n.addParticleSystem(ps)
-            figureScene.rootNode.addChildNode(n)
-            fireNodes.append(n)
-        }
+        refreshFigure(crossfade: true)
+
+        // Flames lick up from the bottom edge of the bust (figure is 2.0 tall, bottom at y = -1).
+        fireNodes.append(emitter(y: -1.0, width: 1.7, rate: 40, speed: 2.4, size: 0.5, life: 1.0, spread: 14,
+                                 colors: [(1, 0.95, 0.55), (1, 0.55, 0.08), (0.75, 0.15, 0.02), (0.15, 0.05, 0.03)], additive: true))
+        fireNodes.append(emitter(y: -0.9, width: 1.1, rate: 18, speed: 3.0, size: 0.35, life: 0.8, spread: 8,   // hot core
+                                 colors: [(1, 1, 0.8), (1, 0.85, 0.3), (1, 0.45, 0.05), (0.3, 0.08, 0.02)], additive: true))
+        fireNodes.append(emitter(y: -0.2, width: 0.9, rate: 22, speed: 1.1, size: 0.7, life: 2.6, spread: 24,   // smoke
+                                 colors: [(0.28, 0.27, 0.27), (0.2, 0.2, 0.2), (0.12, 0.12, 0.12), (0.08, 0.08, 0.08)], additive: false))
     }
 
     func extinguish() {
+        guard burning else { return }
         burning = false
         fireNodes.forEach { $0.removeFromParentNode() }
         fireNodes = []
+        refreshFigure()
     }
 
-    /// Soft white blob used for every flame particle (tinted by the particle colour).
+    private func emitter(y: Float, width: CGFloat, rate: CGFloat, speed: CGFloat, size: CGFloat, life: Double,
+                         spread: CGFloat, colors: [(CGFloat, CGFloat, CGFloat)], additive: Bool) -> SCNNode {
+        let ps = SCNParticleSystem()
+        ps.particleImage = Puppet.flameImage
+        ps.birthRate = rate
+        ps.particleLifeSpan = CGFloat(life)
+        ps.particleLifeSpanVariation = CGFloat(life) * 0.4
+        ps.emitterShape = SCNPlane(width: width, height: 0.08)
+        ps.emittingDirection = SCNVector3(0, 1, 0)
+        ps.spreadingAngle = spread
+        ps.particleVelocity = speed
+        ps.particleVelocityVariation = speed * 0.4
+        ps.particleSize = size
+        ps.particleSizeVariation = size * 0.3
+        ps.stretchFactor = additive ? 0.22 : 0
+        ps.blendMode = additive ? .additive : .alpha
+        ps.isLightingEnabled = false
+        ps.isAffectedByGravity = false
+        ps.loops = true
+        let color = CAKeyframeAnimation()
+        color.values = colors.map { UIColor(red: $0.0, green: $0.1, blue: $0.2, alpha: 1) }
+        color.keyTimes = [0, 0.25, 0.65, 1]
+        let alpha = CAKeyframeAnimation()
+        alpha.values = additive ? [0.0, 0.55, 0.35, 0.0] : [0.0, 0.35, 0.3, 0.0]
+        alpha.keyTimes = [0, 0.12, 0.6, 1]
+        let scale = CAKeyframeAnimation()
+        scale.values = (additive ? [0.5, 1.0, 0.45] : [0.5, 1.0, 1.7]).map { $0 * size }   // absolute sizes: flames taper, smoke billows
+        scale.keyTimes = [0, 0.3, 1]
+        ps.propertyControllers = [
+            .color: SCNParticlePropertyController(animation: color),
+            .opacity: SCNParticlePropertyController(animation: alpha),
+            .size: SCNParticlePropertyController(animation: scale),
+        ]
+        let n = SCNNode()
+        n.position = SCNVector3(0, y, 1.1)   // in front of the nearest relief point (≤ 0.9)
+        n.addParticleSystem(ps)
+        figureScene.rootNode.addChildNode(n)
+        return n
+    }
+
+    /// Soft flame-shaped blob (bright base, tapered tip) used for every particle; tinted by the colour controller.
     private static let flameImage: UIImage = {
-        let size = CGSize(width: 64, height: 64)
+        // 64 x 96: a teardrop, widest and brightest near the bottom, soft all round, fading to a point at the top.
+        let size = CGSize(width: 64, height: 96)
         return UIGraphicsImageRenderer(size: size).image { r in
+            let g = r.cgContext
             let colors = [UIColor.white.cgColor, UIColor(white: 1, alpha: 0).cgColor] as CFArray
             let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
-            r.cgContext.drawRadialGradient(grad, startCenter: CGPoint(x: 32, y: 32), startRadius: 0,
-                                           endCenter: CGPoint(x: 32, y: 32), endRadius: 32, options: [])
+            g.translateBy(x: 0, y: 0)
+            g.saveGState()
+            g.scaleBy(x: 1, y: 1.5)   // stretch the radial gradient into a tall ellipse
+            g.drawRadialGradient(grad, startCenter: CGPoint(x: 32, y: 44), startRadius: 0,
+                                 endCenter: CGPoint(x: 32, y: 44), endRadius: 32, options: [])
+            g.restoreGState()
         }
     }()
 
     // MARK: figure
 
-    private func refreshFigure() {
-        let e: DummyScene.Expression = isDown ? .appalled : expression
-        figure?.removeFromParentNode()
-        let n = ReliefFigure.node(officer: persona, expression: e)
+    /// What is actually shown: burning wins (meltdown), then lying-on-the-floor, then the requested face;
+    /// extra cut-outs that are not bundled for this officer fall back to `appalled`.
+    private var shownExpression: DummyScene.Expression {
+        var e: DummyScene.Expression = burning ? .burning : (isDown ? .appalled : expression)
+        if (e == .burning || e == .outrage), !CutoutStore.has(officer: persona, expression: e) { e = .appalled }
+        return e
+    }
+
+    /// `crossfade`: blend from the current figure to the new one (used when the officer catches fire).
+    private func refreshFigure(crossfade: Bool = false) {
+        let n = ReliefFigure.node(officer: persona, expression: shownExpression)
+        if let stale = fadingOut { stale.removeFromParentNode(); fadingOut = nil }
+        if crossfade, let old = figure {
+            fadingOut = old
+            fadeT = 0
+            n.opacity = 0
+        } else {
+            figure?.removeFromParentNode()
+        }
         figureHolder.addChildNode(n)
         figure = n
         headNode = n.childNode(withName: "head", recursively: false)
         mouthMaterials = n.childNodes.compactMap { $0.geometry?.firstMaterial }
+    }
+
+    private var fadingOut: SCNNode?
+    private var fadeT: CGFloat = 1
+
+    private func stepCrossfade(dt: CGFloat) {
+        guard let old = fadingOut, let new = figure else { return }
+        fadeT = min(1, fadeT + dt / 1.1)
+        new.opacity = fadeT
+        old.opacity = 1 - fadeT
+        if fadeT >= 1 { old.removeFromParentNode(); fadingOut = nil; new.opacity = 1 }
     }
 
     private func applyMouth() {

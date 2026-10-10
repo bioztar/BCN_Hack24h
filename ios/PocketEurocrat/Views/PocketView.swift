@@ -32,6 +32,7 @@ struct PocketView: View {
                 try? await Task.sleep(for: .seconds(1.5))
                 typing = true
             }
+            if ProcessInfo.processInfo.arguments.contains("-outrage") { model.puppet.setExpression(.outrage) }   // screenshot aid
             if ProcessInfo.processInfo.arguments.contains("-ignite") {   // meltdown screenshot aid
                 try? await Task.sleep(for: .seconds(1))
                 model.puppet.ignite()

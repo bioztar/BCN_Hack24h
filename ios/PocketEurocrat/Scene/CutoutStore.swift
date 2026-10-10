@@ -17,6 +17,11 @@ enum CutoutStore {
         return placeholder(color: UIColor(hex: officer.color), expression: expression)
     }
 
+    /// Is this exact cut-out bundled? (The drawn placeholder is not a substitute for burning/outrage.)
+    static func has(officer: Persona, expression: DummyScene.Expression) -> Bool {
+        Bundle.main.path(forResource: "\(officer.id)-\(expression.rawValue)", ofType: "png") != nil
+    }
+
     struct DepthMap {
         let bytes: [UInt8]
         let width: Int
@@ -73,7 +78,7 @@ enum CutoutStore {
             case .smug:
                 line(CGPoint(x: 232, y: 292), CGPoint(x: 272, y: 292)); line(CGPoint(x: 328, y: 292), CGPoint(x: 368, y: 292))
                 arc(310, 370, 45, up: false)
-            case .appalled:
+            case .appalled, .burning, .outrage:
                 UIColor.white.setFill()
                 UIBezierPath(ovalIn: CGRect(x: 220, y: 255, width: 60, height: 60)).fill()
                 UIBezierPath(ovalIn: CGRect(x: 320, y: 255, width: 60, height: 60)).fill()
