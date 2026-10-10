@@ -2,6 +2,7 @@
 import path from "node:path";
 import { paths, port, profiles, rateLimitPerHour, slngConfig } from "./config.js";
 import { analyzerPlugin, WEB_DIST as ANALYZER_WEB } from "@dg-roast/analyzer";
+import { gamePlugin, GAME_WEB_DIST } from "@dg-roast/game";
 import { buildApp } from "./app.js";
 import { Corpus } from "./corpus.js";
 import { openDb } from "./db.js";
@@ -41,6 +42,7 @@ const app = buildApp({
   assetsDir: paths.assets(),
   reportsDir: path.join(dataDir, "reports"),
   analyzer: { plugin: analyzerPlugin, options: { corpusPath: paths.corpus() }, webDir: ANALYZER_WEB },
+  arcade: { plugin: gamePlugin, webDirs: { game: GAME_WEB_DIST, ...Object.fromEntries((["swipe", "flappy", "triplicate"] as const).map((id) => [id, paths.pkgDist(id)])) } },
   logger: true,
 });
 
