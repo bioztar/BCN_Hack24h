@@ -53,8 +53,8 @@ describe("batch-roast against a server", () => {
     expect((await fetch(`${base}/api/stats?event=Not%20A%20Slug`)).status).toBe(400);
   }, 60_000);
 
-  it("founderName stays required without an event", async () => {
+  it("founderName is optional without an event too", async () => {
     const r = await fetch(`${base}/api/applicants`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ startupName: "X" }) });
-    expect(r.status).toBe(400);
+    expect(r.status).toBe(201);
   });
 });

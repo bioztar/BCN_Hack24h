@@ -355,7 +355,7 @@ Clients (pocket PWA, iOS) keep the token in memory/session storage for the sessi
 ### v2 amendment — pre-roast the room (event tag, silent batch)
 
 - `POST /api/applicants` and `POST /api/case` accept optional `event` (slug `^[a-z0-9][a-z0-9-]{0,47}$`, else 400). A case
-  inherits its applicant's event. `founderName` may be omitted only when `event` is set.
+  inherits its applicant's event. `founderName` is optional for everyone (absent → `null`; clients show "Founder: anonymous").
 - `POST /api/case` accepts optional `silent: true`: no TTS for that case (`audioUrl` null, no `audio` events).
 - Leaderboard rows carry `event` (`LeaderboardEntry.event?`). `GET /api/leaderboard?event=<slug>` and
   `GET /api/stats?event=<slug>` filter by it; without `event` everything is listed, tagged rows included.

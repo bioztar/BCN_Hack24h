@@ -54,7 +54,7 @@ export interface WallEntry { speaker: PersonaId; text: string; at: string; }  //
 
 export interface ApplicantInput {
   startupName: string;          // "48K", required, ≤ 60 chars
-  founderName?: string;         // required, ≤ 60 chars — optional only when `event` is set (batch pre-roast)
+  founderName?: string;         // optional, ≤ 60 chars; absent → null on Notice/leaderboard (clients show "Founder: anonymous")
   event?: string;               // optional event slug, e.g. "bcn-hack-24h" (pre-roast amendment)
   oneLiner?: string;            // optional pitch teaser shown on the leaderboard
   photo?: string;               // optional data URL (image/jpeg|png), ≤ 400 KB after client downscale to 512 px
