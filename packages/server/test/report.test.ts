@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { Notice } from "@dg-roast/shared";
 import { BADGE_SIZE, badgeSvg, meanwhileLine } from "../src/report/badge.js";
-import { mockNotice } from "../src/report/fixture.js";
+import { mkdtempSync, existsSync, readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import Fastify from "fastify";
+import { mockFines, mockNotice } from "../src/report/fixture.js";
+import { printable } from "../src/report/glyphs.js";
+import { Window } from "../src/report/renderer.js";
+import { registerReportRoutes } from "../src/report/routes.js";
 import { formatElapsed, formatEur, formatJail } from "../src/report/format.js";
 import { frameworkOf, remedyFor } from "../src/report/law.js";
 import { normalise, type ReportOfficer } from "../src/report/model.js";
 import { excerpt } from "../src/report/pdf.js";
-import { corpus, makeApp } from "./helpers.js";
+import { corpus, makeApp, roster } from "./helpers.js";
 
 const OFFICERS: [ReportOfficer, ReportOfficer] = [
   { id: "formblatt", name: "Dr. Heinrich Formblatt", title: "Rapporteur", cutout: null },
@@ -83,7 +90,7 @@ describe("report model", () => {
 
   it("badge SVG carries every required element", () => {
     const svg = badgeSvg(normalise("mock", mockNotice(), OFFICERS));
-    for (const s of ["EUROCRAT", "REFUSÉ", "BANNED IN THE EU", "FRIDGELY", "€1,234,567,890", "14 YEARS 3 MONTHS", "L-2026/04812", "eurocrat.pro7ocol.com", "MEANWHILE: CHINA 11"]) expect(svg).toContain(s);
+    for (const s of ["EUROCRAT", "REFUSÉ", "BANNED IN THE EU", "FRIDGELY", "€1,234,567,890", "14 YEARS 3 MONTHS", "L-2026/04812", "eurocrat.pro7ocol.com", "MEANWHILE: CHINA 11", "PARODY"]) expect(svg).toContain(s);
     expect(svg).toContain(`width="${BADGE_SIZE}" height="${BADGE_SIZE}"`);
   });
 });
@@ -130,4 +137,71 @@ describe("GET /api/case/:caseId/report.pdf and badge.png", () => {
     const again = await app.inject({ method: "GET", url: `/api/case/${c.caseId}/badge.png` });
     expect(again.rawPayload.equals(png.rawPayload)).toBe(true);
   }, 30_000);
+});
+
+describe("report hardening", () => {
+  it("strips emoji, flags, ZWJ/VS16 and glyphs the fonts lack (CJK); keeps Latin/Cyrillic accents", () => {
+    expect(printable("Fridgely 🚀🇪🇺 👨‍👩‍👧 ❤️ 冷蔵庫")).toBe("Fridgely");
+    expect(printable("Ségolène Привет")).toBe("Ségolène Привет");
+    const r = normalise("x", { ...mockNotice(), startupName: "🤖🤖" }, OFFICERS);
+    expect(r.startupName).toBe("Unnamed Startup");
+  });
+
+  it("v2: per-law breakdown from the fines meter, largest first; v1 has none", () => {
+    const r = normalise("mock", mockNotice(), OFFICERS, mockFines());
+    expect(r.breakdown).toEqual([
+      { law: "AI Act", eur: 700_000_000, jailMonths: 0 },
+      { law: "GDPR", eur: 480_000_000, jailMonths: 120 },
+      { law: "NIS2", eur: 54_567_890, jailMonths: 51 },
+    ]);
+    expect(r.breakdown.reduce((a, b) => a + b.eur, 0)).toBe(r.totalEur);
+    expect(normalise("c1", v1, OFFICERS, mockFines()).breakdown).toEqual([]);
+  });
+
+  it("cites FR Code pénal 226-17/226-18 for GDPR jail", () => {
+    const fw = frameworkOf(corpus.provision("gdpr-9")!);
+    expect(fw.penalty).toMatch(/226-17/);
+    expect(fw.penalty).toMatch(/226-18/);
+    expect(fw.penalty).not.toMatch(/226-16/);
+  });
+
+  it("sliding window limits per key", () => {
+    let t = 0;
+    const w = new Window(2, 1000, () => t);
+    expect(w.hit("a")).toBe(0);
+    expect(w.hit("a")).toBe(0);
+    expect(w.hit("a")).toBe(1000);
+    expect(w.hit("b")).toBe(0);
+    t = 1001;
+    expect(w.hit("a")).toBe(0);
+  });
+
+  it("rate-limits the routes per IP with 429 + retry-after", async () => {
+    const app = Fastify();
+    registerReportRoutes(app, { state: () => undefined, corpus, roster, perMinute: 2 });
+    expect((await app.inject({ url: "/api/case/x/badge.png" })).statusCode).toBe(404);
+    expect((await app.inject({ url: "/api/case/x/badge.png" })).statusCode).toBe(404);
+    const r = await app.inject({ url: "/api/case/x/badge.png" });
+    expect(r.statusCode).toBe(429);
+    expect(Number(r.headers["retry-after"])).toBeGreaterThan(0);
+    await app.close();
+  });
+
+  it("pre-renders both files at verdict into reportsDir and serves them from disk", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "reports-"));
+    const { app } = makeApp({ reportsDir: dir });
+    const c = (await app.inject({ method: "POST", url: "/api/case", payload: { submission: { kind: "text", text: "We are Fridgely. Our AI watches you eat and sells the data. We do €1B in revenue." }, officers: ["formblatt", "annexe"] } })).json() as { caseId: string };
+    for (let tier = 1; tier <= 5; tier++) {
+      if (tier > 1) await app.inject({ method: "POST", url: `/api/case/${c.caseId}/reply`, payload: { text: `Objection ${tier}` } });
+      await app.inject({ method: "GET", url: `/api/case/${c.caseId}/stream` });
+    }
+    const deadline = Date.now() + 20_000;
+    while (readdirSync(dir).filter((f) => !f.endsWith(".tmp")).length < 2 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+    expect(readdirSync(dir).sort()).toEqual([`${c.caseId}.v2.pdf`, `${c.caseId}.v2.png`]);
+    const png = await app.inject({ url: `/api/case/${c.caseId}/badge.png` });
+    expect(png.statusCode).toBe(200);
+    expect(pngSize(png.rawPayload)).toEqual([1080, 1080]);
+    expect(existsSync(path.join(dir, `${c.caseId}.v2.png`))).toBe(true);
+    await app.close();
+  }, 40_000);
 });

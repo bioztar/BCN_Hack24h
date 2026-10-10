@@ -39,6 +39,7 @@ const app = buildApp({
   webDir: paths.web(),
   pocketDir: paths.pocket(),
   assetsDir: paths.assets(),
+  reportsDir: path.join(dataDir, "reports"),
   analyzer: { plugin: analyzerPlugin, options: { corpusPath: paths.corpus() }, webDir: ANALYZER_WEB },
   logger: true,
 });

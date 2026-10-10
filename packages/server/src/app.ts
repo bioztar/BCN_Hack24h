@@ -38,6 +38,8 @@ export interface AppDeps {
   webDir?: string;
   pocketDir?: string;
   assetsDir?: string;
+  /** Rendered report.pdf / badge.png per case (DATA_DIR/reports). */
+  reportsDir?: string;
   /** Lane D analyzer: plugin mounted at /api/analyze, its built UI served at /analyze/. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   analyzer?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDir?: string };
@@ -108,6 +110,13 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   const now = d.now ?? Date.now;
   const applicants = new ApplicantStore(d.db, d.rand ?? Math.random, now);
   const board = new Leaderboard(d.db);
+  const reports = registerReportRoutes(app, {
+    state: (id) => {
+      const s = cases.get(id);
+      return s ? { notice: s.notice ?? null, fines: s.meter?.items } : undefined;
+    },
+    corpus: d.corpus, roster: d.roster, assetsDir: d.assetsDir, reportsDir: d.reportsDir, log: (msg, meta) => app.log.warn(meta ?? {}, msg),
+  });
   const runtimes = new Map<string, Runtime>();
   const background = new Set<Promise<unknown>>();
   const track = (p: Promise<unknown>) => {
@@ -399,6 +408,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         } catch (err) {
           app.log.error({ err }, "leaderboard insert failed");
         }
+        void reports.prerender(state.caseId);
       } else {
         push({ type: "awaiting", prompt: AWAITING[state.tier] });
       }
@@ -492,7 +502,6 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       /* read-only filesystem: skipped below */
     }
   }
-  registerReportRoutes(app, { notice: (id) => { const s = cases.get(id); return s ? (s.notice ?? null) : undefined; }, corpus: d.corpus, roster: d.roster, assetsDir: d.assetsDir, log: (msg, meta) => app.log.warn(meta ?? {}, msg) });
   if (d.analyzer) void app.register(d.analyzer.plugin, { ...(d.analyzer.options ?? {}), prefix: "/api/analyze" });
 
   // Static roots; any missing directory is skipped. Only the first registration decorates reply.

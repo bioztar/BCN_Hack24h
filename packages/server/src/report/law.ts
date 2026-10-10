@@ -33,7 +33,7 @@ const FRAMEWORKS: Framework[] = [
     short: "GDPR",
     name: "General Data Protection Regulation — Regulation (EU) 2016/679",
     penalty:
-      "Art. 83(5): up to €20M or 4% of worldwide annual turnover for breaches of the principles, lawful basis, consent, special categories, data-subject rights and transfers; Art. 83(4): up to €10M or 2% for controller/processor obligations (Arts. 25–39). Art. 84 lets Member States add criminal penalties (e.g. DE BDSG § 42: up to 3 years; FR Code pénal art. 226-16: up to 5 years).",
+      "Art. 83(5): up to €20M or 4% of worldwide annual turnover for breaches of the principles, lawful basis, consent, special categories, data-subject rights and transfers; Art. 83(4): up to €10M or 2% for controller/processor obligations (Arts. 25–39). Art. 84 lets Member States add criminal penalties (e.g. DE BDSG § 42: up to 3 years; FR Code pénal art. 226-17 (failure to secure personal data) and art. 226-18 (unfair or unlawful collection): up to 5 years and €300,000 each).",
     remedy:
       "Map every personal-data flow (Art. 30 record), pick and document a lawful basis per purpose (Art. 6), publish an honest privacy notice (Arts. 13–14), sign Art. 28 agreements with every processor, and minimise: data you never collect cannot be breached.",
     binding: true,

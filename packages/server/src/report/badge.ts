@@ -110,6 +110,7 @@ export function badgeSvg(r: ReportData): string {
   ${r.meltdown ? `<text x="246" y="1020" font-family="Liberation Sans" font-weight="bold" font-size="16" letter-spacing="2" fill="${FLAME}">MELTDOWN · BOTH OFFICERS COMBUSTED</text>` : `<text x="246" y="1026" font-family="Liberation Sans" font-size="16" letter-spacing="1" fill="${PALE}">CASE OFFICERS</text>`}
   <text x="${W - 64}" y="990" text-anchor="end" font-family="Liberation Sans" font-weight="bold" font-size="22" letter-spacing="1" fill="${PALE}">No. ${esc(r.serial)}</text>
   <text x="${W - 64}" y="1022" text-anchor="end" font-family="Liberation Sans" font-weight="bold" font-size="22" letter-spacing="1" fill="${GOLD}">${PUBLIC_HOST}</text>
+<text x="${W / 2}" y="1073" text-anchor="middle" font-family="Liberation Sans" font-size="12" letter-spacing="1.5" fill="#9fb0d8">PARODY · NOT AFFILIATED WITH THE EU OR ANY EU INSTITUTION</text>
 </svg>`;
 }
 

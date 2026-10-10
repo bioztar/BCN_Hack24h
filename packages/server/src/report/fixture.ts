@@ -55,3 +55,13 @@ export function mockNotice(): NoticeV2 {
     },
   };
 }
+
+/** Fines-meter items matching the fixture totals (€1,234,567,890 · 171 months). */
+export function mockFines(): { law: string; amountEur: number; jailMonths: number }[] {
+  return [
+    { law: "AI Act", amountEur: 700_000_000, jailMonths: 0 },
+    { law: "GDPR", amountEur: 300_000_000, jailMonths: 60 },
+    { law: "GDPR", amountEur: 180_000_000, jailMonths: 60 },
+    { law: "NIS2", amountEur: 54_567_890, jailMonths: 51 },
+  ];
+}

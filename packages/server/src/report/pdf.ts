@@ -52,6 +52,13 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
   });
 
   const W = doc.page.width;
+  /** Ellipsises to one line at the current font and size. */
+  const fit = (text: string, width: number) => {
+    if (doc.widthOfString(text) <= width) return text;
+    let t = text;
+    while (t.length > 1 && doc.widthOfString(`${t}…`) > width) t = t.slice(0, -1);
+    return `${t.trimEnd()}…`;
+  };
   const CW = W - 2 * M;
   const rand = seeded(r.caseId + r.serial);
 
@@ -98,11 +105,11 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
     doc.save();
     doc.opacity(0.85).rotate(rot, { origin: [cx, cy] });
     const w = 230 * scale;
-    const h = 74 * scale;
+    const h = 84 * scale;
     doc.roundedRect(cx - w / 2, cy - h / 2, w, h, 6 * scale).lineWidth(4 * scale).stroke(RED);
     doc.roundedRect(cx - w / 2 + 6 * scale, cy - h / 2 + 6 * scale, w - 12 * scale, h - 12 * scale, 3 * scale).lineWidth(1.2 * scale).stroke(RED);
-    doc.font("display").fontSize(38 * scale).fillColor(RED).text("REFUSÉ", cx - w / 2, cy - h / 2 + 8 * scale, { width: w, align: "center", characterSpacing: 3 * scale, lineBreak: false });
-    doc.font("display").fontSize(11 * scale).text("BANNED IN THE EU", cx - w / 2, cy + h / 2 - 22 * scale, { width: w, align: "center", characterSpacing: 3 * scale, lineBreak: false });
+    doc.font("display").fontSize(32 * scale).fillColor(RED).text("REFUSÉ", cx - w / 2, cy - h / 2 + 12 * scale, { width: w, align: "center", characterSpacing: 3 * scale, lineBreak: false });
+    doc.font("display").fontSize(10 * scale).text("BANNED IN THE EU", cx - w / 2, cy + h / 2 - 26 * scale, { width: w, align: "center", characterSpacing: 3 * scale, lineBreak: false });
     doc.restore();
   };
 
@@ -123,7 +130,8 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
   meta.forEach(([k, v], i) => {
     const y = metaTop + i * 14;
     doc.font("sansBold").fontSize(8.5).fillColor(GREY).text(k.toUpperCase(), M, y, { width: 90, lineBreak: false, characterSpacing: 0.6 });
-    doc.font("serif").fontSize(10).fillColor(INK).text(v, M + 92, y - 1, { width: CW - 92, height: 12, ellipsis: true });
+    doc.font("serif").fontSize(10).fillColor(INK);
+    doc.text(fit(v, CW - 92), M + 92, y - 1, { lineBreak: false });
   });
   doc.y = metaTop + meta.length * 14 + 10;
 
@@ -147,16 +155,36 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
   }
   doc.moveDown(0.8);
 
-  // Totals
-  ensure(96);
+  // Totals: v2 → meter total + per-law breakdown; v1 → the single fine and its basis.
+  const rows = r.breakdown.length > 7 ? [...r.breakdown.slice(0, 6), r.breakdown.slice(6).reduce((a, b) => ({ law: "Other", eur: a.eur + b.eur, jailMonths: a.jailMonths + b.jailMonths }), { law: "Other", eur: 0, jailMonths: 0 })] : r.breakdown;
+  const boxH = Math.max(r.v2 && !r.meltdown ? 80 : 92, 30 + rows.length * 13);
+  ensure(boxH + 12);
   const ty = doc.y;
-  doc.rect(M, ty, CW, 88).fill(NAVY);
-  doc.font("sansBold").fontSize(8.5).fillColor("#c9d3ea").text("TOTAL ADMINISTRATIVE FINES", M + 16, ty + 12, { characterSpacing: 1.2 });
+  const leftW = rows.length ? CW * 0.5 - 16 : CW - 32;
+  doc.rect(M, ty, CW, boxH).fill(NAVY);
+  doc.font("sansBold").fontSize(8.5).fillColor("#c9d3ea").text("TOTAL ADMINISTRATIVE FINES", M + 16, ty + 12, { characterSpacing: 1.2, lineBreak: false });
   doc.font("display").fontSize(28).fillColor("#ffd617").text(formatEur(r.totalEur), M + 16, ty + 24, { lineBreak: false });
   doc.font("sansBold").fontSize(10).fillColor("#ffffff").text(r.totalJailMonths > 0 ? `Custodial sentence: ${formatJail(r.totalJailMonths)}` : "Custodial sentence: none (the Directorate is disappointed)", M + 16, ty + 62, { lineBreak: false });
-  doc.font("sans").fontSize(7).fillColor("#c9d3ea").text(`Basis: ${r.fineBasis}${r.meltdown ? " · Meltdown threshold reached: both officers combusted." : ""}`, M + 16, ty + 76, { width: CW - 32, height: 9, ellipsis: true });
-  stamp(M + CW - 100, ty + 34, 0.72, -9);
-  doc.y = ty + 100;
+  const note = r.v2 ? (r.meltdown ? "Meltdown threshold reached: both officers combusted." : "") : `Basis: ${r.fineBasis}`;
+  if (note) {
+    doc.font("sans").fontSize(7).fillColor("#c9d3ea");
+    doc.text(fit(note, leftW), M + 16, ty + 77, { lineBreak: false });
+  }
+  if (rows.length) {
+    const bx = M + CW * 0.5;
+    const bw = M + CW - 16 - bx;
+    doc.moveTo(bx - 10, ty + 12).lineTo(bx - 10, ty + boxH - 12).lineWidth(0.6).stroke(GOLD);
+    doc.font("sansBold").fontSize(7.5).fillColor("#c9d3ea").text("PER LAW", bx, ty + 12, { characterSpacing: 1.2, lineBreak: false });
+    rows.forEach((b, k) => {
+      const y = ty + 27 + k * 13;
+      doc.font("sansBold").fontSize(8.5).fillColor("#ffffff");
+      doc.text(fit(b.law, bw * 0.4), bx, y, { lineBreak: false });
+      doc.font("sans").fontSize(8.5).fillColor("#ffd617");
+      const amt = fit(formatEur(b.eur) + (b.jailMonths ? ` · ${formatJail(b.jailMonths)}` : ""), bw * 0.6);
+      doc.text(amt, bx + bw - doc.widthOfString(amt), y, { lineBreak: false });
+    });
+  }
+  doc.y = ty + boxH + 12;
 
   if (r.meanwhile) {
     const m = r.meanwhile;
@@ -172,6 +200,18 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
   }
   ensure(30);
   doc.font("serifItalic").fontSize(8.5).fillColor(GREY).text("The detailed non-compliance analysis, the Directorate's recommendations and the annex of provisions follow. Reading them does not suspend the fine.", M, doc.y, { width: CW });
+
+  const room = doc.page.height - BOTTOM - doc.y - 12;
+  const scale = Math.min(1.9, (room - 16) / 116);
+  if (doc.bufferedPageRange().count === 1 && scale >= 0.9) stamp(W / 2, doc.y + 12 + room / 2, scale, -8);
+  else {
+    const page = doc.bufferedPageRange().count - 1;
+    const y = doc.y;
+    doc.switchToPage(0);
+    stamp(M + CW - 70, TOP + 14, 0.55, -10);
+    doc.switchToPage(page);
+    doc.y = y;
+  }
 
   // ── Part I: analysis ──
   doc.addPage();
@@ -287,7 +327,7 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
     const fy = doc.page.height - 44;
     doc.moveTo(M, fy - 6).lineTo(W - M, fy - 6).lineWidth(0.5).stroke(GOLD);
     doc.font("sans").fontSize(7).fillColor(GREY);
-    doc.text(`Ref. ${r.serial} · ${r.startupName}`, M, fy, { width: CW / 2, lineBreak: false, ellipsis: true });
+    doc.text(fit(`Ref. ${r.serial} · ${r.startupName}`, CW / 2 - 12), M, fy, { lineBreak: false });
     doc.text(`Page ${i - range.start + 1} of ${range.count}`, M + CW / 2, fy, { width: CW / 2, align: "right", lineBreak: false });
     doc.text("Parody by Eurocrat (eurocrat.pro7ocol.com). Fictional officials, real citations. Not legal advice. Not affiliated with, or endorsed by, any EU institution.", M, fy + 11, { width: CW, align: "center", lineBreak: false });
     doc.page.margins.bottom = bottom;
