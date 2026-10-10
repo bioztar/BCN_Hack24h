@@ -18,9 +18,13 @@ describe("every regulation shown exists in corpus/provisions.json", () => {
     if (r.evidence) expect(p!.text).toContain(r.evidence);
     expect(r.fact.length).toBeGreaterThan(10);
     expect(r.fact.length).toBeLessThanOrEqual(140);
+    expect(r.short.length).toBeLessThanOrEqual(8);
   });
   it("pillar short labels match the framework of the cited provision", () => {
-    const fw: Record<string, RegExp> = { GDPR: /^GDPR /, "AI ACT": /^AI Act /, NIS2: /^NIS2 /, DORA: /^DORA / };
+    const fw: Record<string, RegExp> = {
+      GDPR: /^GDPR /, "AI ACT": /^AI Act /, NIS2: /^NIS2 /, DORA: /^DORA /, DSA: /^DSA /, DMA: /^DMA /,
+      CRA: /^CRA /, "DATA ACT": /^Data Act /, "eIDAS 2": /^eIDAS 2 /, CSRD: /^CSRD /, ePRIVACY: /^ePrivacy /,
+    };
     for (const r of PILLAR_REGS) expect(r.label).toMatch(fw[r.short]);
   });
   it("facts only cite articles that are in the corpus", () => {
@@ -33,6 +37,6 @@ describe("every regulation shown exists in corpus/provisions.json", () => {
   });
   it("ids are unique and there is variety", () => {
     expect(new Set(PILLAR_REGS.map((r) => r.id)).size).toBe(PILLAR_REGS.length);
-    expect(new Set(PILLAR_REGS.map((r) => r.short)).size).toBeGreaterThanOrEqual(4);
+    expect(new Set(PILLAR_REGS.map((r) => r.short)).size).toBeGreaterThanOrEqual(11);
   });
 });

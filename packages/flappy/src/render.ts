@@ -222,7 +222,7 @@ export function draw(g: CanvasRenderingContext2D, v: View, st: State, now: numbe
     if (sx < -C.pillarW || sx > v.viewW + C.pillarW) continue;
     const cy = gapY(p, st.t);
     const reg = PILLAR_REGS[p.reg];
-    pillar(g, sx, cy - p.gap / 2, cy + p.gap / 2, reg.short, reg.label.replace(/^(GDPR|AI Act|NIS2|DORA) /, ""), p.moveFrom !== null);
+    pillar(g, sx, cy - p.gap / 2, cy + p.gap / 2, reg.short, reg.label.replace(/^.*? (?=Art\.|Annex)/, ""), p.moveFrom !== null);
   }
   for (const k of st.pickups) {
     if (k.taken) continue;

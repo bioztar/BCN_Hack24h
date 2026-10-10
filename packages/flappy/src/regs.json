@@ -1,217 +1,352 @@
 {
- "pillars": [
-  {
-   "id": "gdpr-33",
-   "short": "GDPR",
-   "label": "GDPR Art. 33",
-   "title": "Notification of a personal data breach to the supervisory authority",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
-   "fact": "Report a personal data breach to the supervisory authority within 72 hours, where feasible — late ones need reasons.",
-   "evidence": "72 hours"
-  },
-  {
-   "id": "gdpr-83",
-   "short": "GDPR",
-   "label": "GDPR Art. 83",
-   "title": "General conditions for imposing administrative fines",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_83",
-   "fact": "Fines of up to €20 million or 4% of total worldwide annual turnover, whichever is higher."
-  },
-  {
-   "id": "gdpr-7",
-   "short": "GDPR",
-   "label": "GDPR Art. 7",
-   "title": "Conditions for consent",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_7",
-   "fact": "Withdrawing consent must be as easy as giving it.",
-   "evidence": "withdraw his or her consent at any time"
-  },
-  {
-   "id": "gdpr-17",
-   "short": "GDPR",
-   "label": "GDPR Art. 17",
-   "title": "Right to erasure (‘right to be forgotten’)",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_17",
-   "fact": "The right to erasure: personal data must go without undue delay. Your startup may follow.",
-   "evidence": "without undue delay"
-  },
-  {
-   "id": "gdpr-37",
-   "short": "GDPR",
-   "label": "GDPR Art. 37",
-   "title": "Designation of the data protection officer",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_37",
-   "fact": "A data protection officer is mandatory when your core activity is regular and systematic monitoring of people on a large scale.",
-   "evidence": "large scale"
-  },
-  {
-   "id": "gdpr-35",
-   "short": "GDPR",
-   "label": "GDPR Art. 35",
-   "title": "Data protection impact assessment",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_35",
-   "fact": "High-risk processing needs a data protection impact assessment before it starts.",
-   "evidence": "prior to the processing"
-  },
-  {
-   "id": "gdpr-25",
-   "short": "GDPR",
-   "label": "GDPR Art. 25",
-   "title": "Data protection by design and by default",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_25",
-   "fact": "Data protection by design and by default — from the moment you decide how to process.",
-   "evidence": "pseudonymisation"
-  },
-  {
-   "id": "ai-act-5",
-   "short": "AI ACT",
-   "label": "AI Act Art. 5",
-   "title": "Prohibited AI practices",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_5",
-   "fact": "Emotion recognition in the workplace and in education is prohibited, save for medical or safety reasons."
-  },
-  {
-   "id": "ai-act-99",
-   "short": "AI ACT",
-   "label": "AI Act Art. 99",
-   "title": "Penalties",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_99",
-   "fact": "Breaching the Art. 5 prohibitions: up to €35 million or 7% of worldwide annual turnover. For start-ups, mercifully, whichever is lower.",
-   "evidence": "start-ups"
-  },
-  {
-   "id": "ai-act-50",
-   "short": "AI ACT",
-   "label": "AI Act Art. 50",
-   "title": "Transparency obligations for providers and deployers of certain AI systems",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_50",
-   "fact": "Deep fakes must be disclosed as artificially generated or manipulated."
-  },
-  {
-   "id": "ai-act-4",
-   "short": "AI ACT",
-   "label": "AI Act Art. 4",
-   "title": "AI literacy",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_4",
-   "fact": "Providers and deployers must ensure a sufficient level of AI literacy of their staff.",
-   "evidence": "AI literacy"
-  },
-  {
-   "id": "ai-act-113",
-   "short": "AI ACT",
-   "label": "AI Act Art. 113",
-   "title": "Entry into force and application",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
-   "fact": "The prohibitions applied from 2 February 2025; most of the rest from 2 August 2026.",
-   "evidence": "2 February 2025"
-  },
-  {
-   "id": "ai-act-11",
-   "short": "AI ACT",
-   "label": "AI Act Art. 11",
-   "title": "Technical documentation",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_11",
-   "fact": "Technical documentation for a high-risk AI system is drawn up before it is placed on the market — Annex IV lists what goes in.",
-   "evidence": "drawn up before"
-  },
-  {
-   "id": "ai-act-14",
-   "short": "AI ACT",
-   "label": "AI Act Art. 14",
-   "title": "Human oversight",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
-   "fact": "High-risk AI systems must be designed so natural persons can effectively oversee them.",
-   "evidence": "effectively overseen by natural persons"
-  },
-  {
-   "id": "nis2-23",
-   "short": "NIS2",
-   "label": "NIS2 Art. 23",
-   "title": "Reporting obligations",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_23",
-   "fact": "Significant incidents: early warning within 24 hours, notification within 72 hours, final report within one month.",
-   "evidence": "significant incident"
-  },
-  {
-   "id": "nis2-34",
-   "short": "NIS2",
-   "label": "NIS2 Art. 34",
-   "title": "General conditions for imposing administrative fines on essential and important entities",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_34",
-   "fact": "Essential entities: fines of a maximum of at least €10 million or 2% of worldwide annual turnover.",
-   "evidence": "Administrative fines"
-  },
-  {
-   "id": "nis2-20",
-   "short": "NIS2",
-   "label": "NIS2 Art. 20",
-   "title": "Governance",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_20",
-   "fact": "Management bodies approve the cybersecurity measures, can be held liable, and must follow training.",
-   "evidence": "held liable"
-  },
-  {
-   "id": "nis2-21",
-   "short": "NIS2",
-   "label": "NIS2 Art. 21",
-   "title": "Cybersecurity risk-management measures",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
-   "fact": "Cybersecurity risk-management measures include supply chain security and multi-factor authentication."
-  },
-  {
-   "id": "dora-19",
-   "short": "DORA",
-   "label": "DORA Art. 19",
-   "title": "Reporting of major ICT-related incidents and voluntary notification of significant cyber threats",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_19",
-   "fact": "Financial entities must report major ICT-related incidents to their competent authority.",
-   "evidence": "major ICT-related incidents"
-  },
-  {
-   "id": "dora-26",
-   "short": "DORA",
-   "label": "DORA Art. 26",
-   "title": "Advanced testing of ICT tools, systems and processes based on TLPT",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_26",
-   "fact": "Threat-led penetration testing, on live production systems, at least every 3 years.",
-   "evidence": "at least every 3 years"
-  },
-  {
-   "id": "dora-28",
-   "short": "DORA",
-   "label": "DORA Art. 28",
-   "title": "General principles",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_28",
-   "fact": "Financial entities keep a register of information on every contract with an ICT third-party provider."
-  },
-  {
-   "id": "dora-64",
-   "short": "DORA",
-   "label": "DORA Art. 64",
-   "title": "Entry into force and application",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_64",
-   "fact": "Applies from 17 January 2025. Your runway did not.",
-   "evidence": "17 January 2025"
+  "pillars": [
+    {
+      "id": "gdpr-33",
+      "short": "GDPR",
+      "label": "GDPR Art. 33",
+      "title": "Notification of a personal data breach to the supervisory authority",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_33",
+      "fact": "Report a personal data breach to the supervisory authority within 72 hours, where feasible — late ones need reasons.",
+      "evidence": "72 hours"
+    },
+    {
+      "id": "gdpr-83",
+      "short": "GDPR",
+      "label": "GDPR Art. 83",
+      "title": "General conditions for imposing administrative fines",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_83",
+      "fact": "Fines of up to €20 million or 4% of total worldwide annual turnover, whichever is higher."
+    },
+    {
+      "id": "gdpr-7",
+      "short": "GDPR",
+      "label": "GDPR Art. 7",
+      "title": "Conditions for consent",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_7",
+      "fact": "Withdrawing consent must be as easy as giving it.",
+      "evidence": "withdraw his or her consent at any time"
+    },
+    {
+      "id": "gdpr-17",
+      "short": "GDPR",
+      "label": "GDPR Art. 17",
+      "title": "Right to erasure (‘right to be forgotten’)",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_17",
+      "fact": "The right to erasure: personal data must go without undue delay. Your startup may follow.",
+      "evidence": "without undue delay"
+    },
+    {
+      "id": "gdpr-37",
+      "short": "GDPR",
+      "label": "GDPR Art. 37",
+      "title": "Designation of the data protection officer",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_37",
+      "fact": "A data protection officer is mandatory when your core activity is regular and systematic monitoring of people on a large scale.",
+      "evidence": "large scale"
+    },
+    {
+      "id": "gdpr-35",
+      "short": "GDPR",
+      "label": "GDPR Art. 35",
+      "title": "Data protection impact assessment",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_35",
+      "fact": "High-risk processing needs a data protection impact assessment before it starts.",
+      "evidence": "prior to the processing"
+    },
+    {
+      "id": "gdpr-25",
+      "short": "GDPR",
+      "label": "GDPR Art. 25",
+      "title": "Data protection by design and by default",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#art_25",
+      "fact": "Data protection by design and by default — from the moment you decide how to process.",
+      "evidence": "pseudonymisation"
+    },
+    {
+      "id": "ai-act-5",
+      "short": "AI ACT",
+      "label": "AI Act Art. 5",
+      "title": "Prohibited AI practices",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_5",
+      "fact": "Emotion recognition in the workplace and in education is prohibited, save for medical or safety reasons."
+    },
+    {
+      "id": "ai-act-99",
+      "short": "AI ACT",
+      "label": "AI Act Art. 99",
+      "title": "Penalties",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_99",
+      "fact": "Breaching the Art. 5 prohibitions: up to €35 million or 7% of worldwide annual turnover. For start-ups, mercifully, whichever is lower.",
+      "evidence": "start-ups"
+    },
+    {
+      "id": "ai-act-50",
+      "short": "AI ACT",
+      "label": "AI Act Art. 50",
+      "title": "Transparency obligations for providers and deployers of certain AI systems",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_50",
+      "fact": "Deep fakes must be disclosed as artificially generated or manipulated."
+    },
+    {
+      "id": "ai-act-4",
+      "short": "AI ACT",
+      "label": "AI Act Art. 4",
+      "title": "AI literacy",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_4",
+      "fact": "Providers and deployers must ensure a sufficient level of AI literacy of their staff.",
+      "evidence": "AI literacy"
+    },
+    {
+      "id": "ai-act-113",
+      "short": "AI ACT",
+      "label": "AI Act Art. 113",
+      "title": "Entry into force and application",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_113",
+      "fact": "The prohibitions applied from 2 February 2025; most of the rest from 2 August 2026.",
+      "evidence": "2 February 2025"
+    },
+    {
+      "id": "ai-act-11",
+      "short": "AI ACT",
+      "label": "AI Act Art. 11",
+      "title": "Technical documentation",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_11",
+      "fact": "Technical documentation for a high-risk AI system is drawn up before it is placed on the market — Annex IV lists what goes in.",
+      "evidence": "drawn up before"
+    },
+    {
+      "id": "ai-act-14",
+      "short": "AI ACT",
+      "label": "AI Act Art. 14",
+      "title": "Human oversight",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_14",
+      "fact": "High-risk AI systems must be designed so natural persons can effectively oversee them.",
+      "evidence": "effectively overseen by natural persons"
+    },
+    {
+      "id": "nis2-23",
+      "short": "NIS2",
+      "label": "NIS2 Art. 23",
+      "title": "Reporting obligations",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_23",
+      "fact": "Significant incidents: early warning within 24 hours, notification within 72 hours, final report within one month.",
+      "evidence": "significant incident"
+    },
+    {
+      "id": "nis2-34",
+      "short": "NIS2",
+      "label": "NIS2 Art. 34",
+      "title": "General conditions for imposing administrative fines on essential and important entities",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_34",
+      "fact": "Essential entities: fines of a maximum of at least €10 million or 2% of worldwide annual turnover.",
+      "evidence": "Administrative fines"
+    },
+    {
+      "id": "nis2-20",
+      "short": "NIS2",
+      "label": "NIS2 Art. 20",
+      "title": "Governance",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_20",
+      "fact": "Management bodies approve the cybersecurity measures, can be held liable, and must follow training.",
+      "evidence": "held liable"
+    },
+    {
+      "id": "nis2-21",
+      "short": "NIS2",
+      "label": "NIS2 Art. 21",
+      "title": "Cybersecurity risk-management measures",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555#art_21",
+      "fact": "Cybersecurity risk-management measures include supply chain security and multi-factor authentication."
+    },
+    {
+      "id": "dora-19",
+      "short": "DORA",
+      "label": "DORA Art. 19",
+      "title": "Reporting of major ICT-related incidents and voluntary notification of significant cyber threats",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_19",
+      "fact": "Financial entities must report major ICT-related incidents to their competent authority.",
+      "evidence": "major ICT-related incidents"
+    },
+    {
+      "id": "dora-26",
+      "short": "DORA",
+      "label": "DORA Art. 26",
+      "title": "Advanced testing of ICT tools, systems and processes based on TLPT",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_26",
+      "fact": "Threat-led penetration testing, on live production systems, at least every 3 years.",
+      "evidence": "at least every 3 years"
+    },
+    {
+      "id": "dora-28",
+      "short": "DORA",
+      "label": "DORA Art. 28",
+      "title": "General principles",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_28",
+      "fact": "Financial entities keep a register of information on every contract with an ICT third-party provider."
+    },
+    {
+      "id": "dora-64",
+      "short": "DORA",
+      "label": "DORA Art. 64",
+      "title": "Entry into force and application",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2554#art_64",
+      "fact": "Applies from 17 January 2025. Your runway did not.",
+      "evidence": "17 January 2025"
+    },
+    {
+      "id": "dsa-52",
+      "short": "DSA",
+      "label": "DSA Art. 52",
+      "title": "Penalties",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2065#art_52",
+      "fact": "Breaking the DSA costs up to 6% of annual worldwide turnover; misleading the regulator, another 1%.",
+      "evidence": "6 % of the annual worldwide turnover"
+    },
+    {
+      "id": "dsa-16",
+      "short": "DSA",
+      "label": "DSA Art. 16",
+      "title": "Notice and action mechanisms",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2065#art_16",
+      "fact": "Hosting services must let anyone flag illegal content, electronically and user-friendly. Your rocket has been flagged.",
+      "evidence": "easy to access and user-friendly"
+    },
+    {
+      "id": "dsa-34",
+      "short": "DSA",
+      "label": "DSA Art. 34",
+      "title": "Risk assessment",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R2065#art_34",
+      "fact": "Very large platforms must assess their systemic risks at least once every year, and before launching risky features.",
+      "evidence": "at least once every year thereafter"
+    },
+    {
+      "id": "dma-30",
+      "short": "DMA",
+      "label": "DMA Art. 30",
+      "title": "Fines",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R1925#art_30",
+      "fact": "Gatekeepers face fines of up to 10% of worldwide turnover, 20% for a repeat. Congratulations on being big enough.",
+      "evidence": "fines up to 20 %"
+    },
+    {
+      "id": "dma-3",
+      "short": "DMA",
+      "label": "DMA Art. 3",
+      "title": "Designation of gatekeepers",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022R1925#art_3",
+      "fact": "Presumed gatekeeper from €7.5 billion annual EU turnover or €75 billion market cap. Your seed round is not concerned.",
+      "evidence": "EUR 7,5 billion"
+    },
+    {
+      "id": "cra-64",
+      "short": "CRA",
+      "label": "CRA Art. 64",
+      "title": "Penalties",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R2847#art_64",
+      "fact": "Ignoring the essential cybersecurity requirements: up to €15 million or 2.5% of worldwide turnover.",
+      "evidence": "EUR 15 000 000"
+    },
+    {
+      "id": "cra-14",
+      "short": "CRA",
+      "label": "CRA Art. 14",
+      "title": "Reporting obligations of manufacturers",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R2847#art_14",
+      "fact": "Actively exploited vulnerability? Early warning to the CSIRT and ENISA within 24 hours.",
+      "evidence": "within 24 hours of the manufacturer becoming aware"
+    },
+    {
+      "id": "data-act-3",
+      "short": "DATA ACT",
+      "label": "Data Act Art. 3",
+      "title": "Obligation to make product data and related service data accessible to the user",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2854#art_3",
+      "fact": "Connected products must be designed so users can access their own data, by default. Including the toaster.",
+      "evidence": "by default"
+    },
+    {
+      "id": "data-act-29",
+      "short": "DATA ACT",
+      "label": "Data Act Art. 29",
+      "title": "Gradual withdrawal of switching charges",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2854#art_29",
+      "fact": "From 12 January 2027, cloud providers may not charge you for switching away. Leaving is free; staying is not.",
+      "evidence": "From 12 January 2027, providers of data processing services shall not impose any switching charges"
+    },
+    {
+      "id": "eidas2-5a",
+      "short": "eIDAS 2",
+      "label": "eIDAS 2 Art. 5a",
+      "title": "European Digital Identity Wallets",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1183#art_1",
+      "fact": "Each Member State must provide at least one European Digital Identity Wallet within 24 months of the implementing acts.",
+      "evidence": "at least one European Digital Identity Wallet within 24 months"
+    },
+    {
+      "id": "eidas2-16",
+      "short": "eIDAS 2",
+      "label": "eIDAS 2 Art. 16",
+      "title": "Penalties",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1183#art_1",
+      "fact": "Trust service providers face fines of at least €5 million or 1% of worldwide turnover.",
+      "evidence": "EUR 5 000 000 or 1 % of the total worldwide annual turnover"
+    },
+    {
+      "id": "csrd-19a",
+      "short": "CSRD",
+      "label": "CSRD Art. 19a",
+      "title": "Sustainability reporting",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2464#art_1",
+      "fact": "Report your impacts on sustainability and how sustainability affects you. Both directions, audited.",
+      "evidence": "impacts on sustainability matters"
+    },
+    {
+      "id": "csrd-29b",
+      "short": "CSRD",
+      "label": "CSRD Art. 29b",
+      "title": "Sustainability reporting standards",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2464#art_1",
+      "fact": "The sustainability reporting standards arrive by delegated act. Of course they do.",
+      "evidence": "The Commission shall adopt delegated acts"
+    },
+    {
+      "id": "eprivacy-5",
+      "short": "ePRIVACY",
+      "label": "ePrivacy Art. 5",
+      "title": "Confidentiality of the communications",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219#art_5",
+      "fact": "Storing or reading information on a user's device (yes, cookies) is only allowed if they agree. Hence the banner.",
+      "evidence": "the storing of information, or the gaining of access to information already stored"
+    },
+    {
+      "id": "eprivacy-13",
+      "short": "ePRIVACY",
+      "label": "ePrivacy Art. 13",
+      "title": "Unsolicited communications",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02002L0058-20091219#art_13",
+      "fact": "Direct-marketing e-mail needs prior consent; existing customers get the soft opt-in.",
+      "evidence": "who have given their prior consent"
+    }
+  ],
+  "pickups": {
+    "sandbox": {
+      "id": "ai-act-57",
+      "label": "AI Act Art. 57",
+      "title": "AI regulatory sandboxes",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_57",
+      "fact": "Every Member State must have at least one AI regulatory sandbox operational by 2 August 2026. The sand is not yet harmonised.",
+      "evidence": "2 August 2026",
+      "short": "AI ACT"
+    },
+    "delegated": {
+      "id": "ai-act-7",
+      "label": "AI Act Art. 7",
+      "title": "Amendments to Annex III",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_7",
+      "fact": "The Commission is empowered to amend Annex III by delegated act. The pillars have been relocated.",
+      "evidence": "delegated acts",
+      "short": "AI ACT"
+    }
   }
- ],
- "pickups": {
-  "sandbox": {
-   "id": "ai-act-57",
-   "label": "AI Act Art. 57",
-   "title": "AI regulatory sandboxes",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_57",
-   "fact": "Every Member State must have at least one AI regulatory sandbox operational by 2 August 2026. The sand is not yet harmonised.",
-   "evidence": "2 August 2026",
-   "short": "AI ACT"
-  },
-  "delegated": {
-   "id": "ai-act-7",
-   "label": "AI Act Art. 7",
-   "title": "Amendments to Annex III",
-   "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689#art_7",
-   "fact": "The Commission is empowered to amend Annex III by delegated act. The pillars have been relocated.",
-   "evidence": "delegated acts",
-   "short": "AI ACT"
-  }
- }
 }
