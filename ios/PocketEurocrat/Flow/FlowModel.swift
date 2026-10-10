@@ -68,6 +68,7 @@ final class FlowModel {
         do {
             skipResult = try await backend.betterPlace(applicantId: ticket.applicantId, applicantToken: ticket.applicantToken, cause: cause)
         } catch {
+            if (error as? LiveBackend.ServerError)?.status == 404 { return staleApplicant() }
             errorMessage = error.localizedDescription
         }
     }
