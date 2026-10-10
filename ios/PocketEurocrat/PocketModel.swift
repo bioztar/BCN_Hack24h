@@ -26,8 +26,12 @@ final class PocketModel {
     var lastFine: Fine?
     var meltedDown = false
     var analyzing: (stage: String, progress: Double)?
+    /// v2 "Meanwhile" counters: latest server tick (applied as it arrives, not queued behind the lines).
+    var meanwhile: Meanwhile?
     /// Set by the flow once the founder registered; sent with the case so the verdict lands on the leaderboard.
     @ObservationIgnored var applicantId: String?
+    /// Secret from registration (memory only, never persisted); authorises attaching the case to the applicant.
+    @ObservationIgnored var applicantToken: String?
 
     let puppet: DummyScene = {
         let s = DummyScene(size: CGSize(width: 390, height: 700))
@@ -200,7 +204,8 @@ final class PocketModel {
             } else {
                 resetCase()
                 id = try await backend.createCase(Submission.classify(pitch, dictated: dictated),
-                                                  officers: pair.officers, applicantId: applicantId).caseId
+                                                  officers: pair.officers, applicantId: applicantId,
+                                                  applicantToken: applicantToken).caseId
                 caseID = id
             }
             phase = .roasting
@@ -220,7 +225,11 @@ final class PocketModel {
         let player = Task { for await event in queue { await handle(event) } }
         do {
             for try await event in stream {
-                if case .audio(let id, let url) = event { lateAudio[id] = url } else { push.yield(event) }
+                switch event {
+                case .audio(let id, let url): lateAudio[id] = url
+                case .meanwhile(let m): meanwhile = m
+                default: push.yield(event)
+                }
             }
         } catch {
             push.finish()
@@ -272,6 +281,7 @@ final class PocketModel {
             try? await Task.sleep(for: .seconds(5))   // let them burn before the verdict card covers the screen
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle
+        case .meanwhile(let m): meanwhile = m
         case .officers, .audio, .unknown: break
         }
     }
@@ -285,6 +295,7 @@ final class PocketModel {
         lastFine = nil
         meltedDown = false
         analyzing = nil
+        meanwhile = nil
         notice = nil
         puppet.extinguish()
     }
@@ -296,6 +307,7 @@ final class PocketModel {
         subtitle = nil
         tierName = nil
         applicantId = nil
+        applicantToken = nil
         phase = .idle
     }
 }

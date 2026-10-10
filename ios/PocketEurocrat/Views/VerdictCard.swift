@@ -23,7 +23,11 @@ struct VerdictCard: View {
                     }
                 }
 
+                if let m = notice.meanwhile { MeanwhileCard(meanwhile: m) }
+
                 actions
+
+                PlayArcadeButton(title: "Play while you appeal")
 
                 if let tldr = notice.tldr, !tldr.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
