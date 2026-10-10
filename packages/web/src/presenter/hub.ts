@@ -5,7 +5,7 @@ import { speak, unlockAudio } from "../stage/sfx";
 import { pushCaption, sameDay, toEntry, upsert, type Caption } from "../live/board";
 import { emptyLive, liveReduce, type LiveState } from "../live/case";
 import { dayMeanwhile } from "../live/meanwhile";
-import { HttpStatusError, type AnyEvent, type LiveApi, type Stats } from "../live/api";
+import { HACK_EVENT, HttpStatusError, type AnyEvent, type LiveApi, type Stats } from "../live/api";
 
 /** How long the stage stays on a case that sits in "awaiting" before following a newer one. */
 const AWAIT_SWITCH_MS = 45_000;
@@ -17,6 +17,10 @@ const LATE_AUDIO_MS = 3000;
  */
 export class Hub {
   entries: LeaderboardEntry[] = [];
+  /** B: the leaderboard shows only this hackathon (`?event=`); the server ignoring the param → everything. */
+  event: string | null = null;
+  eventEntries: LeaderboardEntry[] = [];
+  eventStats: Stats | null = null;
   captions: Caption[] = [];
   personas: Persona[] = [];
   stats: Stats | null = null;
@@ -84,6 +88,36 @@ export class Hub {
     this.emit("live");
   }
 
+  get boardEntries(): LeaderboardEntry[] {
+    return this.event ? this.eventEntries : this.entries;
+  }
+
+  toggleEvent(): void {
+    this.event = this.event ? null : HACK_EVENT;
+    this.eventEntries = this.event ? this.entries.slice() : [];
+    this.emit("board");
+    if (this.event) void this.loadEvent(this.event);
+  }
+
+  private async loadEvent(event: string) {
+    try {
+      const [fines, jail, stats] = await Promise.all([this.api.leaderboard("fines", 50, event), this.api.leaderboard("jail", 50, event), this.api.stats(event)]);
+      if (this.event !== event) return;
+      if (fines !== "missing" && jail !== "missing") {
+        let list: LeaderboardEntry[] = [];
+        for (const raw of [...fines, ...jail]) {
+          const e = toEntry(raw);
+          if (e) list = upsert(list, e);
+        }
+        this.eventEntries = list;
+      }
+      this.eventStats = stats === "missing" ? null : stats;
+      this.emit("board");
+    } catch (err) {
+      console.warn("[presenter] event board", err);
+    }
+  }
+
   togglePin(): void {
     this.pinned = this.pinned ? null : this.live.caseId;
     this.emit("live");
@@ -123,6 +157,7 @@ export class Hub {
     if (!e) return;
     const isNew = !this.entries.some((x) => x.caseId === e.caseId);
     this.entries = upsert(this.entries, e);
+    if (this.event && live) this.eventEntries = upsert(this.eventEntries, e);
     if (live && isNew) this.fresh.add(e.caseId);
     this.emit("board");
   }
@@ -142,6 +177,7 @@ export class Hub {
         this.statsMissing = s === "missing";
         this.stats = s === "missing" ? null : s;
         this.emit("stats");
+        if (this.event) void this.loadEvent(this.event);
       } catch {
         /* keep the last value */
       }

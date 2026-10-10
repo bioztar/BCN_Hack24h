@@ -5,7 +5,7 @@ export const MOCK = params.get("mock") === "1";
 export const SKIP_INTRO = params.get("skip") === "intro";
 /** `?speak=1` (default in `?mock=1`, off with `speak=0`) reads lines without audioUrl through the browser's speech synthesis. */
 /** Express hearing (one stream, tiers 1→5, verdict, one appeal) by default; `?express=1` / `?express=0` override. */
-export const EXPRESS_DEFAULT = false;
+export const EXPRESS_DEFAULT = true;
 export const EXPRESS = params.get("express") === "1" || (EXPRESS_DEFAULT && params.get("express") !== "0");
 export const SPEAK = params.get("speak") === "1" || (MOCK && params.get("speak") !== "0");
 

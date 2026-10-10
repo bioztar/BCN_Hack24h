@@ -2,6 +2,9 @@ export const NAV_KEY = "eurocrat.stage.nav";
 export const TIP_KEY = "eurocrat.stage.tip";
 export const REPORT_URL = "https://warden.pro7ocol.com/analyze/";
 
+/** The real compliance report, pre-filled with the pitch. */
+export const reportHref = (pitch?: string) => (pitch?.trim() ? `${REPORT_URL}?idea=${encodeURIComponent(pitch.trim().slice(0, 2000))}` : REPORT_URL);
+
 export interface KV {
   getItem(k: string): string | null;
   setItem(k: string, v: string): void;

@@ -13,7 +13,7 @@ import { arcadeView, boardView, caseView, endView, qrView, type Dispose } from "
 export { parseView, type View } from "./view";
 
 const NAV: [View, string, string][] = [["qr", "QR", "Q"], ["board", "Leaderboard", "L"], ["case", "Live case", "C"], ["arcade", "Arcade", "A"], ["end", "End", "E"]];
-const TIP = "Presenter? Keys Q L C A E · F full screen · H hide bar";
+const TIP = "Presenter? Keys Q L C A E · B hackathon · F full screen · H hide bar";
 
 /** The big-screen presenter: Q = QR intro, L = leaderboard, C = live case, A = arcade, E = closing MEANWHILE. */
 export function presenter(root: HTMLElement): void {
@@ -84,6 +84,11 @@ export function presenter(root: HTMLElement): void {
     if (k === "m") {
       hub.toggleSound();
       return flash(hub.sound ? "🔊 Stage sound on" : "🔇 Stage sound off");
+    }
+    if (k === "b") {
+      hub.toggleEvent();
+      if (view !== "board") show("board");
+      return flash(hub.event ? "🏁 This hackathon only" : "All startups today");
     }
     if (k === "0") {
       talk.start = Date.now();

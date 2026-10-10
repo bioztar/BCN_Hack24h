@@ -1,7 +1,8 @@
 import { quoteClaim } from "../validate";
 import type { Notice, Persona } from "../contract";
 import { h, fmtEur, safeUrl } from "../dom";
-import { POCKET_URL, REPORT_URL, withFlags } from "../env";
+import { POCKET_URL, withFlags } from "../env";
+import { reportHref } from "../presenter/nav";
 import { chime } from "../stage/sfx";
 import { qrBox } from "./qr";
 import { turnoverEstimate, turnoverLine } from "../live/fines";
@@ -127,7 +128,7 @@ export function noticeView(notice: Notice, officers: Persona[], pitch?: string, 
   const again = h("a", { class: "btn", href: withFlags("/") }, "Submit another startup");
   const wall = h("a", { class: "btn", href: withFlags("/wall/"), target: "_blank" }, "Official Journal — Series R ↗");
 
-  const report = h("a", { class: "btn primary", href: REPORT_URL, target: "_blank", rel: "noopener" }, "Get the real report ↗");
+  const report = h("a", { class: "btn primary", href: reportHref(pitch), target: "_blank", rel: "noopener" }, "Get the real report ↗");
   const pocket = h(
     "aside",
     { class: "pocket-card" },

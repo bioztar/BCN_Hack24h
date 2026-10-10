@@ -142,7 +142,7 @@ describe("live case reducer", () => {
 
 describe("optional route parsers", () => {
   it("stats / live / game top tolerate partial shapes", () => {
-    expect(toStats({ queue: 12 })).toEqual({ queue: 12, applicantsToday: null, meanwhileToday: null });
+    expect(toStats({ queue: 12 })).toEqual({ queue: 12, applicantsToday: null, meanwhileToday: null, refusedToday: null, totalEurToday: null, totalJailMonthsToday: null });
     expect(toLive({ caseId: "" })).toBeNull();
     expect(toLive({ caseId: "c", ticket: 7 })).toEqual({ caseId: "c", ticket: 7, startupName: null });
     expect(toGameTop({ entries: [{ name: "a", score: 3 }, { player: "b", score: 9 }] })).toEqual({ name: "b", score: 9 });

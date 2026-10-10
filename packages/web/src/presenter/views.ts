@@ -39,7 +39,11 @@ export function qrView(root: HTMLElement, hub: Hub): Dispose {
         h("div", { class: "qr-count" }, count.el, label),
         h("div", { class: "qr-causes" }, h("small", null, "Fast-track available for startups that make the world a better place:"), h("div", { class: "tiles" }, causes.slice(0, 5).map(causeTile))),
       ),
-      bigQr(POCKET_URL, "Scan to apply"),
+      (() => {
+        const qr = bigQr(POCKET_URL, "Scan to apply");
+        qr.append(h("p", { class: "qr-price" }, "Free today. €49 after the hackathon. Accelerators: roast your whole cohort."));
+        return qr;
+      })(),
     ),
     mw.el,
   );
@@ -91,6 +95,8 @@ export function boardView(root: HTMLElement, hub: Hub, state: { sort: BoardSort 
   const ticker = h("div", { class: "ticker-track" });
   const mw = new MeanwhileBoard("day");
   const empty = h("p", { class: "lb-empty" }, "No startup has been refused yet today. Give it a minute.");
+  const title = h("h1", null, "Hall of Shame — most fined startups today");
+  const hack = h("div", { class: "lb-hack" });
   const rows = new Map<string, HTMLElement>();
   let order: string[] = [];
 
@@ -98,7 +104,8 @@ export function boardView(root: HTMLElement, hub: Hub, state: { sort: BoardSort 
     h(
       "div",
       { class: "pv pv-board" },
-      h("header", { class: "lb-head" }, h("h1", null, "Hall of Shame — most fined startups today"), tabs),
+      h("header", { class: "lb-head" }, title, tabs),
+      hack,
       h("div", { class: "lb-cols" }, h("span", null, "#"), h("span", null, ""), h("span", null, "Startup"), h("span", null, "Fines"), h("span", null, "Jail")),
       list,
       empty,
@@ -111,11 +118,25 @@ export function boardView(root: HTMLElement, hub: Hub, state: { sort: BoardSort 
     tabs.replaceChildren(
       h("span", { class: `lb-tab${state.sort === "fines" ? " on" : ""}` }, "€ Fines"),
       h("span", { class: `lb-tab${state.sort === "jail" ? " on" : ""}` }, "⛓ Jail"),
-      h("small", null, "T to toggle"),
+      h("span", { class: `lb-tab${hub.event ? " on" : ""}` }, "🏁 This hackathon"),
+      h("small", null, "T fines/jail · B hackathon"),
     );
 
+  const renderHack = () => {
+    hack.hidden = !hub.event;
+    title.textContent = hub.event ? "Hall of Shame — BCN Hack 24h" : "Hall of Shame — most fined startups today";
+    if (!hub.event) return;
+    const list = hub.boardEntries;
+    const s = hub.eventStats;
+    const refused = s?.refusedToday ?? list.length;
+    const processed = Math.max(s?.applicantsToday ?? 0, refused);
+    const eur = s?.totalEurToday ?? list.reduce((a, e) => a + e.totalEur, 0);
+    const months = s?.totalJailMonthsToday ?? list.reduce((a, e) => a + e.totalJailMonths, 0);
+    hack.textContent = `BCN Hack 24h — ${fmtInt(processed)} projects processed · ${fmtInt(refused)} refused · ${fmtEurShort(eur)} fines · ${fmtJail(months)}`;
+  };
+
   const renderList = () => {
-    const ranked = top(hub.entries, state.sort, 10);
+    const ranked = top(hub.boardEntries, state.sort, 10);
     empty.hidden = ranked.length > 0;
     const ids = ranked.map((e) => e.caseId);
     const before = new Map([...rows].map(([id, el]) => [id, el.getBoundingClientRect().top]));
@@ -167,12 +188,13 @@ export function boardView(root: HTMLElement, hub: Hub, state: { sort: BoardSort 
     mw.set(m, estimated);
   };
   renderTabs();
+  renderHack();
   renderList();
   renderTicker(true);
   renderMw();
   const t = setInterval(renderMw, 1000);
   const off = hub.on((c: Change) => {
-    if (c === "board") renderList();
+    if (c === "board") (renderTabs(), renderHack(), renderList());
     if (c === "ticker") renderTicker();
     if (c === "stats") renderMw();
   });

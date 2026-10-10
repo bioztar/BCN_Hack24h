@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { RoastEvent } from "../src/contract";
 import { DEFAULT_RATES, ratesFrom, talkMeanwhile } from "../src/live/meanwhile";
 import { mockApi } from "../src/mock";
+import { reportHref } from "../src/presenter/nav";
+import { toStats } from "../src/live/api";
 import { parseView } from "../src/presenter/view";
 import { initialState, reduce } from "../src/reducer";
 
@@ -56,5 +58,14 @@ describe("MEANWHILE during this talk (E)", () => {
   it("E opens the closing view", () => {
     expect(parseView("e")).toBe("end");
     expect(parseView("end")).toBe("end");
+  });
+});
+
+describe("hackathon stats + report link", () => {
+  it("reads the event totals and pre-fills the real report", () => {
+    expect(toStats({ queue: 2, applicantsToday: 9, refusedToday: 7, totalEurToday: 1e9, totalJailMonthsToday: 40 })).toMatchObject({ refusedToday: 7, totalEurToday: 1e9, totalJailMonthsToday: 40 });
+    expect(toStats({ queue: 2 })).toMatchObject({ refusedToday: null, totalEurToday: null });
+    expect(reportHref(" Tinder for filings & more ")).toBe("https://warden.pro7ocol.com/analyze/?idea=Tinder%20for%20filings%20%26%20more");
+    expect(reportHref(undefined)).toBe("https://warden.pro7ocol.com/analyze/");
   });
 });
