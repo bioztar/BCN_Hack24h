@@ -15,6 +15,7 @@ struct VerdictCard: View {
     var onApplyAgain: () -> Void = {}
 
     @State private var badge: Image?
+    @State private var badgeFile: URL?
     @State private var grounds = ""
     @State private var appealed = false
     @Environment(\.displayScale) private var scale
@@ -125,8 +126,10 @@ struct VerdictCard: View {
     private var actions: some View {
         VStack(spacing: 10) {
             HStack {
-                if let badge {
-                    ShareLink(item: badge, preview: SharePreview("\(notice.startupName ?? notice.startup) — REFUSÉ", image: badge)) {
+                if let file = badgeFile {
+                    // A real PNG file + text through UIActivityViewController: lazy Transferable exports of an
+                    // Image make WhatsApp/Instagram/LinkedIn/Mail close the sheet without posting.
+                    Button { ShareSheet.present(items: [shareText, file]) } label: {
                         Label("Share badge", systemImage: "square.and.arrow.up")
                     }
                     .buttonStyle(.borderedProminent)
@@ -141,14 +144,42 @@ struct VerdictCard: View {
 
     /// Server badge when there is one; otherwise render the on-screen notice so sharing always works.
     private func loadBadge() async {
+        var image: UIImage?
         if let path = notice.badgeUrl, let url = resolve(path),
-           let (data, _) = try? await URLSession.shared.data(from: url), let ui = UIImage(data: data) {
-            badge = Image(uiImage: ui)
-            return
+           let (data, _) = try? await URLSession.shared.data(from: url) {
+            image = UIImage(data: data)
         }
-        let renderer = ImageRenderer(content: NoticeFace(notice: notice).frame(width: 340).environment(\.colorScheme, .light))
-        renderer.scale = scale
-        if let ui = renderer.uiImage { badge = Image(uiImage: ui) }
+        if image == nil {
+            let renderer = ImageRenderer(content: NoticeFace(notice: notice).frame(width: 340).environment(\.colorScheme, .light))
+            renderer.scale = scale
+            image = renderer.uiImage
+        }
+        guard let image else { return }
+        badge = Image(uiImage: image)
+        // Written once, as a plain PNG, for the share sheet.
+        let name = "eurocrat-\(notice.serial.replacingOccurrences(of: "/", with: "-")).png"
+        let file = FileManager.default.temporaryDirectory.appending(path: name)
+        if let png = image.pngData(), (try? png.write(to: file, options: .atomic)) != nil { badgeFile = file }
+    }
+
+    /// "My startup idea is so illegal it earned €1.2bn and 100 y in jail — Eurocrat https://eurocrat.pro7ocol.com"
+    private var shareText: String {
+        let eur = Money.short(notice.totalEur ?? notice.fineEur)
+        let jail = (notice.totalJailMonths ?? 0) > 0 ? " and \(Money.jail(notice.totalJailMonths ?? 0)) in jail" : ""
+        return "My startup idea is so illegal it earned \(eur)\(jail) — Eurocrat https://eurocrat.pro7ocol.com"
+    }
+}
+
+/// Presents UIActivityViewController from the top-most view controller (works from inside the verdict sheet).
+enum ShareSheet {
+    @MainActor
+    static func present(items: [Any]) {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
+              var top = scene.keyWindow?.rootViewController else { return }
+        while let next = top.presentedViewController { top = next }
+        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        vc.popoverPresentationController?.sourceView = top.view
+        top.present(vc, animated: true)
     }
 }
 
