@@ -3,37 +3,31 @@ import type { Persona } from "../contract";
 import { h } from "../dom";
 
 /**
- * Talking-portrait puppet, South Park-cheap: the cut-out (or still) is split at the mouth
- * line — the jaw piece drops with the audio level over a dark mouth hole — plus blinks,
- * a brow raise on stamps, and a head bob/tilt. No image → procedural silhouette with the
- * same rig. Rig coordinates assume a centred chest-up 3:4 portrait (the asset prompt).
+ * Portrait puppet: no moving mouth. Expression is shown by hard CUTS between cut-outs/stills
+ * (neutral/stamping/smug/appalled) on line/stamp/tier events, plus blinks, a brow raise on
+ * stamps and a gentle head bob. No image → procedural silhouette. Rig coordinates assume a
+ * centred chest-up 3:4 portrait (the asset prompt).
  */
-const RIG = { mouthY: 42, mouthW: 22, eyeY: 31, eyeDx: 8.5 };
-
-type Level = () => number | null;
+const RIG = { eyeY: 31, eyeDx: 8.5 };
 
 export class Puppet {
   readonly el: HTMLElement;
   private readonly rig: HTMLElement;
   private readonly photo: HTMLElement;
   private readonly base: HTMLImageElement;
-  private readonly jaw: HTMLImageElement;
   private readonly silhouette: HTMLElement;
   private url: string | null = null;
   private loading = "";
   private talking = false;
-  private level: Level = () => null;
-  private amp = 0;
-  private lastHeard = 0;
+  private expr = "";
   private nextBlink = performance.now() + 1500 + Math.random() * 3000;
   private raf = 0;
   private readonly phase = Math.random() * 10;
 
   constructor(persona: Persona) {
     this.base = h("img", { class: "pp-base", alt: persona.name, draggable: "false" });
-    this.jaw = h("img", { class: "pp-jaw", alt: "", draggable: "false", "aria-hidden": "true" });
     const eyes = ["l", "r"].flatMap((s) => [h("i", { class: `pp-lid ${s}` }), h("i", { class: `pp-brow ${s}` })]);
-    this.photo = h("div", { class: "pp-photo", hidden: true }, this.base, h("i", { class: "pp-hole" }), this.jaw, eyes);
+    this.photo = h("div", { class: "pp-photo", hidden: true }, this.base, eyes);
     this.silhouette = h(
       "div",
       { class: "ph" },
@@ -44,7 +38,7 @@ export class Puppet {
     this.rig = h("div", { class: "pp-rig" }, this.photo, this.silhouette);
     this.el = h(
       "div",
-      { class: "puppet", style: `--accent:${persona.color};--my:${RIG.mouthY}%;--mw:${RIG.mouthW}%;--ey:${RIG.eyeY}%;--edx:${RIG.eyeDx}%` },
+      { class: "puppet", style: `--accent:${persona.color};--ey:${RIG.eyeY}%;--edx:${RIG.eyeDx}%` },
       this.rig,
     );
     this.raf = requestAnimationFrame(this.frame);
@@ -54,6 +48,10 @@ export class Puppet {
   show(images: string[], expr: Expression): void {
     this.el.dataset.expr = expr;
     this.silhouette.dataset.expr = expr;
+    if (expr !== this.expr) {
+      if (this.expr) this.cut();
+      this.expr = expr;
+    }
     const want = images[0];
     if (!want) {
       this.url = null;
@@ -68,7 +66,7 @@ export class Puppet {
       if (this.loading !== want) return;
       this.loading = "";
       this.url = want;
-      this.base.src = this.jaw.src = want;
+      this.base.src = want;
       this.photo.hidden = false;
       this.silhouette.hidden = true;
       this.sampleSkin(probe);
@@ -82,10 +80,16 @@ export class Puppet {
     probe.src = want;
   }
 
-  setTalking(talking: boolean, level?: Level): void {
+  setTalking(talking: boolean): void {
+    if (talking && !this.talking) this.cut();
     this.talking = talking;
-    if (level) this.level = level;
-    this.lastHeard = performance.now();
+  }
+
+  /** A visible expression cut: brief punch-in + flash. */
+  private cut(): void {
+    this.el.classList.remove("cut");
+    void this.el.offsetWidth;
+    this.el.classList.add("cut");
   }
 
   /** Eyebrows up + a jolt (stamp impact). */
@@ -112,23 +116,14 @@ export class Puppet {
   }
 
   private readonly frame = (now: number) => {
-    let target = 0;
-    if (this.talking) {
-      const real = this.level();
-      if (real !== null && real > 0.04) this.lastHeard = now;
-      // audio level when we have it; a syllable-ish flap otherwise (speech synth, reading, silence > 0.7s)
-      target = real !== null && now - this.lastHeard < 700 ? real : Math.max(0, Math.sin(now / 70 + this.phase) * 0.6 + Math.sin(now / 173) * 0.4);
-    }
-    this.amp += (target - this.amp) * (target > this.amp ? 0.6 : 0.3);
     if (now > this.nextBlink) {
       this.el.classList.add("blink");
       setTimeout(() => this.el.classList.remove("blink"), 130);
       this.nextBlink = now + 1800 + Math.random() * 4200;
     }
     const t = now / 1000 + this.phase;
-    const bob = this.talking ? Math.sin(t * 7) * 1.2 + this.amp * 1.5 : Math.sin(t * 1.3) * 0.5;
-    const tilt = this.talking ? Math.sin(t * 2.3) * 2.2 : Math.sin(t * 0.7) * 0.8;
-    this.el.style.setProperty("--amp", this.amp.toFixed(3));
+    const bob = this.talking ? Math.sin(t * 2.2) * 0.8 : Math.sin(t * 1.3) * 0.5;
+    const tilt = this.talking ? Math.sin(t * 1.4) * 1.4 : Math.sin(t * 0.7) * 0.8;
     this.rig.style.transform = `translateY(${bob.toFixed(2)}%) rotate(${tilt.toFixed(2)}deg)`;
     this.raf = requestAnimationFrame(this.frame);
   };

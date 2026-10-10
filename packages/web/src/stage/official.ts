@@ -23,7 +23,6 @@ export class OfficialView {
   private slot: ClipSlot = "idle";
   private speaking = false;
   private finishedOneShot = "";
-  private level: () => number | null = () => null;
 
   constructor(readonly persona: Persona) {
     this.puppet = new Puppet(persona);
@@ -37,9 +36,8 @@ export class OfficialView {
     this.render();
   }
 
-  update(slot: ClipSlot, speaking: boolean, level?: () => number | null): void {
+  update(slot: ClipSlot, speaking: boolean, _level?: () => number | null): void {
     if (slot !== this.slot) this.finishedOneShot = "";
-    if (level) this.level = level;
     this.slot = slot;
     this.speaking = speaking;
     this.el.classList.toggle("speaking", speaking);
@@ -59,7 +57,7 @@ export class OfficialView {
     const slot = this.effectiveSlot();
     const expr = expressionFor(slot, this.speaking);
     const v = pickVisual(this.persona, slot, expr);
-    this.puppet.setTalking(this.speaking, this.level);
+    this.puppet.setTalking(this.speaking);
     if (v.kind === "puppet") {
       this.puppet.show(v.images, expr);
       if (this.key !== "puppet") {
