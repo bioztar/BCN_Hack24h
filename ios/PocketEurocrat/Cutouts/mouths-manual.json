@@ -1,0 +1,12 @@
+{
+  "auditor-9000-appalled": [0.47, 0.384, 0.09, 0.03],
+  "auditor-9000-asleep": [0.47, 0.384, 0.09, 0.03],
+  "auditor-9000-neutral": [0.47, 0.384, 0.09, 0.03],
+  "auditor-9000-smug": [0.47, 0.384, 0.09, 0.03],
+  "auditor-9000-stamping": [0.47, 0.384, 0.09, 0.03],
+  "the-cookie-appalled": [0.5, 0.405, 0.15, 0.045],
+  "the-cookie-asleep": [0.5, 0.405, 0.15, 0.045],
+  "the-cookie-neutral": [0.5, 0.405, 0.15, 0.045],
+  "the-cookie-smug": [0.5, 0.405, 0.15, 0.045],
+  "the-cookie-stamping": [0.5, 0.405, 0.15, 0.045]
+}
