@@ -9,6 +9,7 @@ import { chrome } from "./ui/chrome";
 import { hearing } from "./ui/hearing";
 import { submitScreen } from "./ui/submit";
 import { queueTicket } from "./ui/ticket";
+import { presenter } from "./presenter/app";
 
 const api = MOCK ? mockApi() : httpApi();
 const root = document.getElementById("app") ?? document.body;
@@ -56,4 +57,6 @@ async function main() {
   }
 }
 
-void main();
+// `/` is the big-screen presenter (stage v2); `?play=1` keeps the v1 hearing you drive from the stage.
+if (new URLSearchParams(location.search).get("play") === "1") void main();
+else presenter(root);
