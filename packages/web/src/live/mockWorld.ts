@@ -209,7 +209,7 @@ export function mockWorld(opts: { pace?: number; replyDelayMs?: number; nextCase
       start();
       const now = new Date();
       const sec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-      return { queue, applicantsToday: 120 + board.length, meanwhileToday: meanwhileAt(sec) };
+      return { queue, applicantsToday: 120 + board.length, meanwhileToday: meanwhileAt(sec), refusedToday: null, totalEurToday: null, totalJailMonthsToday: null };
     },
     async live() {
       start();

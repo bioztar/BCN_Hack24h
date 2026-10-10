@@ -41,7 +41,7 @@ export class MeanwhileBoard {
   private readonly notes: HTMLElement[];
   private readonly title: HTMLElement;
 
-  constructor(private readonly mode: "case" | "day") {
+  constructor(private readonly mode: "case" | "day" | "talk") {
     this.notes = [0, 1, 2].map(() => h("small", { class: "mw-note" }));
     this.title = h("div", { class: "mw-title" }, "MEANWHILE");
     this.el = h(
@@ -65,6 +65,8 @@ export class MeanwhileBoard {
     this.title.textContent =
       this.mode === "case"
         ? `MEANWHILE — while this file was being processed (${elapsedText(m.elapsedSec)})`
-        : `MEANWHILE — today, while Europe processed applications${estimated ? " (estimated at current EU rates)" : ""}`;
+        : this.mode === "talk"
+          ? `MEANWHILE — during this talk (${elapsedText(m.elapsedSec)})`
+          : `MEANWHILE — today, while Europe processed applications${estimated ? " (estimated at current EU rates)" : ""}`;
   }
 }

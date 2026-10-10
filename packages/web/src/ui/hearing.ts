@@ -72,6 +72,8 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
   const late = new LateAudio();
   let stampedThisRound = false;
   let firstOfRound = true;
+  const express = kase.mode === "express";
+  let appealed = false;
   for (const ev of ["pointerdown", "keydown"] as const) document.addEventListener(ev, unlockAudio, { passive: true });
 
   const tierBanner = h("div", { class: "tier-banner" });
@@ -268,7 +270,7 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
     if (!notice) return;
     controls.replaceChildren(h("p", { class: "verdict-wait" }, "The notice is being printed…"));
     setTimeout(async () => {
-      const view = noticeView(notice, state.officers ?? officers, sub.text);
+      const view = noticeView(notice, state.officers ?? officers, sub.text, express && !appealed ? { onAppeal } : {});
       stage.append(view);
       view.scrollIntoView({ behavior: "smooth", block: "start" });
       await sleep(900);
@@ -276,6 +278,16 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
       await slam("RENVOYÉ EN COMMISSION", () => impact("PUBLIÉ"));
       controls.replaceChildren(h("a", { class: "btn", href: withFlags("/wall/"), target: "_blank" }, "Open the Official Journal (wall) ↗"));
     }, 1200);
+  }
+
+  async function onAppeal() {
+    await api.appeal(kase.caseId);
+    appealed = true;
+    stage.querySelectorAll(".verdict").forEach((v) => v.remove());
+    addMinute("The applicant", "Appeal lodged. One chance.", "#666", null, "applicant");
+    dispatch({ type: "appeal" });
+    room.scrollIntoView({ behavior: "smooth", block: "center" });
+    void round();
   }
 
   function showError() {

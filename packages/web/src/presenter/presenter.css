@@ -193,3 +193,24 @@ a.pv-nav-play:hover { background: #fff; }
   0% { top: 105%; left: var(--x0); transform: rotate(var(--r0)) scale(var(--s)); }
   100% { top: -15%; left: var(--x1); transform: rotate(var(--r1)) scale(var(--s)); }
 }
+
+/* E — closing MEANWHILE "during this talk" */
+.pv-end { display: flex; flex-direction: column; justify-content: center; gap: 3vh; min-height: 0; }
+.end-kicker { text-align: center; color: #ffd617; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; font-size: clamp(14px, calc(1.6 * var(--u)), 32px); }
+.meanwhile.mw-talk { padding: 3vh calc(2 * var(--u)); gap: 2vh calc(2 * var(--u)); border-width: 4px; }
+.mw-talk .mw-title { text-align: center; font-size: clamp(22px, calc(3.2 * var(--u)), 68px); }
+.mw-talk .mw-col { grid-template-columns: 1fr; grid-template-rows: none; justify-items: center; text-align: center; row-gap: 1vh; border-left: 0; border-top-width: 10px; border-top-style: solid; padding: 2vh 0 0; min-width: 0; }
+.mw-talk .mw-flag { grid-row: auto; font-size: clamp(44px, calc(6.5 * var(--u)), 140px); line-height: 1; }
+.mw-talk .mw-num { font-size: clamp(60px, calc(10 * var(--u)), 220px); }
+.mw-talk .mw-num.small { font-size: clamp(36px, calc(5.5 * var(--u)), 120px); }
+.mw-talk .mw-pair { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; }
+.mw-talk .mw-plus { font-size: clamp(24px, calc(3.5 * var(--u)), 76px); }
+.mw-talk .mw-unit { font-size: clamp(16px, calc(2 * var(--u)), 42px); }
+.mw-talk .mw-note { grid-column: auto; font-size: clamp(14px, calc(1.5 * var(--u)), 32px); }
+.end-foot { text-align: center; color: #bbb; font-style: italic; margin: 0; font-size: clamp(14px, calc(1.6 * var(--u)), 32px); }
+
+.lb-hack { text-align: center; background: #ffd617; color: #000; font-weight: 900; padding: .6vh 1vw; font-size: clamp(16px, calc(2 * var(--u)), 40px); }
+.lb-hack[hidden] { display: none; }
+.pv-qr .big-qr { --qr: max(120px, min(calc(100cqh - 24vh), calc(36 * var(--u)))); }
+.qr-price { margin: 0; max-width: calc(var(--qr) + 2.8vh); text-align: center; color: #ddd; font-style: italic; font-size: clamp(13px, calc(1.25 * var(--u)), 26px); }
+.pv-board ~ .meanwhile[hidden], .meanwhile[hidden] { display: none; }

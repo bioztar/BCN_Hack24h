@@ -11,7 +11,14 @@ export interface Stats {
   queue: number | null;
   applicantsToday: number | null;
   meanwhileToday: Meanwhile | null;
+  refusedToday: number | null;
+  totalEurToday: number | null;
+  totalJailMonthsToday: number | null;
 }
+
+/** `?event=` id of this hackathon (leaderboard + stats filter). */
+export const HACK_EVENT = "bcn-hack-24h";
+const ev = (event?: string | null) => (event ? `event=${encodeURIComponent(event)}` : "");
 
 /** `GET /api/live` (requested from server-v2; optional): the case the room should watch. */
 export interface LiveCase {
@@ -32,11 +39,11 @@ export type Maybe<T> = T | "missing";
 export interface LiveApi {
   readonly mock: boolean;
   personas(): Promise<Persona[]>;
-  leaderboard(sort: BoardSort | "recent", limit: number): Promise<Maybe<LeaderboardEntry[]>>;
+  leaderboard(sort: BoardSort | "recent", limit: number, event?: string | null): Promise<Maybe<LeaderboardEntry[]>>;
   /** Runs until `signal` aborts, reconnecting on drop. */
   leaderboardStream(onEntry: (e: LeaderboardEntry) => void, signal: AbortSignal): Promise<void>;
   wall(onEntry: (e: WallEntry) => void, signal: AbortSignal): Promise<void>;
-  stats(): Promise<Maybe<Stats>>;
+  stats(event?: string | null): Promise<Maybe<Stats>>;
   live(): Promise<Maybe<LiveCase | null>>;
   /** One round's events; resolves when the server closes the stream. Rejects with status on HTTP errors. */
   caseStream(caseId: string, onEvent: (e: AnyEvent) => void, signal: AbortSignal): Promise<void>;
@@ -66,7 +73,7 @@ const nn = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 
 export function toStats(raw: unknown): Stats | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  return { queue: nn(r.queue), applicantsToday: nn(r.applicantsToday), meanwhileToday: toMeanwhile(r.meanwhileToday) };
+  return { queue: nn(r.queue), applicantsToday: nn(r.applicantsToday), meanwhileToday: toMeanwhile(r.meanwhileToday), refusedToday: nn(r.refusedToday), totalEurToday: nn(r.totalEurToday), totalJailMonthsToday: nn(r.totalJailMonthsToday) };
 }
 
 export function toLive(raw: unknown): LiveCase | null {
@@ -123,8 +130,8 @@ export function httpLiveApi(base = ""): LiveApi {
       const r = await getJson<Persona[]>(`${base}/api/personas`);
       return Array.isArray(r) ? r : [];
     },
-    async leaderboard(sort, limit) {
-      const r = await getJson<{ entries?: unknown[] }>(`${base}/api/leaderboard?sort=${sort}&limit=${limit}`);
+    async leaderboard(sort, limit, event) {
+      const r = await getJson<{ entries?: unknown[] }>(`${base}/api/leaderboard?sort=${sort}&limit=${limit}${event ? `&${ev(event)}` : ""}`);
       if (r === "missing") return r;
       return (r?.entries ?? []).map(toEntry).filter((e): e is LeaderboardEntry => !!e);
     },
@@ -136,8 +143,8 @@ export function httpLiveApi(base = ""): LiveApi {
         (d) => (Array.isArray(d) ? d : [d]).forEach((e) => e && typeof e.speaker === "string" && typeof e.text === "string" && onEntry(e as WallEntry)),
         signal,
       ),
-    async stats() {
-      const r = await getJson(`${base}/api/stats`);
+    async stats(event) {
+      const r = await getJson(`${base}/api/stats${event ? `?${ev(event)}` : ""}`);
       return r === "missing" ? r : (toStats(r) ?? "missing");
     },
     async live() {

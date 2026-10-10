@@ -55,6 +55,43 @@ export function dayMeanwhile(now: Date): Meanwhile {
   };
 }
 
+/** Per-second rates behind the day total; defaults = the server's average rates (meanwhile.ts). */
+export interface MeanwhileRates {
+  china: number;
+  us: number;
+  regulations: number;
+  forms: number;
+}
+
+export const DEFAULT_RATES: MeanwhileRates = { china: 1 / 17.5, us: 1 / 73, regulations: 1 / 8.8, forms: 1.74 };
+
+/** Rates from `/api/stats` meanwhileToday (counts since 00:00 Brussels); too early in the day → defaults. */
+export function ratesFrom(day: Meanwhile | null): MeanwhileRates {
+  if (!day || day.elapsedSec < 600) return DEFAULT_RATES;
+  const t = day.elapsedSec;
+  const r = { china: Math.max(0, day.china.models - 1) / t, us: day.us.models / t, regulations: Math.max(0, day.eu.regulations - 2) / t, forms: Math.max(0, day.eu.forms - 5) / t };
+  return Object.values(r).every((v) => Number.isFinite(v) && v > 0) ? r : DEFAULT_RATES;
+}
+
+const TALK_NOTES = {
+  china: ["one of them is already summarising this talk", "none of them filed Form EU-REG-1", "one of them achieved superintelligence during the Q&A"],
+  us: ["and raised more than this room is worth", "each with its own seed round", "and a lobbyist booked the next slot"],
+  eu: ["all of them apply to this talk", "available in 24 languages, none of them yours", "a consultation on this talk opens in 2029"],
+};
+
+/** "During this talk": the rates applied to the seconds since the talk started. */
+export function talkMeanwhile(sec: number, r: MeanwhileRates): Meanwhile {
+  const t = Math.max(0, Math.floor(sec));
+  const k = Math.floor(t / 20);
+  const pick = (l: string[], o: number) => l[(k + o) % l.length]!;
+  return {
+    elapsedSec: t,
+    china: { models: Math.floor(t * r.china), note: pick(TALK_NOTES.china, 0) },
+    us: { models: Math.floor(t * r.us), note: pick(TALK_NOTES.us, 1) },
+    eu: { regulations: Math.floor(t * r.regulations), forms: Math.floor(t * r.forms), note: pick(TALK_NOTES.eu, 2) },
+  };
+}
+
 export function elapsedText(sec: number): string {
   const t = Math.max(0, Math.floor(sec));
   if (t >= 3600) return `${Math.floor(t / 3600)} h ${Math.floor((t % 3600) / 60)} min`;

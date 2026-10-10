@@ -5,7 +5,7 @@ import { speak, unlockAudio } from "../stage/sfx";
 import { pushCaption, sameDay, toEntry, upsert, type Caption } from "../live/board";
 import { emptyLive, liveReduce, type LiveState } from "../live/case";
 import { dayMeanwhile } from "../live/meanwhile";
-import { HttpStatusError, type AnyEvent, type LiveApi, type Stats } from "../live/api";
+import { HACK_EVENT, HttpStatusError, type AnyEvent, type LiveApi, type Stats } from "../live/api";
 
 /** How long the stage stays on a case that sits in "awaiting" before following a newer one. */
 const AWAIT_SWITCH_MS = 45_000;
@@ -17,6 +17,10 @@ const LATE_AUDIO_MS = 3000;
  */
 export class Hub {
   entries: LeaderboardEntry[] = [];
+  /** B: the leaderboard shows only this hackathon (`?event=`); the server ignoring the param → everything. */
+  event: string | null = null;
+  eventEntries: LeaderboardEntry[] = [];
+  eventStats: Stats | null = null;
   captions: Caption[] = [];
   personas: Persona[] = [];
   stats: Stats | null = null;
@@ -34,6 +38,8 @@ export class Hub {
   private readonly seq = new Sequencer<{ caseId: string; e: AnyEvent }>((j, cur) => this.apply(j, cur));
   private readonly late = new LateAudio();
   private awaitingSince = 0;
+  /** Line events queued but not yet shown (express streams land faster than reading time). */
+  private pendingLines = 0;
   private lineEnd: (() => void) | null = null;
   private readonly playLine = makeLinePlayer({
     createAudio: (url) => new Audio(url),
@@ -82,6 +88,36 @@ export class Hub {
     this.emit("live");
   }
 
+  get boardEntries(): LeaderboardEntry[] {
+    return this.event ? this.eventEntries : this.entries;
+  }
+
+  toggleEvent(): void {
+    this.event = this.event ? null : HACK_EVENT;
+    this.eventEntries = this.event ? this.entries.slice() : [];
+    this.emit("board");
+    if (this.event) void this.loadEvent(this.event);
+  }
+
+  private async loadEvent(event: string) {
+    try {
+      const [fines, jail, stats] = await Promise.all([this.api.leaderboard("fines", 50, event), this.api.leaderboard("jail", 50, event), this.api.stats(event)]);
+      if (this.event !== event) return;
+      if (fines !== "missing" && jail !== "missing") {
+        let list: LeaderboardEntry[] = [];
+        for (const raw of [...fines, ...jail]) {
+          const e = toEntry(raw);
+          if (e) list = upsert(list, e);
+        }
+        this.eventEntries = list;
+      }
+      this.eventStats = stats === "missing" ? null : stats;
+      this.emit("board");
+    } catch (err) {
+      console.warn("[presenter] event board", err);
+    }
+  }
+
   togglePin(): void {
     this.pinned = this.pinned ? null : this.live.caseId;
     this.emit("live");
@@ -121,6 +157,7 @@ export class Hub {
     if (!e) return;
     const isNew = !this.entries.some((x) => x.caseId === e.caseId);
     this.entries = upsert(this.entries, e);
+    if (this.event && live) this.eventEntries = upsert(this.eventEntries, e);
     if (live && isNew) this.fresh.add(e.caseId);
     this.emit("board");
   }
@@ -140,6 +177,7 @@ export class Hub {
         this.statsMissing = s === "missing";
         this.stats = s === "missing" ? null : s;
         this.emit("stats");
+        if (this.event) void this.loadEvent(this.event);
       } catch {
         /* keep the last value */
       }
@@ -148,11 +186,11 @@ export class Hub {
   }
 
   /** Which case to show: `?case=` pin → `GET /api/live` → newest leaderboard entry. */
-  private async target(): Promise<{ caseId: string; ticket: number | null; startupName: string | null } | null> {
+  private async target(): Promise<{ caseId: string; ticket: number | null; startupName: string | null; inProgress?: boolean } | null> {
     if (this.pinned) return { caseId: this.pinned, ticket: null, startupName: null };
     try {
       const l = await this.api.live();
-      if (l !== "missing") return l;
+      if (l !== "missing") return l && { ...l, inProgress: true };
     } catch {
       /* fall through */
     }
@@ -171,14 +209,26 @@ export class Hub {
       const t = await this.target();
       if (t && t.caseId !== this.live.caseId && (this.switchable() || this.pinned === t.caseId)) {
         this.seq.clear();
+        this.pendingLines = 0;
         this.lineEnd?.();
         this.live = emptyLive(t.caseId, t.ticket, t.startupName);
+        this.emit("live");
+      } else if (t?.inProgress && t.caseId === this.live.caseId && this.live.notice) {
+        // express appeal: the decided case is live again → follow its appeal round to the new verdict
+        this.live = { ...this.live, notice: null, awaiting: null, error: null };
         this.emit("live");
       }
       const id = this.live.caseId;
       if (id && !this.live.notice) {
         try {
-          await this.api.caseStream(id, (e) => this.seq.enqueue({ caseId: id, e }), this.ac.signal);
+          await this.api.caseStream(
+            id,
+            (e) => {
+              if (e.type === "line") this.pendingLines++;
+              this.seq.enqueue({ caseId: id, e });
+            },
+            this.ac.signal,
+          );
         } catch (err) {
           if (err instanceof HttpStatusError && err.status === 404 && this.live.caseId === id) {
             this.live = { ...this.live, error: "File not found. It has been lost, as is customary." };
@@ -204,6 +254,7 @@ export class Hub {
   }
 
   private async apply(j: { caseId: string; e: AnyEvent }, isCurrent: () => boolean): Promise<void> {
+    if (j.e.type === "line") this.pendingLines = Math.max(0, this.pendingLines - 1);
     if (j.caseId !== this.live.caseId || !isCurrent()) return;
     const e = j.e;
     if (e.type === "audio") this.late.deliver(e.id, e.audioUrl);
@@ -217,14 +268,14 @@ export class Hub {
     if (e.type !== "line") return;
     this.addCaption(e.text);
     // joined late / replay: catch up quickly instead of reading the whole backlog aloud
-    if (this.seq.size > 4) return void (await sleep(250));
+    if (this.pendingLines > 3) return void (await sleep(250));
     this.speaking = true;
     this.emit("live");
     try {
       if (this.sound) {
         const audioUrl = e.audioUrl ?? (await this.late.wait(e.id, LATE_AUDIO_MS, sleep));
         await this.playLine({ text: e.text, audioUrl, speaker: e.speaker });
-      } else await this.hold(readingTimeMs(e.text));
+      } else await this.hold(this.pendingLines > 0 ? Math.min(readingTimeMs(e.text), 2500) : readingTimeMs(e.text));
     } finally {
       this.speaking = false;
       this.emit("live");

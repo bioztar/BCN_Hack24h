@@ -2,7 +2,7 @@ import "./styles.css";
 import { FIXED_PAIRS, httpApi, pairName, type Pair } from "./api";
 import type { Persona, PersonaId } from "./contract";
 import { h } from "./dom";
-import { MOCK, SKIP_INTRO } from "./env";
+import { EXPRESS, MOCK, SKIP_INTRO } from "./env";
 import { MOCK_PERSONAS, mockApi } from "./mock";
 import { cookieBanner } from "./ui/banner";
 import { chrome } from "./ui/chrome";
@@ -43,7 +43,7 @@ async function main() {
   for (;;) {
     const sub = await submitScreen(root, api);
     try {
-      const kase = await api.createCase(sub, pair.officers);
+      const kase = await api.createCase(sub, pair.officers, EXPRESS ? "express" : undefined);
       // the queue number is the server's case ticket, so the ticket comes after filing
       if (!SKIP_INTRO) await queueTicket(root, officers, name, kase.ticket);
       hearing(root, api, kase, officers, name, sub);
