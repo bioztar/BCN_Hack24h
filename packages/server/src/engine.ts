@@ -49,6 +49,8 @@ export interface CaseState {
   applicantId?: string;
   /** v2: ms epoch the Meanwhile clock starts from (applicant registration, else case creation). */
   startedAt?: number;
+  /** v2: ms epoch the case was created (stage feed `GET /api/live`). */
+  createdAt?: number;
   /** v2: the fines meter; totals are monotonic. */
   meter?: FineMeter;
   /** v2, tier 5: the final Meanwhile numbers the closing line and the Notice both state. */
