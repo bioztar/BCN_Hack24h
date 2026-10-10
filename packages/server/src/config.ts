@@ -83,7 +83,7 @@ export function slngConfig(): SlngConfig {
   return {
     apiKey: requireEnv("SLNG_API_KEY"),
     baseUrl: process.env.SLNG_BASE_URL || "https://eu-west.api.slng.ai",
-    timeoutMs: positive("SLNG_TTS_TIMEOUT_MS", 5000),
+    timeoutMs: positive("SLNG_TTS_TIMEOUT_MS", 12000),
     sttModel: process.env.SLNG_STT_MODEL || "deepgram/nova:3",
     sttLanguage: process.env.SLNG_STT_LANGUAGE || "en",
     sttTimeoutMs: positive("SLNG_STT_TIMEOUT_MS", 15000),
