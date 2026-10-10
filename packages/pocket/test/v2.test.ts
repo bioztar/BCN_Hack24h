@@ -12,7 +12,7 @@ import { initialState, reduce } from "../src/reducer";
 import { FineSync, Timeline } from "../src/timeline";
 import { SseParser, toRoastEvent } from "../src/sse";
 import { MELTDOWN_EUR, type FineEvent, type LeaderboardEntry, type Notice, type NoticeV2, type Persona, type Provision, type Submission } from "../src/types";
-import { isNoticeV2, toNoticeV2 } from "../src/verdict";
+import { isNoticeV2, toNoticeV2, turnoverLine } from "../src/verdict";
 
 const prov = (id: string, label: string): Provision => ({ id, label, title: label, url: "https://eur-lex.europa.eu/" });
 const gdpr = prov("gdpr-5", "GDPR Art. 5");
@@ -252,6 +252,15 @@ describe("mock v2 roast", () => {
 });
 
 describe("verdict + photo helpers", () => {
+  it("formats the server's turnover estimate and hides it when absent", () => {
+    expect(turnoverLine({ eur: 40_000_000, basis: "EU HR-tech TAM €8 bn × 0.5 %" })).toBe(
+      "Estimated turnover (by the Commission, generously): €40 M — EU HR-tech TAM €8 bn × 0.5 %",
+    );
+    expect(turnoverLine({ eur: 1_250_000, basis: "" })).toBe("Estimated turnover (by the Commission, generously): €1.3 M");
+    expect(turnoverLine(undefined)).toBeNull();
+    expect(turnoverLine({ eur: Number.NaN, basis: "x" })).toBeNull();
+  });
+
   const v1: Notice = { serial: "S", startup: "Acme", officers: ["formblatt", "annexe"], fineEur: 5, fineBasis: "", findings: [{ text: "bad", provision: gdpr }], issuedAt: "2026-10-10T12:00:00Z" };
   it("upgrades a v1 notice using the streamed totals", () => {
     const n = toNoticeV2(v1, { caseId: "c 1", fines: [fine("f", ai, 9e8)], totalEur: 9e8, totalJailMonths: 12, meltdown: false, meanwhile: null, startupName: "Faceify" });

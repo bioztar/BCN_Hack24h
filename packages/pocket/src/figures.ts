@@ -651,26 +651,3 @@ export function buildFigure(p: Persona): Rig {
       });
   }
 }
-
-/** Replaces the procedural look with a GLB when one exists; silently keeps procedural otherwise. */
-export async function tryLoadModel(rig: Rig, url: string): Promise<boolean> {
-  try {
-    const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
-    const gltf = await new GLTFLoader().loadAsync(url);
-    const model = gltf.scene;
-    const bb = new THREE.Box3().setFromObject(model);
-    const size = bb.getSize(new THREE.Vector3());
-    const s = 0.92 / Math.max(size.y, 1e-3);
-    model.scale.setScalar(s);
-    const c = bb.getCenter(new THREE.Vector3()).multiplyScalar(s);
-    model.position.sub(c);
-    model.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) o.castShadow = true;
-    });
-    for (const child of [...rig.inner.children]) child.visible = false;
-    rig.inner.add(model);
-    return true;
-  } catch {
-    return false;
-  }
-}

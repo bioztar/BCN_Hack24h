@@ -13,7 +13,7 @@ import { CAUSES, QUEUE_JOKES, formatPosition, positionAt } from "./queue";
 import { initialState, reduce, type Action, type LineEvent, type RoastState } from "./reducer";
 import { FineSync, Timeline } from "./timeline";
 import type { AnyRoastEvent, ApplicantAuth, FineEvent, LeaderboardEntry, LeaderboardSort, Meanwhile, NoticeV2, Persona, PersonaId, QueueTicket, Submission } from "./types";
-import { toNoticeV2 } from "./verdict";
+import { toNoticeV2, turnoverLine } from "./verdict";
 
 export interface FlowDeps { api: Api; sound: Sound; app: HTMLElement; appUrl: string; }
 
@@ -373,10 +373,6 @@ function pitchScreen(): void {
   repo.placeholder = "https://github.com/you/startup";
   repo.autocapitalize = "off";
   const repoField = field("Public GitHub repository", repo);
-  const rev = el("input");
-  rev.type = "number";
-  rev.inputMode = "numeric";
-  rev.placeholder = "Optional — we'll take a percentage";
   const err = el("p", "err");
   const go = el("button", "btn primary big", "Submit to the Commission");
   const set = (m: Mode) => {
@@ -396,10 +392,8 @@ function pitchScreen(): void {
   }, () => set("text"));
   text.addEventListener("input", () => (dictated = false));
   set("voice");
-  s.append(seg, voice, textField, repoField, field("Annual turnover (€)", rev), err, go);
+  s.append(seg, voice, textField, repoField, err, go);
   go.addEventListener("click", () => {
-    const revenueEur = rev.value ? Number(rev.value) : undefined;
-    const r = Number.isFinite(revenueEur) && revenueEur !== undefined && revenueEur >= 0 ? { revenueEur } : {};
     let sub: Submission;
     if (mode === "repo") {
       const url = repo.value.trim();
@@ -407,14 +401,14 @@ function pitchScreen(): void {
         err.textContent = "Not a GitHub repository. Format: github.com/owner/repo (public).";
         return;
       }
-      sub = { kind: "repo", repoUrl: url.startsWith("http") ? url : `https://${url}`, ...r };
+      sub = { kind: "repo", repoUrl: url.startsWith("http") ? url : `https://${url}` };
     } else {
       const t = text.value.trim();
       if (t.length < 3) {
         err.textContent = mode === "voice" ? "Record your pitch first (or type it)." : "A pitch requires words. At least three letters.";
         return;
       }
-      sub = { kind: dictated ? "dictation" : "text", text: t, ...r };
+      sub = { kind: dictated ? "dictation" : "text", text: t };
     }
     D.sound.unlock();
     void roastScreen(sub);
@@ -896,6 +890,8 @@ function verdictScreen(n: NoticeV2): void {
   const t2 = el("div");
   t2.append(el("b", "", formatJail(n.totalJailMonths)), el("small", "", "jail"));
   totals.append(t1, t2);
+  const tl = turnoverLine(n.turnoverEstimate);
+  const turnover = tl ? el("p", "v-turnover", tl) : null;
   const share = el("button", "btn primary big", "Share my refusal");
   const saveBadge = el("a", "btn ghost", "Save badge");
   const report = el("a", "btn ghost", "Report (PDF)");
@@ -938,7 +934,7 @@ function verdictScreen(n: NoticeV2): void {
   toBoard.addEventListener("click", () => showTab("board"));
   const foot = el("div", "v-actions");
   foot.append(toBoard, again);
-  s.append(center, badge, totals, meanwhileCard(mw), actions, list, foot);
+  s.append(center, badge, totals, ...(turnover ? [turnover] : []), meanwhileCard(mw), actions, list, foot);
   D.sound.stamp();
   buzz([60, 40, 60]);
 

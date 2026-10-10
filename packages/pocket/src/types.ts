@@ -91,6 +91,13 @@ export interface NoticeV2 extends Notice {
   reportUrl: string;
   badgeUrl: string;
   meanwhile?: Meanwhile;
+  turnoverEstimate?: TurnoverEstimate;
+}
+
+/** Server's market-based guess; the PWA never asks for turnover. */
+export interface TurnoverEstimate {
+  eur: number;
+  basis: string;
 }
 
 export interface LeaderboardEntry {

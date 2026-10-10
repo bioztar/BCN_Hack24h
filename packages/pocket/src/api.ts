@@ -11,6 +11,8 @@ import type {
   NoticeV2, Pair, Persona, PersonaId, QueueTicket, Submission,
 } from "./types";
 
+
+const MOCK_TURNOVER = { eur: 40_000_000, basis: "EU HR-tech TAM €8 bn × 0.5 %" };
 export interface Api {
   readonly mock: boolean;
   personas(): Promise<Persona[]>;
@@ -257,7 +259,7 @@ export class MockApi implements Api {
     await pumpSse(body, onEvent);
   }
   private async finishVerdict(c: MockCase, n: NoticeV2, mw: ReturnType<typeof estimateMeanwhile>): Promise<AnyRoastEvent> {
-    const notice: NoticeV2 = { ...n, meanwhile: mw };
+    const notice: NoticeV2 = { ...n, meanwhile: mw, turnoverEstimate: n.turnoverEstimate ?? MOCK_TURNOVER };
     try {
       const badge = await drawBadge(notice, c.applicant?.photo ?? null);
       notice.badgeUrl = URL.createObjectURL(badge);
