@@ -5,12 +5,15 @@ export const HIT_POINTS = 100;
 /** Combo multiplier cap (streak keeps counting for "best combo"). */
 export const COMBO_CAP = 10;
 export const MISTRAL_PENALTY = -500;
+/** Escapes are not penalised before this point (transition period) — first-timers stay positive. */
+export const ESCAPE_GRACE_MS = 8_000;
 export const ESCAPE_PENALTY = -25;
 
 export type GameEvent =
   | "hit" // stamped a non-EU model
   | "mistral" // stamped the only European one
   | "escape" // a non-EU model got away
+  | "escape_grace" // got away during the transition period: no penalty, combo still resets
   | "spared" // Mistral left alone (correct)
   | "miss"; // stamped an empty hole
 
@@ -49,6 +52,8 @@ export function score(t: Tally, ev: GameEvent): Scored {
     }
     case "mistral":
       return { tally: { ...t, score: t.score + MISTRAL_PENALTY, mistralHits: t.mistralHits + 1, streak: 0 }, points: MISTRAL_PENALTY, combo: 0 };
+    case "escape_grace":
+      return { tally: { ...t, escapes: t.escapes + 1, streak: 0 }, points: 0, combo: 0 };
     case "escape":
       return { tally: { ...t, score: t.score + ESCAPE_PENALTY, escapes: t.escapes + 1, streak: 0 }, points: ESCAPE_PENALTY, combo: 0 };
     case "miss":

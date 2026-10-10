@@ -86,3 +86,9 @@ body.embed .stage > .fine-print { display: none; }
   .hud-block b { font-size: 32px; }
   .card { max-width: 460px; }
 }
+
+/* Mistral must read as "ours" at a glance: gold star ring, EU tag, warm halo. */
+.hole.eu.up { box-shadow: 0 0 0 0.9cqw var(--gold), 0 0 6cqw 1cqw rgba(255, 204, 0, 0.75), 0 6px 0 #00164a; }
+.hole.eu .tile { background: radial-gradient(circle at 50% 35%, #ff8a3d 0%, var(--bg) 70%); box-shadow: inset 0 0 0 2.2cqw var(--gold), inset 0 0 0 3cqw #fff; }
+.hole.eu .tile::after { content: "🇪🇺 MADE IN EU"; position: absolute; bottom: 9%; left: 50%; transform: translateX(-50%); white-space: nowrap; font: bold 5.4cqw Arial; color: var(--eu); background: var(--gold); padding: 0.6cqw 2cqw; border-radius: 2cqw; }
+.hole.eu .tile small { display: none; }

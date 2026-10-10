@@ -1,7 +1,7 @@
 /** One 45 s round on a 3×3 DOM board. Transforms + WAAPI only, so it stays at 60 fps on a phone. */
 import { ModelPicker, type Model } from "../core/models";
 import { pick, rngFor, type Rng } from "../core/rng";
-import { HOLES, ROUND_MS, STAMP_WORDS, newTally, score, type GameEvent, type Tally } from "../core/rules";
+import { ESCAPE_GRACE_MS, HOLES, ROUND_MS, STAMP_WORDS, newTally, score, type GameEvent, type Tally } from "../core/rules";
 import { Spawner } from "../core/scheduler";
 import type { Sfx } from "../shared/audio";
 import { vibrate } from "../shared/audio";
@@ -151,8 +151,9 @@ export class Round {
           this.apply("spared");
           this.floatText(h, "Approved ✓", "ok");
         } else {
-          const pts = this.apply("escape");
-          this.floatText(h, `${pts} escaped into the single market`, "bad small");
+          const grace = elapsed < ESCAPE_GRACE_MS;
+          const pts = this.apply(grace ? "escape_grace" : "escape");
+          this.floatText(h, grace ? "Escaped — transition period, no fine" : `${pts} escaped into the single market`, "bad small");
           this.sfx.escape();
         }
       } else if (p.state === "hit" && elapsed - p.born >= HIT_HOLD_MS) {

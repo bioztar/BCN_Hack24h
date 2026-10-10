@@ -2,7 +2,7 @@
   "_note": "Weights ≈ share of real model releases. Names, makers, flags and colours only — no logos. Mistral is the only EU model (≈ 3–5 % of pops with the one-per-round guarantee).",
   "models": [
     { "id": "deepseek", "name": "DeepSeek", "maker": "DeepSeek", "country": "CN", "flag": "🇨🇳", "bg": "#4d6bfe", "fg": "#ffffff", "weight": 9 },
-    { "id": "qwen", "name": "Qwen", "maker": "Alibaba", "country": "CN", "flag": "🇨🇳", "bg": "#615ced", "fg": "#ffffff", "weight": 10 },
+    { "id": "qwen", "name": "Qwen", "maker": "Alibaba", "country": "CN", "flag": "🇨🇳", "bg": "#615ced", "fg": "#ffffff", "weight": 9 },
     { "id": "kimi", "name": "Kimi", "maker": "Moonshot AI", "country": "CN", "flag": "🇨🇳", "bg": "#16191e", "fg": "#ffffff", "weight": 6 },
     { "id": "glm", "name": "GLM", "maker": "Zhipu AI", "country": "CN", "flag": "🇨🇳", "bg": "#2d5bff", "fg": "#ffffff", "weight": 6 },
     { "id": "minimax", "name": "MiniMax", "maker": "MiniMax", "country": "CN", "flag": "🇨🇳", "bg": "#e2167e", "fg": "#ffffff", "weight": 5 },
@@ -11,13 +11,13 @@
     { "id": "hunyuan", "name": "Hunyuan", "maker": "Tencent", "country": "CN", "flag": "🇨🇳", "bg": "#0a7cff", "fg": "#ffffff", "weight": 4 },
     { "id": "yi", "name": "Yi", "maker": "01.AI", "country": "CN", "flag": "🇨🇳", "bg": "#1b9e5a", "fg": "#ffffff", "weight": 3 },
     { "id": "gpt", "name": "GPT", "maker": "OpenAI", "country": "US", "flag": "🇺🇸", "bg": "#10a37f", "fg": "#ffffff", "weight": 9 },
-    { "id": "claude", "name": "Claude", "maker": "Anthropic", "country": "US", "flag": "🇺🇸", "bg": "#d97757", "fg": "#ffffff", "weight": 8 },
+    { "id": "claude", "name": "Claude", "maker": "Anthropic", "country": "US", "flag": "🇺🇸", "bg": "#f0eee6", "fg": "#191919", "weight": 8 },
     { "id": "gemini", "name": "Gemini", "maker": "Google", "country": "US", "flag": "🇺🇸", "bg": "#4b7bf5", "fg": "#ffffff", "weight": 8 },
     { "id": "llama", "name": "Llama", "maker": "Meta", "country": "US", "flag": "🇺🇸", "bg": "#0866ff", "fg": "#ffffff", "weight": 7 },
     { "id": "grok", "name": "Grok", "maker": "xAI", "country": "US", "flag": "🇺🇸", "bg": "#000000", "fg": "#ffffff", "weight": 5 },
     { "id": "phi", "name": "Phi", "maker": "Microsoft", "country": "US", "flag": "🇺🇸", "bg": "#5e5e5e", "fg": "#ffffff", "weight": 3 },
-    { "id": "nova", "name": "Nova", "maker": "Amazon", "country": "US", "flag": "🇺🇸", "bg": "#ff9900", "fg": "#111111", "weight": 3 },
+    { "id": "nova", "name": "Nova", "maker": "Amazon", "country": "US", "flag": "🇺🇸", "bg": "#232f3e", "fg": "#ffffff", "weight": 3 },
     { "id": "command", "name": "Command", "maker": "Cohere", "country": "CA", "flag": "🇨🇦", "bg": "#39594d", "fg": "#ffffff", "weight": 2 },
-    { "id": "mistral", "name": "Mistral", "maker": "Mistral AI", "country": "FR", "flag": "🇫🇷", "bg": "#fa520f", "fg": "#ffffff", "weight": 3, "eu": true }
+    { "id": "mistral", "name": "Mistral", "maker": "Mistral AI", "country": "FR", "flag": "🇫🇷", "bg": "#fa520f", "fg": "#ffffff", "weight": 4, "eu": true }
   ]
 }

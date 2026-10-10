@@ -54,8 +54,8 @@ app.innerHTML = `
     <p class="mission">Your mission: protect the single market. Stamp every non-European model. <b>Do NOT stamp Mistral.</b></p>
     <ul class="rules">
       <li><b>+100 × combo</b> per non-EU model stamped</li>
-      <li><b>−25</b> if one escapes into the single market</li>
-      <li><b>−500</b> for stamping Mistral (the only one we had)</li>
+      <li><b>−25</b> if one escapes into the single market (fines start after the 8-second transition period)</li>
+      <li><b>−500</b> for stamping Mistral 🇪🇺 — gold ring, "MADE IN EU". The only one we had.</li>
     </ul>
     <label class="field">Name of officer <input id="name" maxlength="24" autocomplete="nickname" placeholder="Anonymous stagiaire" /></label>
     <button class="btn primary big" id="play">Begin procedure</button>

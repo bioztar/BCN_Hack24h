@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
+import modelsData from "../src/models.json" with { type: "json" };
+import type { Model } from "../src/core/models.js";
 import { COMBO_CAP, ESCAPE_PENALTY, MISTRAL_PENALTY, newTally, rankTitle, RANKS, score, type GameEvent, type Tally } from "../src/core/rules.js";
 
 const run = (evs: GameEvent[], t: Tally = newTally()) => evs.reduce((acc, e) => score(acc, e).tally, t);
+
+const POOL = (modelsData as { models: Model[] }).models;
 
 describe("scoring", () => {
   it("hit = +100 × combo, combo grows on consecutive hits", () => {
@@ -63,5 +67,18 @@ describe("rank titles", () => {
   });
   it("thresholds are strictly increasing", () => {
     for (let i = 1; i < RANKS.length; i++) expect(RANKS[i]!.min).toBeGreaterThan(RANKS[i - 1]!.min);
+  });
+  it("transition-period escape: no fine, combo still resets", () => {
+    const t = run(["hit", "hit", "escape_grace"]);
+    expect(t.score).toBe(300);
+    expect(t.escapes).toBe(1);
+    expect(t.streak).toBe(0);
+  });
+
+  it("Mistral pops about 1 in 25", () => {
+    const total = POOL.reduce((n, m) => n + m.weight, 0);
+    const eu = POOL.filter((m) => m.eu).reduce((n, m) => n + m.weight, 0);
+    expect(eu / total).toBeGreaterThanOrEqual(0.035);
+    expect(eu / total).toBeLessThanOrEqual(0.05);
   });
 });
