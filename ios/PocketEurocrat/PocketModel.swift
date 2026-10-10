@@ -191,7 +191,21 @@ final class PocketModel {
 
     // MARK: roast
 
-    func submit(_ text: String, dictated: Bool = false) async {
+    /// Pitch screen: stop the recording and return the transcript for editing (nil + errorMessage on failure).
+    func finishDictation() async -> String? {
+        guard phase == .listening else { return nil }
+        phase = .idle
+        guard let data = audio.stopRecording(), data.count > 2_000 else { errorMessage = "Too short — tap, pitch, tap again."; return nil }
+        do {
+            return try await backend.transcribe(audio: data, contentType: "audio/mp4")
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// `submission` (pitch screen) overrides the auto-classification of `text`; ignored for follow-up replies.
+    func submit(_ text: String, dictated: Bool = false, as submission: Submission? = nil) async {
         let pitch = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !pitch.isEmpty, phase == .idle || phase.isAwaiting else { return }
         wake()
@@ -203,7 +217,8 @@ final class PocketModel {
                 id = existing
             } else {
                 resetCase()
-                id = try await backend.createCase(Submission.classify(pitch, dictated: dictated),
+                if case .repo = submission?.base { puppet.setExpression(.outrage) }   // outraged while the repo is read
+                id = try await backend.createCase(submission ?? Submission.classify(pitch, dictated: dictated),
                                                   officers: pair.officers, applicantId: applicantId,
                                                   applicantToken: applicantToken).caseId
                 caseID = id

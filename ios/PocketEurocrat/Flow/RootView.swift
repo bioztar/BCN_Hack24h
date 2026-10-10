@@ -31,6 +31,7 @@ struct RootView: View {
         case .register: RegisterView(flow: flow)
         case .queue: QueueView(flow: flow)
         case .select: DuoSelectView(flow: flow)
+        case .pitch: PitchView(flow: flow)
         case .play: PocketView(model: flow.pocket, onApplyAgain: { flow.applyAgain() })
         }
     }

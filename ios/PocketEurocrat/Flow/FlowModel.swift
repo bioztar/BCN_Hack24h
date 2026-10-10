@@ -5,7 +5,7 @@ import UIKit
 @MainActor
 @Observable
 final class FlowModel {
-    enum Stage: Equatable { case register, queue, select, play }
+    enum Stage: Equatable { case register, queue, select, pitch, play }
 
     var stage: Stage = .register
     var startupName = ""
@@ -72,7 +72,13 @@ final class FlowModel {
         pocket.select(pair: pairID)
         pocket.applicantId = ticket?.applicantId
         pocket.applicantToken = ticket?.applicantToken
+        stage = .pitch
+    }
+
+    /// Pitch screen → roast screen; the chosen submission runs as the case's first pitch.
+    func submitPitch(_ submission: Submission, label: String, dictated: Bool = false) {
         stage = .play
+        Task { await pocket.submit(label, dictated: dictated, as: submission) }
     }
 
     func applyAgain() {

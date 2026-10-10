@@ -100,9 +100,10 @@ struct MockBackend: RoastBackend {
         let state = Self.store.lock.withLock { Self.store.cases[caseID] }
         var isRepo = false, wantsMeltdown = false
         if let sub = state?.pitch {
-            switch sub {
+            switch sub.base {
             case .repo: isRepo = true; wantsMeltdown = true
             case .text(let t), .dictation(let t): wantsMeltdown = t.lowercased().contains("meltdown")
+            case .turnover: break
             }
         }
         let applicant = state?.applicantId.flatMap { id in Self.store.lock.withLock { Self.store.applicants[id] } }

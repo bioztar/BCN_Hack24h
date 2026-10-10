@@ -17,6 +17,7 @@ struct PocketEurocratApp: App {
                 f.startupName = "48K"; f.founderName = "Pavel K."
                 Task { await f.register() }
             case "select": f.stage = .select
+            case "pitch": f.stage = .pitch
             case "play": f.stage = .play
             default: break
             }

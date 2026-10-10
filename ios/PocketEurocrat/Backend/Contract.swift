@@ -18,16 +18,25 @@ struct Provision: Codable, Hashable {
     let url: String
 }
 
-enum Submission {
+indirect enum Submission {
     case text(String)
     case dictation(String)
     case repo(String)
+    /// Same pitch plus the optional "Annual turnover (€)" the PWA asks for.
+    case turnover(Double, Submission)
+
+    /// The pitch itself, without the turnover wrapper.
+    var base: Submission {
+        if case .turnover(_, let s) = self { return s.base }
+        return self
+    }
 
     var json: [String: Any] {
         switch self {
         case .text(let t): return ["kind": "text", "text": t]
         case .dictation(let t): return ["kind": "dictation", "text": t]
         case .repo(let url): return ["kind": "repo", "repoUrl": url]
+        case .turnover(let eur, let s): return s.json.merging(["revenueEur": eur]) { $1 }
         }
     }
 
