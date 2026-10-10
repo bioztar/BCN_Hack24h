@@ -48,8 +48,10 @@ struct VerdictCard: View {
 
                 if canAppeal && !appealed { appealBlock }
 
-                Button("🔁 Pitch another startup", action: onApplyAgain)
-                    .buttonStyle(.borderedProminent).controlSize(.large)
+                Button(action: onApplyAgain) {
+                    Text("🆕 New startup idea").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.large)
 
                 fixes
 

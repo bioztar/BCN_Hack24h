@@ -245,6 +245,7 @@ final class PocketModel {
         } catch {
             whack.active = false
             phase = .idle
+            if Task.isCancelled || error is CancellationError { return }   // abandoned via "New startup"
             if applicantId != nil, (error as? LiveBackend.ServerError)?.status == 404 {
                 // Server forgot this applicant (data wipe): drop the ticket, back to Register.
                 onStaleApplicant?()
@@ -276,6 +277,19 @@ final class PocketModel {
         if phase == .roasting { phase = .idle }
     }
 
+    /// "New startup" while a case runs: silence the officers and drop every event still queued for them.
+    func abandon() {
+        epoch += 1
+        holdForQueue = false
+        audio.stopPlayback()
+        puppet.setSpeaker(nil)
+        puppet.extinguish()
+        phase = .idle
+    }
+
+    /// Bumped by `abandon()`; a running `consume` stops handling events from an older epoch.
+    @ObservationIgnored private var epoch = 0
+
     /// Stop the audit game (user tapped "Face the officers", or the round ended + 2.5 s).
     func closeWhack() { whack.active = false }
 
@@ -289,7 +303,8 @@ final class PocketModel {
     private func consume(_ stream: AsyncThrowingStream<RoastEvent, Error>) async throws {
         lateAudio = [:]
         let (queue, push) = AsyncStream.makeStream(of: RoastEvent.self)
-        let player = Task { for await event in queue { await handle(event) } }
+        let my = epoch
+        let player = Task { for await event in queue { guard my == epoch else { break }; await handle(event) } }
         do {
             for try await event in stream {
                 switch event {

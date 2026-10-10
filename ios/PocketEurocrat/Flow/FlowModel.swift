@@ -94,34 +94,32 @@ final class FlowModel {
         registeredAt = Date()
         pocket.holdForQueue = true
         stage = .queue
-        Task {
+        pitchTask = Task {
             await pocket.submit(label, dictated: dictated, as: submission)   // returns after the stream (or at once on error)
-            if stage == .queue {   // failed before the queue ended: back to the pitch (the alert says why)
+            if stage == .queue, !Task.isCancelled {   // failed before the queue ended: back to the pitch (the alert says why)
                 pocket.holdForQueue = false
                 stage = .pitch
             }
         }
     }
 
-    /// "Pitch another startup": re-register the same founder as a pivot ("Faceify (pivot 2)"), straight to the pitch
-    /// with the same officers (one case per applicant). Falls back to pitching anonymously if registering fails.
-    func pitchAgain() async {
-        let name = startupName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty, !busy else { return applyAgain() }
-        busy = true
-        defer { busy = false }
-        let pairID = pocket.pairID
+    @ObservationIgnored private var pitchTask: Task<Void, Never>?
+
+    /// Is there a file in progress that "New startup" would abandon (queue running / roast streaming)?
+    var hasFileInProgress: Bool { stage == .queue || (stage == .play && pocket.phase != .idle) }
+
+    /// "＋ New startup": abandon whatever runs, reset the case, back to Register with an EMPTY startup name
+    /// (founder + selfie stay prefilled; a fresh applicant is registered on submit).
+    func newStartup() {
+        pitchTask?.cancel()
+        pitchTask = nil
+        pocket.abandon()
         pocket.newApplication()
-        startupName = Self.pivotName(name)
-        let founder = founderName.trimmingCharacters(in: .whitespaces)
-        let input = ApplicantInput(startupName: startupName, founderName: founder.isEmpty ? "A. Nonymous" : founder,
-                                   oneLiner: nil, photo: photo.flatMap(Self.dataURL))
-        ticket = try? await backend.register(input)
-        pocket.select(pair: pairID)
-        pocket.applicantId = ticket?.applicantId
-        pocket.applicantToken = ticket?.applicantToken
-        skipResult = nil
-        stage = .pitch
+        startupName = ""
+        oneLiner = ""
+        ticket = nil; skipResult = nil; registeredAt = nil
+        errorMessage = nil
+        stage = .register
     }
 
     /// "Faceify" → "Faceify (pivot 2)" → "Faceify (pivot 3)", within the 60-char name limit.

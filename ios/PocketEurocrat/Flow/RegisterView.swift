@@ -50,6 +50,9 @@ struct RegisterView: View {
             .padding(.bottom, 40)
         }
         .scrollDismissesKeyboard(.interactively)
+        .onAppear {   // "New startup": founder + selfie are kept, the name is empty and ready
+            if flow.startupName.isEmpty, !flow.founderName.isEmpty || flow.photo != nil { focus = .startup }
+        }
         .alert("Hmm.", isPresented: .init(get: { flow.errorMessage != nil }, set: { if !$0 { flow.errorMessage = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(flow.errorMessage ?? "") }
