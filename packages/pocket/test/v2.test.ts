@@ -154,6 +154,19 @@ describe("queue", () => {
     expect(positionAt(10, 5, 0)).toBe(0);
     expect(formatPosition(1234567)).toBe("1,234,567");
   });
+  it("still shows visible motion on a short demo countdown (5-8s), never an instant drop to 0", () => {
+    // Regression: the original exponent (2.4) front-loaded the plunge so hard that on a
+    // short countdown it read as "jumped to 0" within the first second — Vitaly caught this
+    // live, 2026-10-10. At the 20% mark it must still be well above the floor.
+    const start = 3_000_000;
+    const countdown = 6;
+    const at20pct = positionAt(start, countdown * 0.2, countdown);
+    expect(at20pct).toBeGreaterThan(start * 0.3);
+    const at50pct = positionAt(start, countdown * 0.5, countdown);
+    expect(at50pct).toBeGreaterThan(start * 0.05);
+    expect(at50pct).toBeLessThan(at20pct);
+    expect(positionAt(start, countdown, countdown)).toBe(0);
+  });
   it("offers every contract cause once", () => {
     const ids = CAUSES.map((c) => c.id);
     expect(new Set(ids).size).toBe(10);

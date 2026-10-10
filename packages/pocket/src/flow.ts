@@ -271,7 +271,7 @@ function queueScreen(t: QueueTicket): void {
   for (const c of CAUSES) {
     const b = el("button", "tile");
     b.style.setProperty("--c", c.color);
-    b.append(el("i", "", c.emoji), el("span", "", c.label));
+    b.append(el("i", "", c.emoji), el("span", "", c.label), el("small", "", c.desc));
     tileArt(b, c.id);
     b.addEventListener("click", async () => {
       if (skipped) return;
