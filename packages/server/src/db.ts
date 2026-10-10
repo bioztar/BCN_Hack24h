@@ -62,7 +62,9 @@ export function openDb(file: string): Db {
   db.exec(SCHEMA);
   // Additive column migrations for databases created before the applicant-token amendment.
   const cols = new Set((db.prepare("PRAGMA table_info(applicants)").all() as { name: string }[]).map((c) => c.name));
-  for (const c of ["token_hash", "photo_id", "case_id"]) if (!cols.has(c)) db.exec(`ALTER TABLE applicants ADD COLUMN ${c} TEXT`);
+  for (const c of ["token_hash", "photo_id", "case_id", "event"]) if (!cols.has(c)) db.exec(`ALTER TABLE applicants ADD COLUMN ${c} TEXT`);
+  const lb = new Set((db.prepare("PRAGMA table_info(leaderboard)").all() as { name: string }[]).map((c) => c.name));
+  if (!lb.has("event")) db.exec("ALTER TABLE leaderboard ADD COLUMN event TEXT");
   return db;
 }
 

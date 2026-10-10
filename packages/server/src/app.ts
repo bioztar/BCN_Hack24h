@@ -5,7 +5,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance, type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
 import { MELTDOWN_EUR, MELTDOWN_JAIL_MONTHS, TIER_NAMES, type ApplicantInput, type Case, type LeaderboardSort, type NoticeV2, type PersonaId, type RoastEvent, type RoastEventV2, type Submission, type Tier } from "@dg-roast/shared";
-import { ApplicantStore, InputError } from "./applicants.js";
+import { ApplicantStore, InputError, eventSlug } from "./applicants.js";
 import { addFine, emptyMeter, extractRevenueHeuristic, provisionFine, topLaws } from "./fine.js";
 import { expressModeEnabled } from "./config.js";
 import { fallbackTurnover, type TurnoverEstimate } from "./turnover.js";
@@ -214,13 +214,25 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   });
 
   // ── v2: leaderboard ──
-  app.get<{ Querystring: { sort?: string; limit?: string; cursor?: string } }>("/api/leaderboard", async (req, reply) => {
+  const eventQuery = (reply: FastifyReply, v: unknown): string | null | false => {
+    try {
+      return eventSlug(v);
+    } catch (err) {
+      if (err instanceof InputError) void fail(reply, 400, err.message);
+      else throw err;
+      return false;
+    }
+  };
+
+  app.get<{ Querystring: { sort?: string; limit?: string; cursor?: string; event?: string } }>("/api/leaderboard", async (req, reply) => {
     const sort = (req.query.sort ?? "fines") as LeaderboardSort;
     if (!SORTS.includes(sort)) return fail(reply, 400, "sort must be fines, jail or recent");
     const limit = req.query.limit === undefined ? 50 : Number(req.query.limit);
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) return fail(reply, 400, "limit must be an integer 1–200");
     if (req.query.cursor && !decodeCursor(req.query.cursor)) return fail(reply, 400, "invalid cursor");
-    return board.list(sort, limit, req.query.cursor || null);
+    const event = eventQuery(reply, req.query.event);
+    if (event === false) return reply;
+    return board.list(sort, limit, req.query.cursor || null, event);
   });
 
   app.get("/api/leaderboard/stream", async (_req, reply) => {
@@ -239,7 +251,11 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
   // ── v2 amendment: stage feeds ──
   app.get("/api/live", async () => stats.live());
-  app.get("/api/stats", async () => stats.snapshot());
+  app.get<{ Querystring: { event?: string } }>("/api/stats", async (req, reply) => {
+    const event = eventQuery(reply, req.query.event);
+    if (event === false) return reply;
+    return stats.snapshot(event);
+  });
   app.get("/api/stats/stream", async (_req, reply) => {
     reply.hijack();
     const sse = new Sse(reply.raw);
@@ -260,7 +276,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     return r;
   });
 
-  app.post<{ Body: { submission?: Submission; officers?: [PersonaId, PersonaId]; applicantId?: string; applicantToken?: string; mode?: unknown } }>("/api/case", async (req, reply) => {
+  app.post<{ Body: { submission?: Submission; officers?: [PersonaId, PersonaId]; applicantId?: string; applicantToken?: string; mode?: unknown; event?: unknown; silent?: unknown } }>("/api/case", async (req, reply) => {
     const sub = req.body?.submission;
     if (!sub || !["text", "dictation", "repo"].includes(sub.kind)) return fail(reply, 400, "submission.kind must be text, dictation or repo");
     if (sub.revenueEur !== undefined && (typeof sub.revenueEur !== "number" || !Number.isFinite(sub.revenueEur) || sub.revenueEur < 0)) return fail(reply, 400, "submission.revenueEur must be a non-negative number");
@@ -270,6 +286,9 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     const mode = req.body.mode;
     if (mode !== undefined && mode !== "staged" && mode !== "express") return fail(reply, 400, 'mode must be "staged" or "express"');
     if (mode === "express" && !(d.expressMode ?? expressModeEnabled())) return fail(reply, 400, "express mode is off on this server (EXPRESS_MODE)");
+    const event = eventQuery(reply, req.body.event);
+    if (event === false) return reply;
+    if (req.body.silent !== undefined && typeof req.body.silent !== "boolean") return fail(reply, 400, "silent must be a boolean");
     let officers = req.body.officers;
     if (officers !== undefined) {
       if (!Array.isArray(officers) || officers.length !== 2 || officers[0] === officers[1] || !officers.every((o) => d.roster.get(o))) return fail(reply, 400, "officers must be two distinct persona ids");
@@ -307,6 +326,9 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       }
     }
     if (mode === "express") state.mode = "express";
+    const tag = event ?? applicant?.event ?? null;
+    if (tag) state.event = tag;
+    if (req.body.silent === true) state.silent = true;
     // No revenue given (field or pitch): the Commission estimates it — never ask the applicant.
     if (sub.revenueEur === undefined && extractRevenueHeuristic(visitorTexts(state).join("\n")) === null) {
       state.estimateTurnover = true;
@@ -440,7 +462,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       const ttsBudget = state.round === 0 && n <= 2 ? (d.firstLinesTtsBudgetMs ?? 8000) : (d.ttsBudgetMs ?? 2500);
       const spec = d.roster.get(line.speaker)!;
       const lineTier = state.tier;
-      const render = d.audio.render(line.text, spec.voice, lineSeq++);
+      const render: Promise<string | null> = state.silent ? Promise.resolve(null) : d.audio.render(line.text, spec.voice, lineSeq++);
       const arrived = Date.now();
       const provisions = line.provisions.map((pid) => d.corpus.provision(pid)).filter((p): p is NonNullable<typeof p> => Boolean(p));
       state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
@@ -548,6 +570,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
             { caseId: state.caseId, startupName: notice.startupName, founderName: notice.founderName, oneLiner: a?.oneLiner ?? null, photoUrl: a?.photoId ? `/api/photos/${a.photoId}.jpg` : null, totalEur: meter.totalEur, totalJailMonths: meter.totalJailMonths, meltdown: meter.meltdown, topLaws: topLaws(meter), issuedAt: notice.issuedAt },
             notice.findings,
             state.applicantId ?? null,
+            state.event ?? null,
           );
         } catch (err) {
           app.log.error({ err }, "leaderboard insert failed");

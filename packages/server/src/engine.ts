@@ -58,6 +58,9 @@ export interface CaseState {
   meanwhile?: Meanwhile;
   /** "express": one stream runs tiers 1→5 and the verdict, no replies. */
   mode?: "express";
+  /** Pre-roast amendment: event slug (leaderboard/stats filter) and no-TTS batch cases. */
+  event?: string;
+  silent?: boolean;
   /** Express: the one appeal has been lodged. */
   appealed?: boolean;
   /** No revenue given (field or pitch): the Commission estimates turnover; cached here once chosen. */
