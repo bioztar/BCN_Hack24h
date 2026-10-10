@@ -11,7 +11,7 @@ import { NebiusLlm } from "./nebius.js";
 import { Roster } from "./personas.js";
 import { RateLimiter } from "./ratelimit.js";
 import { GitHubIntake } from "./repo.js";
-import { AudioCache, SlngStt, SlngTts } from "./voice.js";
+import { AudioCache, SlngStt, SlngTts, PRIORITY_IDLE } from "./voice.js";
 import { Wall } from "./wall.js";
 
 if (!process.env.NEBIUS_API_KEY) console.warn("NEBIUS_API_KEY is not set — officials will use canned lines only");
@@ -57,7 +57,7 @@ if (process.env.SLNG_API_KEY) {
   const worker = async () => {
     while (next < jobs.length) {
       const j = jobs[next++]!;
-      if (await audio.render(j.text, roster.get(j.speaker)!.voice)) ok++;
+      if (await audio.render(j.text, roster.get(j.speaker)!.voice, PRIORITY_IDLE)) ok++;
     }
   };
   void Promise.all([worker(), worker(), worker()]).then(() => console.log(`pre-rendered ${ok}/${jobs.length} canned lines`));
