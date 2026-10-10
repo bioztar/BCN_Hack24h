@@ -7,7 +7,7 @@ test.describe("stage /", () => {
   test("mock: cookie banner → ticket → allocation → text pitch → 5 rounds → Notice", async ({ page }) => {
     test.setTimeout(6 * 60_000);
     await watchStamps(page);
-    await fileCase(page, "?mock=1&speak=0");
+    await fileCase(page, "?play=1&mock=1&speak=0");
     await expect(page.locator(".mock-badge")).toBeVisible();
     await hearCase(page, 60_000);
   });
@@ -17,25 +17,28 @@ test.describe("stage /", () => {
     takeLiveCase(testInfo, "stage");
     test.setTimeout(5 * UI_ROUND_MS + 3 * 60_000);
     await watchStamps(page);
-    await fileCase(page, "");
+    await fileCase(page, "?play=1");
     await expect(page.locator(".mock-badge")).toHaveCount(0);
     await hearCase(page);
     await expect(page.getByRole("link", { name: /Get the real report/ }).first()).toHaveAttribute("href", /warden\.pro7ocol\.com\/analyze/);
   });
 
-  test("v2 presenter keys: Q shows the QR intro (→ /pocket/), L the leaderboard, C the live case", async ({ page }) => {
-    await page.goto("/?skip=intro");
-    await expect(page.getByRole("heading", { name: "Application for Refusal" })).toBeVisible({ timeout: 20_000 });
-    await page.locator("body").click({ position: { x: 5, y: 5 } });
+  test("v2 presenter keys: Q shows the QR intro (→ /pocket/), L the leaderboard, C the live case", async ({ page, consoleLog }) => {
+    await page.goto("/?mock=1&sound=0");
+    const screen = page.locator(".pv-screen");
+    const hasPresenter = await screen.isVisible({ timeout: 15_000 }).catch(() => false);
+    test.skip(!hasPresenter, "stage-v2 presenter not deployed yet (no .pv-screen at /)");
+    await page.mouse.click(5, 5);
     await page.keyboard.press("q");
-    const qr = page.locator('img[alt*="/pocket/"]');
-    const hasQr = await qr.first().isVisible({ timeout: 4_000 }).catch(() => false);
-    test.skip(!hasQr, "stage-v2 presenter keys not deployed yet (Q shows no /pocket/ QR)");
-    await expect(qr.first()).toHaveAttribute("alt", new RegExp(POCKET_URL.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")));
+    await expect(screen).toHaveAttribute("data-view", "qr");
+    await expect(screen.locator('img[alt^="QR code:"]').first()).toHaveAttribute("alt", new RegExp(`${POCKET_URL.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}`));
     await page.keyboard.press("l");
-    await expect(page.getByText(/leaderboard/i).first()).toBeVisible();
+    await expect(screen).toHaveAttribute("data-view", "board");
+    await expect(screen.locator(".lb-tabs, .lb-cols").first()).toBeVisible();
     await page.keyboard.press("c");
-    await expect(page.getByText(/leaderboard/i).first()).toBeHidden();
+    await expect(screen).toHaveAttribute("data-view", "case");
+    await expect(page).toHaveURL(/view=case/);
+    expect(consoleLog.errors(), "console errors").toEqual([]);
   });
 });
 
