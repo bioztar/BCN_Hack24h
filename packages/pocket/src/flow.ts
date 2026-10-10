@@ -478,6 +478,10 @@ class Officer {
   set(expr: string): void {
     if (this.burning || expr === this.expr) return;
     this.expr = expr;
+    // A visible "cut" on every expression change (no mouth animation).
+    this.root.classList.remove("cut");
+    void this.root.offsetWidth;
+    this.root.classList.add("cut");
     setImg(this.img, stillUrl(this.p, this.id, expr), () => {
       this.img.hidden = true;
       this.ini.hidden = false;
@@ -731,6 +735,7 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
     if (sync.apply(f)) meltdown();
   };
 
+  let cutN = 0;
   const sayLine = (line: LineEvent) => {
     const p = officers.get(line.speaker)?.p ?? personas.find((x) => x.id === line.speaker);
     bubble.replaceChildren(el("b", "", p?.name ?? line.speaker), document.createTextNode(line.text));
@@ -746,9 +751,10 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
       }
       bubble.append(pv);
     }
+    cutN++;
     officers.forEach((o, id) => {
       o.root.classList.toggle("talk", id === line.speaker);
-      o.set(id === line.speaker ? (line.stamp ? "stamping" : "smug") : (st.tier ?? 1) >= 4 ? "appalled" : "neutral");
+      o.set(id === line.speaker ? (line.stamp ? "stamping" : cutN % 2 ? "smug" : "appalled") : (st.tier ?? 1) >= 4 ? "appalled" : cutN % 3 === 0 ? "asleep" : "neutral");
     });
     if (line.stamp) D.sound.stamp();
   };
@@ -773,7 +779,8 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
           pb = D.sound.mumble(line.text, voiceFor(line.speaker));
         }
         speaking = pb;
-        await Promise.all([pb.done, sleep(Math.min(7000, 900 + line.text.length * 38))]);
+        // Subtitles are how the room follows the roast: hold each line long enough to read.
+        await Promise.all([pb.done, sleep(Math.min(9000, 1400 + line.text.length * 55))]);
         speaking = null;
         await sleep(300);
       }
@@ -800,6 +807,7 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
         break;
       case "tier":
         tierTag.textContent = `TIER ${e.tier}/5 · ${e.name.toUpperCase()}`;
+        officers.forEach((o) => o.set(e.tier >= 3 ? "appalled" : "stamping"));
         tierTag.classList.remove("show");
         void tierTag.offsetWidth;
         tierTag.classList.add("show");
@@ -1025,7 +1033,9 @@ function verdictScreen(n: NoticeV2, appealFrom?: AppealFrom): void {
   const row = el("div", "row");
   row.append(saveBadge, report);
   const actions = el("div", "v-actions");
-  actions.append(share, row);
+  const rank = el("button", "btn primary big rank", "🏆 See where you rank →");
+  rank.addEventListener("click", () => showTab("board"));
+  actions.append(rank, share, row);
 
   const list = el("div", "v-list");
   if (n.tldr.length) {

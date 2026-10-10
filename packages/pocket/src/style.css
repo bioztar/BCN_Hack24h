@@ -286,3 +286,11 @@ body.jolt .box { animation: jolt 0.25s; }
 .v-fixes .btn { width: 100%; }
 .v-money { margin: 4px 0 10px; font-size: 11px; line-height: 1.4; color: #667; text-align: center; }
 .v-money a { color: var(--eu); }
+
+/* Subtitles are the primary channel now (no mouth animation): big, high-contrast, held long enough to read. */
+.bubble { font-size: 19px; font-weight: 700; line-height: 1.32; color: #000; min-height: 96px; border-left: 6px solid var(--gold); }
+.bubble b { font-size: 13px; text-transform: uppercase; letter-spacing: .4px; }
+.subtitle { font-size: 20px; font-weight: 700; line-height: 1.3; color: #000; border-left-width: 6px; }
+.sub-who { font-size: 13px; }
+.officer.cut:not(.burning) img { animation: cut .3s ease-out; }
+@keyframes cut { from { transform: scale(1.12); filter: brightness(1.45); } }
