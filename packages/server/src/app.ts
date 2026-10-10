@@ -19,6 +19,7 @@ import { quotesVisitor } from "./visitor.js";
 import type { RateLimiter } from "./ratelimit.js";
 import { IntakeError, type GitHubIntake } from "./repo.js";
 import { Sse } from "./sse.js";
+import { StatsHub } from "./stats.js";
 import { AUDIO_TYPES, type AudioCache, type Stt } from "./voice.js";
 import type { Wall } from "./wall.js";
 import { registerReportRoutes } from "./report/routes.js";
@@ -110,6 +111,9 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   const now = d.now ?? Date.now;
   const applicants = new ApplicantStore(d.db, d.rand ?? Math.random, now);
   const board = new Leaderboard(d.db);
+  const stats = new StatsHub(d.db, now);
+  board.subscribe(() => stats.changed());
+  app.addHook("onClose", async () => stats.close());
   const reports = registerReportRoutes(app, {
     state: (id) => {
       const s = cases.get(id);
@@ -166,6 +170,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     if (limited(req, reply)) return reply;
     try {
       const { ticket } = await applicants.register(req.body);
+      stats.changed();
       return reply.code(201).send(ticket);
     } catch (err) {
       if (err instanceof InputError) return fail(reply, err.status, err.message);
@@ -216,6 +221,23 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     });
   });
 
+  // ── v2 amendment: stage feeds ──
+  app.get("/api/live", async () => stats.live());
+  app.get("/api/stats", async () => stats.snapshot());
+  app.get("/api/stats/stream", async (_req, reply) => {
+    reply.hijack();
+    const sse = new Sse(reply.raw);
+    sse.send("message", stats.snapshot());
+    const off = stats.subscribe((s) => sse.send("message", s));
+    const ping = setInterval(() => {
+      if (!sse.isClosed) reply.raw.write(":ping\n\n");
+    }, 15000);
+    reply.raw.on("close", () => {
+      off();
+      clearInterval(ping);
+    });
+  });
+
   app.get<{ Params: { caseId: string } }>("/api/leaderboard/:caseId", async (req, reply) => {
     const r = board.get(req.params.caseId);
     if (!r) return fail(reply, 404, "not on the leaderboard (yet)");
@@ -250,7 +272,8 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
     const submission: Submission = { kind: sub.kind, ...(sub.text ? { text: sub.text.trim() } : {}), ...(sub.repoUrl ? { repoUrl: sub.repoUrl.trim() } : {}), ...(sub.revenueEur !== undefined ? { revenueEur: sub.revenueEur } : {}) };
     const state: CaseState = { caseId: randomUUID(), ticket: nextCounter(d.db, "ticket", 4812), officers: [officers[0], officers[1]], submission, tier: 1, replies: [], lines: [], roundPending: true, round: 0, done: false };
-    state.startedAt = applicant ? applicant.createdAt : now();
+    state.createdAt = now();
+    state.startedAt = applicant ? applicant.createdAt : state.createdAt;
     if (applicant) state.applicantId = applicant.id;
     if (sub.kind === "repo") {
       try {
@@ -462,6 +485,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     let rt = runtimes.get(state.caseId);
     if (!rt) {
       rt = { events: [], done: false, bus: new EventEmitter() };
+      rt.bus.setMaxListeners(1000); // the stage and the audience read the same case stream
       runtimes.set(state.caseId, rt);
       if (state.roundPending) track(runRound(state, rt));
       else {
