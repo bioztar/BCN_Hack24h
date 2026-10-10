@@ -42,6 +42,10 @@ a.pv-nav-play:hover { background: #fff; }
 .qr-count-label { font-size: clamp(20px, calc(2.4 * var(--u)), 48px); color: #fff; }
 .qr-causes { margin-top: 2vh; }
 .qr-causes > small { font-size: clamp(13px, calc(1.2 * var(--u)), 22px); color: #9fb3e6; }
+.qr-laws { margin-top: 1.6vh; }
+.qr-laws > small { font-size: clamp(13px, calc(1.2 * var(--u)), 22px); color: #9fb3e6; display: block; margin-bottom: .6vh; }
+.qr-laws .laws-list { display: flex; flex-wrap: wrap; gap: .6vh calc(.6 * var(--u)); }
+.qr-laws .laws-list span { font-size: clamp(11px, calc(1 * var(--u)), 18px); color: #fff; background: #ffffff1a; border: 1px solid #ffffff33; padding: 2px calc(.7 * var(--u)); border-radius: 999px; }
 .tiles { display: flex; gap: calc(1 * var(--u)); margin-top: .6vh; padding: 4px 10px 10px 4px; }
 .cause-tile { margin: 0; width: min(calc(8.5 * var(--u)), 10.5vh, 13cqh); aspect-ratio: 3 / 4; background: var(--bg); color: var(--fg); border: 4px solid #fff; box-shadow: 6px 6px 0 #ffd617; overflow: hidden; transform: rotate(-2deg); }
 .cause-tile:nth-child(even) { transform: rotate(2deg); }

@@ -16,6 +16,19 @@ import { burningCandidates, causeTile, CAUSES, ensureHeatFilter, Fire, firstImag
 export const GAME_URL = "https://eurocrat.pro7ocol.com/game/";
 export type Dispose = () => void;
 
+/** Every startup is checked against the same 879-provision corpus, indexed from EUR-Lex plus the named standards. */
+const EU_LAW = ["AI Act", "GDPR", "DSA", "CRA", "DORA", "DMA", "Data Act", "NIS2", "eIDAS 2", "ePrivacy", "CSRD"];
+const STANDARDS = ["ISO/IEC 27001", "NIST AI RMF", "ISO/IEC 42001", "SOC 2", "OWASP LLM Top 10"];
+
+function qrLaws(): HTMLElement {
+  return h(
+    "div",
+    { class: "qr-laws" },
+    h("small", null, "Checked against 879 provisions, 16 frameworks:"),
+    h("div", { class: "laws-list" }, [...EU_LAW, ...STANDARDS].map((l) => h("span", null, l))),
+  );
+}
+
 function bigQr(url: string, caption: string): HTMLElement {
   return h("div", { class: "big-qr" }, qrBox(url, caption, 900, "#000"), h("div", { class: "qr-url" }, url.replace(/^https:\/\//, "")));
 }
@@ -38,6 +51,7 @@ export function qrView(root: HTMLElement, hub: Hub): Dispose {
         h("p", { class: "qr-sub" }, "Scan. Register. Be processed. Estimated decision: Q3 2031."),
         h("div", { class: "qr-count" }, count.el, label),
         h("div", { class: "qr-causes" }, h("small", null, "Fast-track available for startups that make the world a better place:"), h("div", { class: "tiles" }, causes.slice(0, 5).map(causeTile))),
+        qrLaws(),
       ),
       (() => {
         const qr = bigQr(POCKET_URL, "Scan to apply");
