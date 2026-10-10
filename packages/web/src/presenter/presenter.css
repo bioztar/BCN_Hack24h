@@ -26,13 +26,14 @@ a.pv-nav-play:hover { background: #fff; }
 @keyframes tip-in { from { opacity: 0; transform: translate(-50%, 20px); } }
 
 /* QR */
-.big-qr { display: flex; flex-direction: column; align-items: center; gap: 1vh; }
+/* explicit size: the grid sizes its auto column before container units resolve, which clipped the Arcade QR */
+.big-qr { --qr: max(120px, min(calc(100cqh - 17vh), calc(38 * var(--u)))); min-width: calc(var(--qr) + 2.8vh); display: flex; flex-direction: column; align-items: center; gap: 1vh; }
 .big-qr .qr { background: #fff; padding: 1.4vh; display: flex; flex-direction: column; align-items: center; color: #000; font-weight: bold; font-size: clamp(16px, calc(1.6 * var(--u)), 30px); min-width: 30vh; min-height: 30vh; justify-content: center; }
-.big-qr .qr img { --qr: max(120px, min(calc(100cqh - 17vh), calc(38 * var(--u)))); width: var(--qr); height: var(--qr); image-rendering: pixelated; display: block; }
+.big-qr .qr img { width: var(--qr); height: var(--qr); image-rendering: pixelated; display: block; }
 .big-qr .qr small { font-size: clamp(18px, calc(2 * var(--u)), 36px); margin-top: .6vh; }
 .qr-url { font-family: "Courier New", monospace; font-size: clamp(18px, calc(2 * var(--u)), 38px); color: #ffd617; font-weight: bold; }
-.pv-qr, .pv-arcade { display: grid; grid-template-columns: 1fr auto; gap: calc(4 * var(--u)); align-items: safe center; overflow: hidden; container-type: size; }
-.qr-left { min-height: 0; }
+.pv-qr, .pv-arcade { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: calc(4 * var(--u)); align-items: safe center; overflow: hidden; container-type: size; }
+.qr-left { min-width: 0; min-height: 0; }
 .qr-head { font-size: clamp(36px, min(calc(5.2 * var(--u)), 9vh, 11cqh), 112px); line-height: 1.02; margin: 1vh 0; color: #fff; font-weight: 900; }
 .qr-head em { color: #ffd617; font-style: normal; }
 .qr-sub { font-size: clamp(18px, calc(2 * var(--u)), 40px); color: #ddd; margin: 0 0 2vh; }
@@ -41,8 +42,8 @@ a.pv-nav-play:hover { background: #fff; }
 .qr-count-label { font-size: clamp(20px, calc(2.4 * var(--u)), 48px); color: #fff; }
 .qr-causes { margin-top: 2vh; }
 .qr-causes > small { font-size: clamp(13px, calc(1.2 * var(--u)), 22px); color: #9fb3e6; }
-.tiles { display: flex; gap: calc(1 * var(--u)); margin-top: 1vh; }
-.cause-tile { margin: 0; width: min(calc(8.5 * var(--u)), 10.5vh, 14cqh); aspect-ratio: 3 / 4; background: var(--bg); color: var(--fg); border: 4px solid #fff; box-shadow: 6px 6px 0 #ffd617; overflow: hidden; transform: rotate(-2deg); }
+.tiles { display: flex; gap: calc(1 * var(--u)); margin-top: .6vh; padding: 4px 10px 10px 4px; }
+.cause-tile { margin: 0; width: min(calc(8.5 * var(--u)), 10.5vh, 13cqh); aspect-ratio: 3 / 4; background: var(--bg); color: var(--fg); border: 4px solid #fff; box-shadow: 6px 6px 0 #ffd617; overflow: hidden; transform: rotate(-2deg); }
 .cause-tile:nth-child(even) { transform: rotate(2deg); }
 .cause-tile .fi, .tile-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tile-poster { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: calc(.6 * var(--u)); background: repeating-linear-gradient(-45deg, var(--bg) 0 14px, color-mix(in srgb, var(--bg) 82%, #000) 14px 28px); }
@@ -99,7 +100,7 @@ a.pv-nav-play:hover { background: #fff; }
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* Arcade */
-.arc-games { display: grid; grid-template-columns: 1fr 1fr; gap: calc(1.4 * var(--u)); margin-top: 3vh; }
+.arc-games { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(1.4 * var(--u)); margin-top: 3vh; }
 .arc-game { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: calc(1 * var(--u)); align-items: center; background: #111; border-left: 8px solid #ffd617; padding: 1.4vh calc(1 * var(--u)); }
 .arc-emoji { grid-row: 1 / 3; font-size: clamp(36px, calc(4 * var(--u)), 80px); }
 .arc-game strong { font-size: clamp(20px, calc(2.2 * var(--u)), 46px); color: #ffd617; }
@@ -148,12 +149,12 @@ a.pv-nav-play:hover { background: #fff; }
 .lc-fine-card .chip { align-self: flex-start; font-size: clamp(12px, calc(1.1 * var(--u)), 22px); }
 .lc-fine-card em { font-size: clamp(16px, calc(1.6 * var(--u)), 32px); color: #fff; }
 @keyframes pop { from { transform: scale(1.4) rotate(-3deg); opacity: 0; } }
-.lc-overlay { position: absolute; inset: 0 0 24% 0; pointer-events: none; display: grid; place-items: center; z-index: 5; }
+.lc-overlay { position: absolute; inset: 0 0 30% 0; pointer-events: none; display: grid; place-items: center; z-index: 5; }
 .lc-awaiting { background: rgba(0, 0, 0, .8); color: #ffd617; font-size: clamp(20px, calc(2.2 * var(--u)), 46px); padding: 1.4vh calc(2 * var(--u)); border: 3px solid #ffd617; max-width: 80%; text-align: center; align-self: end; margin-bottom: 3vh; }
 .lc-meltdown { align-self: start; margin-top: 2vh; font-size: clamp(44px, calc(6 * var(--u)), 140px); font-weight: 900; color: #fff; text-shadow: 0 0 20px #ff6a00, 0 0 60px #ff2000; animation: meltdown 1s ease-in-out infinite alternate; letter-spacing: .05em; }
 @keyframes meltdown { from { transform: scale(1) rotate(-2deg); } to { transform: scale(1.06) rotate(2deg); } }
-.lc-verdict { display: flex; align-items: center; gap: calc(2 * var(--u)); background: rgba(0, 0, 0, .6); padding: 1vh calc(2 * var(--u)); max-height: 100%; }
-.lc-stamp-img { width: calc(22 * var(--u)); max-height: 26vh; object-fit: contain; animation: splat2 .5s ease-out; }
+.lc-verdict { display: flex; align-items: center; gap: calc(2 * var(--u)); background: rgba(0, 0, 0, .6); padding: 1vh calc(2 * var(--u)); max-height: 100%; overflow: hidden; }
+.lc-stamp-img { width: calc(22 * var(--u)); max-height: min(22vh, 100%); object-fit: contain; animation: splat2 .5s ease-out; }
 .lc-stamp { border: calc(1 * var(--u)) double #e0102e; color: #e0102e; font-size: calc(5.5 * var(--u)); font-weight: 900; padding: 0 calc(1.5 * var(--u)); transform: rotate(-8deg); animation: splat2 .5s ease-out; background: rgba(255, 255, 255, .9); }
 @keyframes splat2 { from { transform: rotate(-8deg) scale(2.2); opacity: 0; } }
 .lc-verdict-sum { display: flex; flex-direction: column; align-items: center; }
