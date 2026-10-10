@@ -9,7 +9,8 @@ Satire of regulation, not of people. All officials are fictional; every citation
 - `docs/PERSONA.md` — the officials, the hard rules, the gag bank (the product)
 - `docs/PLAN.md` — build plan, owners, dependencies, acceptance
 
-Grounding corpus: [`bioztar/EU-AI-Act`](https://github.com/bioztar/EU-AI-Act) and
-`bioztar/warden`.
+Grounding corpus: [`bioztar/EU-AI-Act`](https://github.com/bioztar/EU-AI-Act),
+`bioztar/warden`, and EUR-Lex texts fetched by `npm run build:corpus` (DSA, DMA, CRA, Data Act,
+ePrivacy, eIDAS 2, CSRD).
 
 Status: pre-event planning. No code yet.
