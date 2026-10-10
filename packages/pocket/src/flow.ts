@@ -12,8 +12,9 @@ import { selfieDataUrl } from "./photo";
 import { CAUSES, QUEUE_JOKES, formatPosition, positionAt } from "./queue";
 import { initialState, reduce, type Action, type LineEvent, type RoastState } from "./reducer";
 import { FineSync, Timeline } from "./timeline";
-import type { AnyRoastEvent, ApplicantAuth, FineEvent, LeaderboardEntry, LeaderboardSort, Meanwhile, NoticeV2, Persona, PersonaId, QueueTicket, Submission } from "./types";
+import type { AnyRoastEvent, ApplicantAuth, FineEvent, LeaderboardEntry, LeaderboardSort, Meanwhile, NoticeV2, CaseMode, Persona, PersonaId, QueueTicket, Submission } from "./types";
 import { toNoticeV2, turnoverLine } from "./verdict";
+import { isExpress, pivotName, wardenUrl, whackLine, whackResult, type WhackResult } from "./express";
 
 export interface FlowDeps { api: Api; sound: Sound; app: HTMLElement; appUrl: string; }
 
@@ -28,6 +29,11 @@ let personas: Persona[] = FIXTURE_PERSONAS;
 let shownMw: Meanwhile | null = null;
 let serverMwAt = 0;
 let myCaseId: string | null = null;
+/** Whack-a-Model result from the repo-analysing screen, shown on the verdict. */
+let whack: WhackResult | null = null;
+/** The last pitch text / repo URL, to prefill the full compliance analyzer. */
+let lastPitch = "";
+interface AppealFrom { caseId: string; ticket: number; officers: [PersonaId, PersonaId]; notice: NoticeV2; }
 /** Bumped on every screen change so stale timers/loops/streams stop. */
 let epoch = 0;
 
@@ -142,25 +148,22 @@ function meanwhileCard(m: Meanwhile): HTMLDivElement {
 
 function register(): void {
   const s = screen("reg", ["Eurocrat Commission · DG ROAST", "Form A-1 · Startup Registration"]);
-  s.append(el("h1", "", "Register your startup and build a real business in the EU!"), el("p", "sub", "Fast. Simple. Only 27 national procedures. Bring a pen."));
+  s.append(el("h1", "", "Pitch your startup. The EU will refuse it. In 15 seconds."));
   const startup = el("input");
   startup.maxLength = 60;
   startup.placeholder = "e.g. Faceify";
   startup.autocomplete = "organization";
   const founder = el("input");
   founder.maxLength = 60;
-  founder.placeholder = "Your name, as on your passport (all of them)";
+  founder.placeholder = "Optional — for the leaderboard";
   founder.autocomplete = "name";
-  const oneLiner = el("input");
-  oneLiner.maxLength = 140;
-  oneLiner.placeholder = "Optional: what does it do?";
   const file = el("input");
   file.type = "file";
   file.accept = "image/*";
   file.setAttribute("capture", "user");
   const selfie = el("label", "selfie");
   const ph = el("span", "ph", "🤳");
-  const selfieText = el("span", "", "Add a selfie (optional) — for your criminal record");
+  const selfieText = el("span", "", "Add a mugshot for the leaderboard (optional)");
   selfie.append(file, ph, selfieText);
   let photo: string | null = null;
   file.addEventListener("change", async () => {
@@ -175,14 +178,15 @@ function register(): void {
     } else selfieText.textContent = "Face not accepted (format). Proceed faceless.";
   });
   const err = el("p", "err");
-  const go = el("button", "btn primary big", "Take a number");
-  s.append(field("Startup name *", startup), field("Founder *", founder), field("One-liner", oneLiner), selfie,
-    el("p", "fineprint", "☑ I have read and accepted the 4,212 pages of terms. ☑ I consent to consenting. Satire — your data is used for the joke and the leaderboard only."), err, go);
+  const go = el("button", "btn primary big", "Get refused →");
+  s.append(field("Startup name", startup), err, go, field("Founder (optional)", founder), selfie,
+    el("p", "fineprint", "☑ I have read and accepted the 4,212 pages of terms. ☑ I consent to consenting. Satire — your data is used for the joke and the leaderboard only."));
   go.addEventListener("click", async () => {
     const startupName = startup.value.trim();
-    const founderName = founder.value.trim();
-    if (!startupName || !founderName) {
-      err.textContent = "Form incomplete. INCOMPLET. Fields marked * are mandatory (they all are).";
+    const founderName = founder.value.trim() || "A. Nonymous";
+    if (!startupName) {
+      err.textContent = "INCOMPLET. Your startup needs a name. Any name. We will refuse it either way.";
+      startup.focus();
       D.sound.stamp();
       buzz(80);
       return;
@@ -191,7 +195,7 @@ function register(): void {
     go.disabled = true;
     go.textContent = "Printing your ticket…";
     D.sound.printer();
-    const input = { startupName, founderName, ...(oneLiner.value.trim() ? { oneLiner: oneLiner.value.trim() } : {}), ...(photo ? { photo } : {}) };
+    const input: { startupName: string; founderName: string; oneLiner?: string; photo?: string } = { startupName, founderName, ...(photo ? { photo } : {}) };
     let ticket: QueueTicket;
     let applicantId: string | null;
     let applicantToken: string | null;
@@ -232,7 +236,7 @@ function queueScreen(t: QueueTicket): void {
   const jokeTimer = setInterval(() => {
     if (my !== epoch) return clearInterval(jokeTimer);
     joke.textContent = QUEUE_JOKES[++j % QUEUE_JOKES.length]!;
-  }, 4200);
+  }, Math.round(Math.min(4200, Math.max(1600, (t.countdownSec * 1000) / 3))));
   const frame = () => {
     if (my !== epoch || skipped) return;
     const pos = positionAt(t.position, (performance.now() - start) / 1000, t.countdownSec);
@@ -243,8 +247,12 @@ function queueScreen(t: QueueTicket): void {
   requestAnimationFrame(frame);
 
   let quipEl: HTMLElement | null = null;
+  let autoGo: number | undefined;
   const yourTurn = (msg: string) => {
     if (my !== epoch) return;
+    // No extra tap: on to the pitch unless the cause tiles are open.
+    clearTimeout(autoGo);
+    autoGo = window.setTimeout(() => my === epoch && causes.hidden && pitchScreen(), skipped ? 2800 : 1600);
     if (quipEl) return void (quipEl.textContent = msg);
     giant.classList.add("front");
     D.sound.ding();
@@ -253,7 +261,7 @@ function queueScreen(t: QueueTicket): void {
     const go = el("button", "btn primary big pulse", "Proceed to pitch →");
     go.addEventListener("click", () => pitchScreen());
     result.append(quipEl, go);
-    better.hidden = true;
+    better.hidden = skipped;
   };
 
   better.addEventListener("click", () => {
@@ -551,7 +559,7 @@ function fireCanvas(host: HTMLElement, alive: () => boolean): HTMLCanvasElement 
   return c;
 }
 
-async function roastScreen(sub: Submission): Promise<void> {
+async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise<void> {
   const s = screen("roast");
   const my = epoch;
   const alive = () => my === epoch;
@@ -564,6 +572,7 @@ async function roastScreen(sub: Submission): Promise<void> {
   let playing = false;
   let speaking: Playback | null = null;
   let officers = new Map<PersonaId, Officer>();
+  let caseExpress = Boolean(appeal);
 
   // Meter
   const meter = el("div", "meter");
@@ -615,6 +624,21 @@ async function roastScreen(sub: Submission): Promise<void> {
   let analyzing: HTMLDivElement | null = null;
   let anaText: HTMLParagraphElement | null = null;
   let anaBar: HTMLElement | null = null;
+  // Whack-a-Model while the repo is audited; officer lines wait behind `gate` until the overlay closes.
+  let game: HTMLIFrameElement | null = null;
+  let goBtn: HTMLButtonElement | null = null;
+  let audited = false;
+  let gameOver = false;
+  let release: (() => void) | null = null;
+  let gate: Promise<void> = Promise.resolve();
+  const onGameMsg = (e: MessageEvent) => {
+    if (!game || e.source !== game.contentWindow) return;
+    const r = whackResult(e.data);
+    if (!r) return;
+    whack = r;
+    gameOver = true;
+    if (audited) setTimeout(() => alive() && hideAnalyzing(), 2500);
+  };
   const showAnalyzing = (stage: string, progress: number) => {
     if (!analyzing) {
       analyzing = el("div", "analyzing");
@@ -625,6 +649,19 @@ async function roastScreen(sub: Submission): Promise<void> {
       anaBar = el("i");
       b.append(anaBar);
       analyzing.append(img, el("h2", "", "Analysing your repository…"), anaText, b);
+      if (sub?.kind === "repo") {
+        const g = (game = el("iframe", "whack"));
+        g.src = `/game/whack/?embed=1${D.api.mock ? "&mock=1" : ""}`;
+        g.title = "Whack-a-Model";
+        g.allow = "autoplay";
+        goBtn = el("button", "btn primary big", "Face the officers →");
+        goBtn.hidden = true;
+        goBtn.addEventListener("click", () => hideAnalyzing());
+        analyzing.classList.add("has-game");
+        analyzing.append(el("div", "whack-hint", "Meanwhile: stamp every non-EU model. Do NOT stamp Mistral."), g, goBtn);
+        gate = new Promise<void>((r) => (release = r));
+        window.addEventListener("message", onGameMsg);
+      }
       for (let i = 0; i < 18; i++) {
         const p = el("div", "paper");
         p.style.setProperty("--s", (0.6 + Math.random() * 0.9).toFixed(2));
@@ -656,6 +693,19 @@ async function roastScreen(sub: Submission): Promise<void> {
   const hideAnalyzing = () => {
     analyzing?.remove();
     analyzing = null;
+    window.removeEventListener("message", onGameMsg);
+    release?.();
+    release = null;
+  };
+  const auditComplete = () => {
+    if (!analyzing) return;
+    if (!game) return hideAnalyzing();
+    if (audited) return;
+    audited = true;
+    anaText!.textContent = gameOver ? "Audit complete." : "Audit complete. Finish your round — or face the officers.";
+    anaBar!.style.width = "100%";
+    goBtn!.hidden = false;
+    if (gameOver) setTimeout(() => alive() && hideAnalyzing(), 2500);
   };
 
   const meltdown = () => {
@@ -708,6 +758,7 @@ async function roastScreen(sub: Submission): Promise<void> {
     if (playing) return;
     playing = true;
     try {
+      await gate;
       for (let cue = timeline.next(); cue && alive(); cue = timeline.next()) {
         const { line } = cue;
         sayLine(line);
@@ -745,7 +796,7 @@ async function roastScreen(sub: Submission): Promise<void> {
         showAnalyzing(e.stage, st.analyzing?.progress ?? e.progress);
         break;
       case "intake":
-        setTimeout(hideAnalyzing, 600);
+        setTimeout(auditComplete, 600);
         break;
       case "tier":
         tierTag.textContent = `TIER ${e.tier}/5 · ${e.name.toUpperCase()}`;
@@ -756,7 +807,7 @@ async function roastScreen(sub: Submission): Promise<void> {
         else D.sound.ding();
         break;
       case "line":
-        hideAnalyzing();
+        auditComplete();
         timeline.addLine(e);
         void pump();
         break;
@@ -814,7 +865,9 @@ async function roastScreen(sub: Submission): Promise<void> {
       if (!alive()) return;
       speaking?.stop();
       myCaseId = caseId;
-      verdictScreen(toNoticeV2(st.notice, { ...st, applicantId: me?.applicantId, founderName: me?.founderName, startupName: me?.startupName }));
+      const notice = toNoticeV2(st.notice, { ...st, applicantId: me?.applicantId, founderName: me?.founderName, startupName: me?.startupName });
+      const ids = [...officers.keys()];
+      verdictScreen(notice, caseExpress && !appeal ? { caseId, ticket: st.ticket ?? 0, officers: [ids[0]!, ids[1] ?? ids[0]!], notice } : undefined);
     } else fail(st.error ?? "unknown");
   };
 
@@ -844,16 +897,40 @@ async function roastScreen(sub: Submission): Promise<void> {
     });
   };
 
-  if (sub.kind === "repo") showAnalyzing("Requesting the repository from the Publications Office…", 0.02);
+  if (appeal) {
+    setOfficers(appeal.officers);
+    tierTag.textContent = "APPEAL · ONE CHANCE";
+    status.textContent = "Appeal under review…";
+    eurT.set(appeal.notice.totalEur, performance.now());
+    jailT.set(appeal.notice.totalJailMonths, performance.now());
+    if (appeal.notice.meltdown) meltdown();
+    dispatch({ type: "submit" });
+    dispatch({ type: "case", caseId: appeal.caseId, ticket: appeal.ticket });
+    await runRound(appeal.caseId);
+    return;
+  }
+  if (!sub) return;
+  const submission: Submission = sub;
+  lastPitch = submission.text ?? submission.repoUrl ?? "";
+  whack = null;
+  if (submission.kind === "repo") showAnalyzing("Requesting the repository from the Publications Office…", 0.02);
   try {
     dispatch({ type: "submit" });
     const auth = applicantAuth();
-    const c = await D.api.createCase(sub, undefined, auth).catch((err: unknown) => {
+    const mode: CaseMode | undefined = isExpress() ? "express" : undefined;
+    const create = (a?: ApplicantAuth) =>
+      D.api.createCase(submission, undefined, a, mode).catch((err: unknown) => {
+        // The server runs without EXPRESS_MODE (400): fall back to the staged roast.
+        if (mode && err instanceof HttpError && err.status === 400) return D.api.createCase(submission, undefined, a);
+        throw err;
+      });
+    const c = await create(auth).catch((err: unknown) => {
       // A rejected token must not cost the audience their roast: pitch anonymously instead.
-      if (auth && err instanceof HttpError && (err.status === 401 || err.status === 403)) return D.api.createCase(sub);
+      if (auth && err instanceof HttpError && (err.status === 401 || err.status === 403)) return create();
       throw err;
     });
     if (!alive()) return;
+    caseExpress = c.mode === "express";
     setOfficers(c.officers);
     dispatch({ type: "case", caseId: c.caseId, ticket: c.ticket });
     await runRound(c.caseId);
@@ -876,7 +953,56 @@ async function fetchBlob(url: string, type: RegExp): Promise<Blob | null> {
   }
 }
 
-function verdictScreen(n: NoticeV2): void {
+/** Play again in one tap: re-register the same founder as a pivot (one case per applicant), straight to the pitch. */
+async function pitchAgain(btn: HTMLButtonElement): Promise<void> {
+  const prev = me;
+  if (!prev) return register();
+  const my = epoch;
+  btn.disabled = true;
+  btn.textContent = "Filing your pivot…";
+  const startupName = pivotName(prev.startupName);
+  let ticket = prev.ticket;
+  let applicantId: string | null = null;
+  let applicantToken: string | null = null;
+  try {
+    ticket = await D.api.register({ startupName, founderName: prev.founderName, ...(prev.photo ? { photo: prev.photo } : {}) });
+    applicantId = ticket.applicantId;
+    applicantToken = ticket.applicantToken || null;
+  } catch { /* pitch anonymously */ }
+  if (my !== epoch) return;
+  me = { ...prev, applicantId, applicantToken, startupName, at: Date.now(), ticket };
+  myCaseId = null;
+  pitchScreen();
+}
+
+function appealBlock(from: AppealFrom): HTMLDivElement {
+  const box = el("div", "v-appeal");
+  const grounds = el("input");
+  grounds.maxLength = 300;
+  grounds.placeholder = "Grounds for appeal (optional, will be ignored)";
+  const btn = el("button", "btn big appeal", "⚖️ Appeal (one chance)");
+  const msg = el("div", "status");
+  box.append(grounds, btn, msg);
+  btn.addEventListener("click", async () => {
+    const my = epoch;
+    btn.disabled = true;
+    msg.textContent = "Lodging your appeal in triplicate…";
+    try {
+      await D.api.appeal(from.caseId, applicantAuth(), grounds.value.trim() || undefined);
+      if (my !== epoch) return;
+      D.sound.unlock();
+      void roastScreen(null, from);
+    } catch (err) {
+      if (my !== epoch) return;
+      const done = err instanceof HttpError && err.status === 409;
+      msg.textContent = done ? "Your appeal has been lodged and, naturally, rejected." : `Appeal lost in the post: ${errText(err)}`;
+      btn.disabled = done;
+    }
+  });
+  return box;
+}
+
+function verdictScreen(n: NoticeV2, appealFrom?: AppealFrom): void {
   const s = screen("verdict", ["Notice of Non-Compliance", n.serial]);
   const my = epoch;
   const mw = n.meanwhile ?? shownMw ?? currentMeanwhile();
@@ -912,29 +1038,39 @@ function verdictScreen(n: NoticeV2): void {
     });
     list.append(ul);
   }
-  if (n.recommendations.length) {
-    list.append(el("h3", "", "How to adjust the idea (genuinely)"));
-    const ul = el("ul");
-    n.recommendations.forEach((r) => {
-      const li = el("li", "", r.text + " ");
-      if (r.provision) {
-        const a = el("a", "", r.provision.label);
-        a.href = r.provision.url;
-        a.target = "_blank";
-        a.rel = "noopener";
-        li.append(a);
-      }
-      ul.append(li);
-    });
-    list.append(ul);
-  }
-  const again = el("button", "btn ghost big", "Apply again (why?)");
-  const toBoard = el("button", "btn primary big", "🏆 See the Hall of Shame");
-  again.addEventListener("click", () => register());
+  const fixes = el("div", "v-fixes");
+  fixes.append(el("h3", "", "How to make it legal — top 3 fixes"));
+  const ol = el("ol");
+  n.recommendations.slice(0, 3).forEach((r) => {
+    const li = el("li", "", r.text);
+    if (r.provision) {
+      const a = el("a", "cite-chip", r.provision.label);
+      a.href = r.provision.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.title = r.provision.title;
+      li.append(" ", a);
+    }
+    ol.append(li);
+  });
+  const full = el("a", "btn ghost big", "Get the full compliance report →");
+  full.href = wardenUrl(lastPitch || n.startupName);
+  full.target = "_blank";
+  full.rel = "noopener";
+  fixes.append(...(ol.childElementCount ? [ol] : []), full);
+  const again = el("button", "btn primary big", "🔁 Pitch another startup");
+  again.addEventListener("click", () => void pitchAgain(again));
+  const toBoard = el("button", "btn ghost big", "🏆 See the Hall of Shame");
   toBoard.addEventListener("click", () => showTab("board"));
+  const money = el("p", "v-money", "Free today · Full compliance dossier €49 · Accelerators: roast your whole cohort — ");
+  const contact = el("a", "", "contact");
+  contact.href = "mailto:hello@pro7ocol.com?subject=Eurocrat%20%E2%80%94%20roast%20our%20cohort";
+  money.append(contact);
   const foot = el("div", "v-actions");
-  foot.append(toBoard, again);
-  s.append(center, badge, totals, ...(turnover ? [turnover] : []), meanwhileCard(mw), actions, list, foot);
+  foot.append(toBoard);
+  const banned = whack ? el("p", "v-whack", whackLine(whack)) : null;
+  const appealBox = appealFrom ? appealBlock(appealFrom) : null;
+  s.append(center, badge, totals, ...([turnover, banned, appealBox] as (HTMLElement | null)[]).filter((x): x is HTMLElement => x !== null), again, fixes, actions, money, meanwhileCard(mw), list, foot);
   D.sound.stamp();
   buzz([60, 40, 60]);
 

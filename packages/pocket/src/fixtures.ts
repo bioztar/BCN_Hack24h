@@ -262,3 +262,11 @@ export function mockRoundSse(ctx: MockCtx, round: number): string {
 }
 
 export const MOCK_DICTATION = "It's Uber for filling in forms. With AI. On the blockchain. We're pre-revenue but post-hype.";
+
+/** Express: rounds 0+1 as one stream (no `awaiting`, one final verdict); the appeal replays the closing round. */
+export function mockExpressEvents(ctx: MockCtx, appeal: boolean): AnyRoastEvent[] {
+  const events = appeal ? mockRoundEvents(ctx, 1) : [...mockRoundEvents(ctx, 0), ...mockRoundEvents(ctx, 1)];
+  let last = -1;
+  events.forEach((e, i) => e.type === "verdict" && (last = i));
+  return events.filter((e, i) => e.type !== "awaiting" && (e.type !== "verdict" || i === last));
+}

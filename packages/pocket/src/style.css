@@ -262,3 +262,26 @@ body.jolt .box { animation: jolt 0.25s; }
 .sheet-modal .sheet-body { background: var(--paper); width: 100%; max-height: 88vh; overflow-y: auto; border-radius: 14px 14px 0 0; padding: 16px 16px calc(var(--safe-b) + 16px); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
 .chips span { background: #e8ecf8; color: var(--eu); font: bold 11px Arial; padding: 3px 7px; border-radius: 10px; }
+
+/* express: Whack-a-Model while the repo is audited, appeal on the verdict */
+.analyzing .paper { pointer-events: none; }
+.analyzing.has-game { position: fixed; inset: 0 0 calc(44px + var(--safe-b, 0px)) 0; z-index: 20; justify-content: flex-start; padding: 10px 10px 8px; }
+.analyzing.has-game img { max-height: 13vh; }
+.analyzing.has-game h2 { margin: 4px 0 2px; font-size: 17px; }
+.analyzing.has-game p { margin: 0 0 6px; min-height: 0; font-size: 13px; }
+.analyzing .whack-hint { color: var(--gold); font: 700 12px Arial, sans-serif; margin: 8px 0 4px; }
+.analyzing iframe.whack { flex: 1; min-height: 0; width: 100%; border: 0; border-radius: 8px; background: #000; position: relative; z-index: 1; }
+.analyzing.has-game .btn { margin-top: 8px; width: 100%; flex: none; position: relative; z-index: 2; }
+.v-whack { margin: 4px 0 8px; font-size: 13px; line-height: 1.35; font-weight: 700; }
+.v-appeal { display: grid; gap: 6px; margin: 10px 0; padding: 10px; border: 2px dashed var(--eu); border-radius: 6px; }
+.v-appeal input { font: 15px Arial, sans-serif; padding: 10px; border: 2px solid #ccd3ea; border-radius: 6px; }
+.btn.appeal { background: var(--gold); color: #10183a; }
+.v-fixes { margin: 14px 0 4px; padding: 10px 12px; background: #f3f6ff; border-left: 4px solid var(--eu); border-radius: 4px; }
+.v-fixes h3 { color: var(--eu); margin: 0 0 6px; font-size: 16px; }
+.v-fixes ol { margin: 0 0 10px; padding-left: 20px; }
+.v-fixes li { margin: 0 0 8px; font-size: 14px; line-height: 1.35; }
+.cite-chip { display: inline-block; font: bold 11px Arial, sans-serif; color: var(--eu); background: #e8eefb; border: 1px solid var(--eu); border-radius: 10px; padding: 2px 8px; text-decoration: none; white-space: nowrap; }
+.cite-chip::after { content: " ↗"; }
+.v-fixes .btn { width: 100%; }
+.v-money { margin: 4px 0 10px; font-size: 11px; line-height: 1.4; color: #667; text-align: center; }
+.v-money a { color: var(--eu); }
