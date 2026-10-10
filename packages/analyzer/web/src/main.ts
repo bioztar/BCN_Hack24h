@@ -23,9 +23,15 @@ let tab: "idea" | "document" | "repo" = "idea";
 let reportId = "";
 let draft = "";
 
+const SKILL_REPO = "https://github.com/bioztar/warden";
+const SKILL_INSTALL = "git clone https://github.com/bioztar/warden && warden/scripts/install-skill.sh";
+
 function shell(inner: string) {
   app.innerHTML = `<header class="top" id="top"><span class="brand">warden<small>by Pro7ocol</small></span></header><main>${inner}</main>
+  <aside class="skill no-print" aria-label="Install as an agent skill"><h3>Install this as an agent skill</h3><p>Works in Claude Code, Codex, Pi and other agent harnesses. Source: <a href="${SKILL_REPO}" target="_blank" rel="noopener">github.com/bioztar/warden</a></p><div class="cmd"><code>${esc(SKILL_INSTALL)}</code><button type="button" class="ghost" id="copy-skill">Copy</button></div></aside>
   <footer>warden — EU AI Act &amp; compliance analyzer · <a href="https://warden.pro7ocol.com/analyze/">warden.pro7ocol.com</a> · <a href="https://eurocrat.pro7ocol.com/" title="for the brave">🇪🇺</a></footer>`;
+  const copy = app.querySelector<HTMLButtonElement>("#copy-skill")!;
+  copy.onclick = () => void navigator.clipboard?.writeText(SKILL_INSTALL).then(() => (copy.textContent = "Copied"));
 }
 
 function renderForm(error = "") {
