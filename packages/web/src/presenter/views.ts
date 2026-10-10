@@ -124,6 +124,7 @@ export function boardView(root: HTMLElement, hub: Hub, state: { sort: BoardSort 
 
   const renderHack = () => {
     hack.hidden = !hub.event;
+    mw.el.hidden = !!hub.event; // the hackathon header takes the day board's room so all 10 rows fit
     title.textContent = hub.event ? "Hall of Shame — BCN Hack 24h" : "Hall of Shame — most fined startups today";
     if (!hub.event) return;
     const list = hub.boardEntries;

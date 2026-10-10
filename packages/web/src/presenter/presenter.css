@@ -213,3 +213,4 @@ a.pv-nav-play:hover { background: #fff; }
 .lb-hack[hidden] { display: none; }
 .pv-qr .big-qr { --qr: max(120px, min(calc(100cqh - 24vh), calc(36 * var(--u)))); }
 .qr-price { margin: 0; max-width: calc(var(--qr) + 2.8vh); text-align: center; color: #ddd; font-style: italic; font-size: clamp(13px, calc(1.25 * var(--u)), 26px); }
+.pv-board ~ .meanwhile[hidden], .meanwhile[hidden] { display: none; }
