@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import modelsData from "../src/models.json" with { type: "json" };
 import { ModelPicker, type Model } from "../src/core/models.js";
-import { COMBO_CAP, ESCAPE_PENALTY, MISTRAL_PENALTY, newTally, rankTitle, RANKS, score, type GameEvent, type Tally } from "../src/core/rules.js";
+import { COMBO_CAP, ESCAPE_PENALTY, MISTRAL_PENALTY, newTally, rankDelta, rankTitle, RANKS, score, type GameEvent, type Tally } from "../src/core/rules.js";
 
 const run = (evs: GameEvent[], t: Tally = newTally()) => evs.reduce((acc, e) => score(acc, e).tally, t);
 
@@ -94,5 +94,12 @@ describe("rank titles", () => {
     expect(run(["escape", "escape"]).score).toBe(0);
     expect(run(["hit", "escape", "escape", "escape", "escape", "escape"]).score).toBe(0);
     expect(run(["mistral", "escape"]).score).toBe(-500);
+  });
+  it("rank delta: first appointment, promotion, same, demotion", () => {
+    expect(rankDelta(null, 1500)).toMatchObject({ kind: "first", line: "Appointed Intern (stagiaire). 500 more points for Desk Officer." });
+    expect(rankDelta(2500, 7000)).toEqual({ kind: "up", line: "You were promoted to Head of Unit!" });
+    expect(rankDelta(6100, 6500).kind).toBe("same");
+    expect(rankDelta(13_000, 3000)).toMatchObject({ kind: "down" });
+    expect(rankDelta(60_000, 70_000).line).toBe("Still President of the Commission.");
   });
 });

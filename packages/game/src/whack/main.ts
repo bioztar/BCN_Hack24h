@@ -3,12 +3,13 @@ import "./whack.css";
 import modelsData from "../models.json";
 import type { Model } from "../core/models";
 import { meanwhile } from "../core/meanwhile";
-import { COMBO_CAP, rankTitle } from "../core/rules";
+import { COMBO_CAP, rankDelta, rankTitle } from "../core/rules";
 import { leaderboard, saveName, savedName, startRound, submitScore, type Entry, type Ticket } from "../shared/api";
 import { Sfx } from "../shared/audio";
 import { postScore } from "../shared/bridge";
 import { EMBED, FROM_ARCADE, MOCK, esc, fmt, withFlags } from "../shared/env";
 import { shareCard } from "../shared/share";
+import { Hand } from "./hand";
 import { buildBoard, Round, type RoundResult } from "./round";
 
 const POOL = (modelsData as { models: Model[] }).models;
@@ -82,6 +83,26 @@ app.innerHTML = `
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const stage = $("stage");
 const holes = buildBoard($("board"));
+const hand = new Hand(stage, () => {
+  const r = $("board").getBoundingClientRect();
+  return { x: r.right - r.width * 0.14, y: r.bottom - r.height * 0.02 };
+});
+const LAST_SCORE = "eurocrat.whack.lastScore";
+function lastScore(): number | null {
+  try {
+    const v = localStorage.getItem(LAST_SCORE);
+    return v === null || !Number.isFinite(Number(v)) ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
+function saveLastScore(n: number): void {
+  try {
+    localStorage.setItem(LAST_SCORE, String(n));
+  } catch {
+    /* private mode */
+  }
+}
 const scoreEl = $("score");
 const comboEl = $("combo");
 const comboBox = $("combo-box");
@@ -118,7 +139,10 @@ document.addEventListener("pointerdown", () => sfx.unlock(), { capture: true });
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+let replays = 0;
+
 async function countdown(): Promise<void> {
+  const fast = replays++ > 0;
   show("countdown");
   const n = $("count-n");
   const t = $("count-t");
@@ -128,14 +152,14 @@ async function countdown(): Promise<void> {
     t.textContent = "Pending approval…";
     n.animate([{ transform: "scale(1.6)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], { duration: 220, easing: "ease-out" });
     sfx.beep(520, 0.1);
-    await wait(700);
+    await wait(fast ? 320 : 700);
   }
   n.textContent = "APPROVED.";
   n.className = "approved";
   t.textContent = "Proceed.";
   sfx.approved();
   n.animate([{ transform: "rotate(-8deg) scale(2.2)", opacity: 0 }, { transform: "rotate(-8deg) scale(1)", opacity: 1 }], { duration: 160, easing: "ease-in", fill: "forwards" });
-  await wait(650);
+  await wait(fast ? 380 : 650);
 }
 
 let round: Round | null = null;
@@ -146,7 +170,7 @@ async function play(): Promise<void> {
   await countdown();
   const ticket = await ticketP;
   show(null);
-  round = new Round(stage, holes, $("banned"), hud, sfx, POOL, ticket.seed, (r) => void finish(ticket, r));
+  round = new Round(stage, holes, $("banned"), hud, sfx, POOL, ticket.seed, (r) => void finish(ticket, r), hand);
   round.start();
 }
 
@@ -158,6 +182,8 @@ async function finish(ticket: Ticket, r: RoundResult): Promise<void> {
   sfx.bell();
   const { tally } = r;
   const title = rankTitle(tally.score);
+  const delta = rankDelta(lastScore(), tally.score);
+  saveLastScore(tally.score);
   const mw = meanwhile(r.seed, r.durationMs);
   const name = savedName() || "Anonymous stagiaire";
   const ref = r.seed.slice(0, 6).toUpperCase();
@@ -166,6 +192,7 @@ async function finish(ticket: Ticket, r: RoundResult): Promise<void> {
     <div class="form-no">Decision No. WAM/2026/${ref} — notice of performance</div>
     <div class="end-score"><span>Final score</span><b>${fmt(tally.score)}</b></div>
     <div class="end-rank">Rank: <b>${esc(title)}</b></div>
+    <div class="end-delta ${delta.kind}">${esc(delta.line)}</div>
     <div class="end-place" id="place">Filing your result with the register…</div>
     <div class="stats">
       ${statRow("Non-EU models stamped", fmt(tally.hits))}
@@ -176,8 +203,8 @@ async function finish(ticket: Ticket, r: RoundResult): Promise<void> {
     <p class="meanwhile"><b>Meanwhile.</b> ${esc(mw.line)}</p>
     ${tally.mistralHits ? `<p class="verdict bad">You stamped Mistral ${tally.mistralHits === 1 ? "once" : `${tally.mistralHits} times`}. A delegated act has been opened in your name.</p>` : `<p class="verdict ok">Mistral was spared. The single market thanks you.</p>`}
     <div class="end-stamp">${tally.mistralHits ? "RENVOYÉ EN COMMISSION" : "APPROVED"}</div>
+    <button class="btn primary big" id="again">Play again — file another application</button>
     <button class="btn gold big" id="share">Share the decision</button>
-    <button class="btn primary big" id="again">File another application</button>
     <div class="row">
       <button class="btn small" id="end-lb">Leaderboard</button>
       ${showArcade ? `<a class="btn small" href="${withFlags("/game/")}">‹ Arcade</a>` : ""}
@@ -185,7 +212,10 @@ async function finish(ticket: Ticket, r: RoundResult): Promise<void> {
     </div>`;
   show("end");
   card.querySelector(".end-stamp")!.animate([{ transform: "rotate(-12deg) scale(2.4)", opacity: 0 }, { transform: "rotate(-12deg) scale(1)", opacity: 0.85 }], { duration: 220, delay: 250, easing: "ease-in", fill: "both" });
-  $("again").addEventListener("click", () => void play());
+  if (delta.kind === "up") setTimeout(() => sfx.approved(), 400);
+  const again = $("again");
+  again.addEventListener("click", () => void play(), { once: true });
+  again.focus({ preventScroll: true });
   $("end-lb").addEventListener("click", () => void openLeaderboard("end"));
   $("share").addEventListener("click", async () => {
     const res = await shareCard(
