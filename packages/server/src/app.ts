@@ -85,6 +85,7 @@ export interface AppDeps {
 type AnyEvent = RoastEvent | RoastEventV2;
 
 const ANALYZING = ["Cloning the repository into a filing cabinet", "Reading the README aloud to the committee", "Counting dependencies, in triplicate", "Mapping your code to 27 legal systems"];
+const ANALYZING_TEXT = ["Reading your pitch into the record", "Cross-referencing 879 provisions", "Locating a precedent for your audacity", "Findings filed"];
 
 /** Until the tier-5 round has run, the Meanwhile clock assumes it lasts this long, so the ticks never overtake the final value. */
 const VERDICT_ROUND_SEC = 15;
@@ -442,7 +443,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     };
     const express = state.mode === "express";
     const appeal = express && Boolean(state.appealed);
-    const plan: Tier[] = express && !appeal ? [1, 2, 3, 4, 5] : [state.tier];
+    const plan: Tier[] = express && !appeal ? [1, 3, 5] : [state.tier];
     const started = Date.now();
     const deadline = started + (d.roundDeadlineMs ?? 20000) * plan.length;
     const lateAudio: Promise<void>[] = [];
@@ -488,13 +489,14 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     try {
       if (state.round === 0) {
         push({ type: "officers", officers: [d.roster.toPersona(state.officers[0]), d.roster.toPersona(state.officers[1])], ticket: state.ticket });
-        if (state.intake) {
-          for (const [k, stage] of ANALYZING.entries()) {
-            push({ type: "analyzing", stage, progress: +((k + 1) / (ANALYZING.length + 1)).toFixed(2) });
+        {
+          const stages = state.intake ? ANALYZING : ANALYZING_TEXT;
+          for (const [k, stage] of stages.entries()) {
+            push({ type: "analyzing", stage, progress: +((k + 1) / (stages.length + 1)).toFixed(2) });
             if (d.analyzingStepMs !== 0) await new Promise((r) => setTimeout(r, d.analyzingStepMs ?? 600));
           }
           push({ type: "analyzing", stage: "Findings filed", progress: 1 });
-          push({ type: "intake", repo: state.intake });
+          if (state.intake) push({ type: "intake", repo: state.intake });
         }
       }
       for (const tier of plan) {

@@ -77,17 +77,17 @@ describe("express mode", () => {
     expect(ev.at(-1)!.type).toBe("awaiting");
   });
 
-  it("one stream: tiers 1→5, 5–7 alternating lines, escalating fines, verdict, no awaiting, no replies", async () => {
+  it("one stream: tiers 1→3→5, 3–5 alternating lines, escalating fines, verdict, no awaiting, no replies", async () => {
     const { app } = makeApp({ llm: null, expressMode: true });
     const res = await create(app, { ...text(), mode: "express" });
     expect(res.json().mode).toBe("express");
     const caseId = res.json().caseId;
     const ev = await stream(app, caseId);
     const tiers = ev.flatMap((e) => (e.type === "tier" ? [e.tier] : []));
-    expect(tiers).toEqual([1, 2, 3, 4, 5]);
+    expect(tiers).toEqual([1, 3, 5]);
     const lines = ev.filter((e): e is Extract<RoastEvent, { type: "line" }> => e.type === "line");
-    expect(lines.length).toBeGreaterThanOrEqual(5);
-    expect(lines.length).toBeLessThanOrEqual(7);
+    expect(lines.length).toBeGreaterThanOrEqual(3);
+    expect(lines.length).toBeLessThanOrEqual(5);
     lines.slice(1).forEach((l, i) => expect(l.speaker).not.toBe(lines[i]!.speaker));
     expect(ev.some((e) => e.type === "awaiting")).toBe(false);
     expect(ev.at(-1)!.type).toBe("verdict");

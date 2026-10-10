@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { ROUND_MS } from "../src/core/rules.js";
-import { maxPlausibleScore } from "../src/core/scheduler.js";
+import { maxPlausibleScore, maxSpawns } from "../src/core/scheduler.js";
 import { GAMES, type Submission } from "../server/games.js";
 import { gamePlugin } from "../server/plugin.js";
 import { dayOf, GameStore } from "../server/store.js";
@@ -37,7 +37,7 @@ describe("plausibility caps", () => {
   const late = ROUND_MS + 5_000;
   it("whack: accepts a strong but possible round", () => {
     expect(GAMES.whack.implausible(whack(), late)).toBeNull();
-    expect(GAMES.whack.implausible(whack({ score: maxPlausibleScore(ROUND_MS) }, { hits: 100, bestCombo: 100 }), late)).toBeNull();
+    expect(GAMES.whack.implausible(whack({ score: maxPlausibleScore(ROUND_MS) }, { hits: maxSpawns(ROUND_MS), bestCombo: maxSpawns(ROUND_MS) }), late)).toBeNull();
   });
   it("whack: rejects impossible claims", () => {
     expect(GAMES.whack.implausible(whack({ score: maxPlausibleScore(ROUND_MS) + 1 }), late)).toMatch(/plausible max/);

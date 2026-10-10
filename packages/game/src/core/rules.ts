@@ -1,5 +1,5 @@
 /** Scoring per docs/CONTRACT.md "Game — Eurocrat: Whack-a-Model". Pure: shared by client, server and tests. */
-export const ROUND_MS = 45_000;
+export const ROUND_MS = 30_000;
 export const HOLES = 9;
 export const HIT_POINTS = 100;
 /** Combo multiplier cap (streak keeps counting for "best combo"). */

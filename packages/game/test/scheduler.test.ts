@@ -35,13 +35,13 @@ describe("spawn scheduler", () => {
       live.set(sp.hole, t + sp.lifetime);
       expect(live.size).toBeLessThanOrEqual(phaseAt(t).maxLive);
       if (t < 10_000) spawnsEarly++;
-      if (t > 35_000) spawnsLate++;
+      if (t > 22_000) spawnsLate++;
     }
     expect(spawnsLate).toBeGreaterThan(spawnsEarly);
   });
 
   it("speeds up: more spawns per second at the end than at the start", () => {
-    expect(maxSpawns(10_000)).toBeLessThan(maxSpawns(ROUND_MS) - maxSpawns(35_000));
+    expect(maxSpawns(10_000)).toBeLessThan(maxSpawns(ROUND_MS) - maxSpawns(20_000));
   });
 });
 

@@ -211,13 +211,16 @@ function register(): void {
     me = { applicantId, applicantToken, startupName, founderName, oneLiner: input.oneLiner ?? "", photo, at: Date.now(), ticket };
     shownMw = null;
     serverMwAt = 0;
-    queueScreen(ticket);
+    pitchScreen();
   });
 }
 
 // ---------- 2. Queue ----------
 
-function queueScreen(t: QueueTicket): void {
+/** Queue length is now the 30 s Whack-a-Model round: the game is the wait, not a decoupled timer. */
+const QUEUE_GAME_SEC = 30;
+
+function queueScreen(t: QueueTicket, sub: Submission): void {
   const s = screen("queue", ["Directorate-General for Startups", "Waiting room · Window 1"]);
   const my = epoch;
   const tk = el("div", "q-ticket", "Your ticket");
@@ -228,7 +231,46 @@ function queueScreen(t: QueueTicket): void {
   const causes = el("div", "causes");
   const result = el("div");
   causes.hidden = true;
-  s.append(tk, el("div", "q-label", "People ahead of you"), giant, el("div", "q-eta", t.etaText), joke, meanwhileStrip(), better, causes, result);
+  s.append(tk, el("div", "q-label", "People ahead of you — stamp the queue while you wait"), giant, el("div", "q-eta", t.etaText), joke, meanwhileStrip(), better, causes, result);
+
+  // Case created now (pitch submit): the roast stream only opens once the queue/game is done,
+  // so the officers don't start until the audience is watching.
+  whack = null;
+  const auth = applicantAuth();
+  const mode: CaseMode | undefined = isExpress() ? "express" : undefined;
+  let preCase: { caseId: string; ticket: number; officers: PersonaId[]; mode?: CaseMode } | undefined;
+  const createP: Promise<void> = D.api
+    .createCase(sub, undefined, auth ?? undefined, mode)
+    .catch((err: unknown) => {
+      if (mode && err instanceof HttpError && err.status === 400) return D.api.createCase(sub, undefined, auth ?? undefined);
+      throw err;
+    })
+    .catch((err: unknown) => {
+      if (auth && err instanceof HttpError && (err.status === 401 || err.status === 403)) return D.api.createCase(sub, undefined, undefined, mode);
+      throw err;
+    })
+    .then((c) => {
+      preCase = { caseId: c.caseId, ticket: c.ticket, officers: c.officers, mode: c.mode };
+    })
+    .catch(() => undefined);
+
+  // Whack-a-Model runs for the whole wait; the queue ends the instant the round ends.
+  const game = el("iframe", "queue-whack") as HTMLIFrameElement;
+  game.src = `/game/whack/?embed=1${D.api.mock ? "&mock=1" : ""}`;
+  game.title = "Whack-a-Model";
+  game.allow = "autoplay";
+  const gameWrap = el("div", "queue-game");
+  gameWrap.append(el("div", "whack-hint", "Meanwhile: stamp every non-EU model. Do NOT stamp Mistral."), game);
+  giant.insertAdjacentElement("afterend", gameWrap);
+  let gameDone = false;
+  const onGameMsg = (e: MessageEvent) => {
+    if (e.source !== game.contentWindow) return;
+    const r = whackResult(e.data);
+    if (!r) return;
+    whack = r;
+    gameDone = true;
+  };
+  window.addEventListener("message", onGameMsg);
 
   const start = performance.now();
   let skipped = false;
@@ -236,30 +278,33 @@ function queueScreen(t: QueueTicket): void {
   const jokeTimer = setInterval(() => {
     if (my !== epoch) return clearInterval(jokeTimer);
     joke.textContent = QUEUE_JOKES[++j % QUEUE_JOKES.length]!;
-  }, Math.round(Math.min(4200, Math.max(1600, (t.countdownSec * 1000) / 3))));
+  }, Math.round(Math.min(4200, Math.max(1600, (QUEUE_GAME_SEC * 1000) / 3))));
   const frame = () => {
     if (my !== epoch || skipped) return;
-    const pos = positionAt(t.position, (performance.now() - start) / 1000, t.countdownSec);
+    const pos = positionAt(t.position, (performance.now() - start) / 1000, QUEUE_GAME_SEC);
     giant.textContent = formatPosition(pos);
-    if (pos > 0) requestAnimationFrame(frame);
+    if (pos > 0 && !gameDone) requestAnimationFrame(frame);
     else yourTurn("Your turn. Window 1 is now open (until 12:00).");
   };
   requestAnimationFrame(frame);
 
   let quipEl: HTMLElement | null = null;
   let autoGo: number | undefined;
+  const toRoast = () => void createP.then(() => roastScreen(sub, undefined, preCase));
   const yourTurn = (msg: string) => {
     if (my !== epoch) return;
-    // No extra tap: on to the pitch unless the cause tiles are open.
+    window.removeEventListener("message", onGameMsg);
+    gameWrap.remove();
+    // No extra tap: on to the roast unless the cause tiles are open.
     clearTimeout(autoGo);
-    autoGo = window.setTimeout(() => my === epoch && causes.hidden && pitchScreen(), skipped ? 2800 : 1600);
+    autoGo = window.setTimeout(() => my === epoch && causes.hidden && toRoast(), skipped ? 2800 : 1600);
     if (quipEl) return void (quipEl.textContent = msg);
     giant.classList.add("front");
     D.sound.ding();
     buzz([40, 30, 40]);
     quipEl = el("div", "quip", msg);
-    const go = el("button", "btn primary big pulse", "Proceed to pitch →");
-    go.addEventListener("click", () => pitchScreen());
+    const go = el("button", "btn primary big pulse", "Proceed →");
+    go.addEventListener("click", toRoast);
     result.append(quipEl, go);
     better.hidden = skipped;
   };
@@ -282,14 +327,14 @@ function queueScreen(t: QueueTicket): void {
       let quip: string;
       let n: number;
       try {
-        const auth = applicantAuth();
-        if (!auth) throw new Error("local");
-        const r = await D.api.betterPlace(auth, c.id);
+        const auth2 = applicantAuth();
+        if (!auth2) throw new Error("local");
+        const r = await D.api.betterPlace(auth2, c.id);
         quip = r.quip;
         n = r.skipped;
       } catch {
         quip = mockQuip(c.id);
-        n = Math.max(1, positionAt(t.position, (performance.now() - start) / 1000, t.countdownSec) - 1);
+        n = Math.max(1, positionAt(t.position, (performance.now() - start) / 1000, QUEUE_GAME_SEC) - 1);
       }
       if (my !== epoch) return;
       giant.textContent = quipEl ? "0" : "1";
@@ -419,7 +464,8 @@ function pitchScreen(): void {
       sub = { kind: dictated ? "dictation" : "text", text: t };
     }
     D.sound.unlock();
-    void roastScreen(sub);
+    if (!me) return register();
+    queueScreen(me.ticket, sub);
   });
 }
 
@@ -563,7 +609,11 @@ function fireCanvas(host: HTMLElement, alive: () => boolean): HTMLCanvasElement 
   return c;
 }
 
-async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise<void> {
+async function roastScreen(
+  sub: Submission | null,
+  appeal?: AppealFrom,
+  preCase?: { caseId: string; ticket: number; officers: PersonaId[]; mode?: CaseMode },
+): Promise<void> {
   const s = screen("roast");
   const my = epoch;
   const alive = () => my === epoch;
@@ -624,25 +674,17 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
     duo.prepend(...[...officers.values()].map((o) => o.root));
   };
 
-  // Analyzing overlay (repo pitches)
+  // Analyzing overlay, every pitch kind — the Whack game already ran in the queue, before this
+  // screen opened, so this is cosmetic-only and closes itself on the first line (see auditComplete).
   let analyzing: HTMLDivElement | null = null;
   let anaText: HTMLParagraphElement | null = null;
   let anaBar: HTMLElement | null = null;
-  // Whack-a-Model while the repo is audited; officer lines wait behind `gate` until the overlay closes.
-  let game: HTMLIFrameElement | null = null;
-  let goBtn: HTMLButtonElement | null = null;
+  const game: HTMLIFrameElement | null = null;
+  const goBtn: HTMLButtonElement | null = null;
   let audited = false;
-  let gameOver = false;
+  const gameOver = false;
   let release: (() => void) | null = null;
-  let gate: Promise<void> = Promise.resolve();
-  const onGameMsg = (e: MessageEvent) => {
-    if (!game || e.source !== game.contentWindow) return;
-    const r = whackResult(e.data);
-    if (!r) return;
-    whack = r;
-    gameOver = true;
-    if (audited) setTimeout(() => alive() && hideAnalyzing(), 2500);
-  };
+  const gate: Promise<void> = Promise.resolve();
   const showAnalyzing = (stage: string, progress: number) => {
     if (!analyzing) {
       analyzing = el("div", "analyzing");
@@ -652,20 +694,9 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
       const b = el("div", "bar");
       anaBar = el("i");
       b.append(anaBar);
-      analyzing.append(img, el("h2", "", "Analysing your repository…"), anaText, b);
-      if (sub?.kind === "repo") {
-        const g = (game = el("iframe", "whack"));
-        g.src = `/game/whack/?embed=1${D.api.mock ? "&mock=1" : ""}`;
-        g.title = "Whack-a-Model";
-        g.allow = "autoplay";
-        goBtn = el("button", "btn primary big", "Face the officers →");
-        goBtn.hidden = true;
-        goBtn.addEventListener("click", () => hideAnalyzing());
-        analyzing.classList.add("has-game");
-        analyzing.append(el("div", "whack-hint", "Meanwhile: stamp every non-EU model. Do NOT stamp Mistral."), g, goBtn);
-        gate = new Promise<void>((r) => (release = r));
-        window.addEventListener("message", onGameMsg);
-      }
+      // Whack-a-Model now runs in the queue, before this screen even opens — this overlay is
+      // analysis-only for every pitch kind and closes itself the instant the first line arrives.
+      analyzing.append(img, el("h2", "", "Under review…"), anaText, b);
       for (let i = 0; i < 18; i++) {
         const p = el("div", "paper");
         p.style.setProperty("--s", (0.6 + Math.random() * 0.9).toFixed(2));
@@ -697,7 +728,6 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
   const hideAnalyzing = () => {
     analyzing?.remove();
     analyzing = null;
-    window.removeEventListener("message", onGameMsg);
     release?.();
     release = null;
   };
@@ -920,10 +950,16 @@ async function roastScreen(sub: Submission | null, appeal?: AppealFrom): Promise
   if (!sub) return;
   const submission: Submission = sub;
   lastPitch = submission.text ?? submission.repoUrl ?? "";
-  whack = null;
-  if (submission.kind === "repo") showAnalyzing("Requesting the repository from the Publications Office…", 0.02);
   try {
     dispatch({ type: "submit" });
+    // The queue already created the case (and ran Whack-a-Model) before this screen opened.
+    if (preCase) {
+      caseExpress = preCase.mode === "express";
+      setOfficers(preCase.officers);
+      dispatch({ type: "case", caseId: preCase.caseId, ticket: preCase.ticket });
+      await runRound(preCase.caseId);
+      return;
+    }
     const auth = applicantAuth();
     const mode: CaseMode | undefined = isExpress() ? "express" : undefined;
     const create = (a?: ApplicantAuth) =>
