@@ -62,14 +62,14 @@ export class Leaderboard {
   }
 
   add(entry: LeaderboardEntry, findings: Notice["findings"], applicantId: string | null): void {
-    this.db
+    const r = this.db
       .prepare(
         `INSERT INTO leaderboard (case_id, applicant_id, startup_name, founder_name, one_liner, photo_url, total_eur, total_jail, meltdown, top_laws, findings, issued_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(case_id) DO NOTHING`,
       )
       .run(entry.caseId, applicantId, entry.startupName, entry.founderName, entry.oneLiner, entry.photoUrl, Math.round(entry.totalEur), entry.totalJailMonths, entry.meltdown ? 1 : 0, JSON.stringify(entry.topLaws), JSON.stringify(findings), entry.issuedAt);
-    this.bus.emit("entry", entry);
+    if (Number(r.changes) > 0) this.bus.emit("entry", entry);
   }
 
   list(sort: LeaderboardSort = "fines", limit = 50, cursor?: string | null): { entries: LeaderboardEntry[]; next: string | null } {

@@ -26,7 +26,7 @@ export function meanwhileAt(key: string, elapsedSec: number): Meanwhile {
   const r = seeded(key, "meanwhile");
   const jitter = () => 0.8 + 0.45 * r();
   const china = Math.floor(1 + (t / 18) * jitter());
-  const us = Math.floor((t / 75) * jitter());
+  const us = Math.max(1, Math.floor((t / 75) * jitter()));
   const regulations = Math.floor(2 + (t / 9) * jitter());
   const forms = Math.floor(5 + t * 1.7 * jitter());
   const bnPerModel = 9 + Math.floor(r() * 9);

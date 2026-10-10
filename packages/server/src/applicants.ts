@@ -1,5 +1,5 @@
 /** Applicants (CONTRACT v2): registration, queue ticket, the better-place skip, selfies. */
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import sharp from "sharp";
 import type { ApplicantInput, BetterPlaceCause, BetterPlaceResult, QueueTicket } from "@dg-roast/shared";
 import type { Db } from "./db.js";
@@ -70,8 +70,13 @@ export interface Applicant {
   position: number;
   cause: BetterPlaceCause | null;
   hasPhoto: boolean;
+  /** Random id the selfie is served under; the applicantId is public and never used for photos. */
+  photoId: string | null;
+  caseId: string | null;
   createdAt: number;
 }
+
+const tokenHash = (token: string) => createHash("sha256").update(token).digest();
 
 export class InputError extends Error {
   constructor(
@@ -114,6 +119,9 @@ interface Row {
   cause: string | null;
   has_photo: number;
   created_at: number;
+  token_hash: string | null;
+  photo_id: string | null;
+  case_id: string | null;
 }
 
 export class ApplicantStore {
@@ -134,6 +142,7 @@ export class ApplicantStore {
     const photo = input?.photo ? await reencodePhoto(input.photo) : null;
 
     const r = this.rand;
+    const token = randomBytes(32).toString("base64url");
     const applicant: Applicant = {
       id: randomUUID(),
       ticket: 10_000 + Math.floor(r() * 990_000),
@@ -143,13 +152,15 @@ export class ApplicantStore {
       position: 1_200_000 + Math.floor(r() * 3_600_000),
       cause: null,
       hasPhoto: Boolean(photo),
+      photoId: photo ? randomBytes(18).toString("base64url") : null,
+      caseId: null,
       createdAt: this.now(),
     };
-    const ticket: QueueTicket = { applicantId: applicant.id, ticket: applicant.ticket, position: applicant.position, etaText: pick(ETAS, r), countdownSec: 30 + Math.floor(r() * 31) };
+    const ticket: QueueTicket = { applicantId: applicant.id, applicantToken: token, ticket: applicant.ticket, position: applicant.position, etaText: pick(ETAS, r), countdownSec: 30 + Math.floor(r() * 31) };
     this.db
-      .prepare("INSERT INTO applicants (id, ticket, startup_name, founder_name, one_liner, position, cause, has_photo, created_at) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)")
-      .run(applicant.id, applicant.ticket, startupName, founderName, oneLiner, applicant.position, photo ? 1 : 0, applicant.createdAt);
-    if (photo) this.db.prepare("INSERT INTO photos (id, jpeg, created_at) VALUES (?, ?, ?)").run(applicant.id, photo, applicant.createdAt);
+      .prepare("INSERT INTO applicants (id, ticket, startup_name, founder_name, one_liner, position, cause, has_photo, created_at, token_hash, photo_id) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)")
+      .run(applicant.id, applicant.ticket, startupName, founderName, oneLiner, applicant.position, photo ? 1 : 0, applicant.createdAt, tokenHash(token).toString("hex"), applicant.photoId);
+    if (photo) this.db.prepare("INSERT INTO photos (id, jpeg, created_at) VALUES (?, ?, ?)").run(applicant.photoId, photo, applicant.createdAt);
     return { applicant, ticket };
   }
 
@@ -165,22 +176,37 @@ export class ApplicantStore {
       position: row.position,
       cause: row.cause as BetterPlaceCause | null,
       hasPhoto: row.has_photo === 1,
+      photoId: row.photo_id,
+      caseId: row.case_id,
       createdAt: row.created_at,
     };
   }
 
-  betterPlace(id: string, cause: unknown): BetterPlaceResult {
-    if (typeof cause !== "string" || !CAUSES.includes(cause as BetterPlaceCause)) throw new InputError(`cause must be one of: ${CAUSES.join(", ")}`);
-    const a = this.get(id);
+  /** The applicant behind a public id, only with the matching registration token (404 unknown, 403 wrong token). */
+  authorize(id: unknown, token: unknown): Applicant {
+    const a = typeof id === "string" ? this.get(id) : null;
     if (!a) throw new InputError("unknown applicant", 404);
+    const row = this.db.prepare("SELECT token_hash FROM applicants WHERE id = ?").get(a.id) as { token_hash: string | null };
+    const want = row.token_hash ? Buffer.from(row.token_hash, "hex") : null;
+    if (!want || typeof token !== "string" || !token || !timingSafeEqual(want, tokenHash(token))) throw new InputError("applicantToken missing or wrong", 403);
+    return a;
+  }
+
+  setCase(id: string, caseId: string): void {
+    this.db.prepare("UPDATE applicants SET case_id = ? WHERE id = ? AND case_id IS NULL").run(caseId, id);
+  }
+
+  betterPlace(id: string, cause: unknown, token: unknown): BetterPlaceResult {
+    if (typeof cause !== "string" || !CAUSES.includes(cause as BetterPlaceCause)) throw new InputError(`cause must be one of: ${CAUSES.join(", ")}`);
+    const a = this.authorize(id, token);
     const skipped = Math.max(0, a.position - 1);
-    this.db.prepare("UPDATE applicants SET position = 1, cause = ? WHERE id = ?").run(cause, id);
+    this.db.prepare("UPDATE applicants SET position = 1, cause = ? WHERE id = ?").run(cause, a.id);
     const quip = pick(QUIPS[cause as BetterPlaceCause], this.rand).replaceAll("{skipped}", skipped.toLocaleString("en-GB"));
     return { position: 1, skipped, cause: cause as BetterPlaceCause, quip };
   }
 
-  photo(id: string): Buffer | null {
-    const row = this.db.prepare("SELECT jpeg FROM photos WHERE id = ?").get(id) as { jpeg: Uint8Array } | undefined;
+  photo(photoId: string): Buffer | null {
+    const row = this.db.prepare("SELECT jpeg FROM photos WHERE id = ?").get(photoId) as { jpeg: Uint8Array } | undefined;
     return row ? Buffer.from(row.jpeg) : null;
   }
 }

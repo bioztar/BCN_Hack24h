@@ -30,7 +30,10 @@ CREATE TABLE IF NOT EXISTS applicants (
   position INTEGER NOT NULL,
   cause TEXT,
   has_photo INTEGER NOT NULL DEFAULT 0,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  token_hash TEXT,
+  photo_id TEXT,
+  case_id TEXT
 );
 CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, jpeg BLOB NOT NULL, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS leaderboard (
@@ -57,6 +60,9 @@ export function openDb(file: string): Db {
   const db = new DatabaseSync(file);
   if (file !== ":memory:") db.exec("PRAGMA journal_mode = WAL");
   db.exec(SCHEMA);
+  // Additive column migrations for databases created before the applicant-token amendment.
+  const cols = new Set((db.prepare("PRAGMA table_info(applicants)").all() as { name: string }[]).map((c) => c.name));
+  for (const c of ["token_hash", "photo_id", "case_id"]) if (!cols.has(c)) db.exec(`ALTER TABLE applicants ADD COLUMN ${c} TEXT`);
   return db;
 }
 

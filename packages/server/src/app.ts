@@ -7,7 +7,7 @@ import Fastify, { type FastifyInstance, type FastifyPluginAsync, type FastifyRep
 import { MELTDOWN_EUR, MELTDOWN_JAIL_MONTHS, TIER_NAMES, type ApplicantInput, type Case, type LeaderboardSort, type NoticeV2, type PersonaId, type RoastEvent, type RoastEventV2, type Submission, type Tier } from "@dg-roast/shared";
 import { ApplicantStore, InputError } from "./applicants.js";
 import { addFine, emptyMeter, extractRevenueHeuristic, provisionFine, topLaws } from "./fine.js";
-import { Leaderboard, SORTS } from "./leaderboard.js";
+import { Leaderboard, SORTS, decodeCursor } from "./leaderboard.js";
 import { meanwhileAt } from "./meanwhile.js";
 import { buildNoticeV2, fallbackExtras, type Extras } from "./notice2.js";
 import type { Corpus } from "./corpus.js";
@@ -163,9 +163,12 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     }
   });
 
-  app.post<{ Params: { id: string }; Body: { cause?: unknown } }>("/api/applicants/:id/better-place", async (req, reply) => {
+  const tokenOf = (req: FastifyRequest, body: { applicantToken?: unknown } | undefined) => body?.applicantToken ?? req.headers["x-applicant-token"];
+
+  app.post<{ Params: { id: string }; Body: { cause?: unknown; applicantToken?: unknown } }>("/api/applicants/:id/better-place", async (req, reply) => {
+    if (limited(req, reply)) return reply;
     try {
-      return reply.send(applicants.betterPlace(req.params.id, req.body?.cause));
+      return reply.send(applicants.betterPlace(req.params.id, req.body?.cause, tokenOf(req, req.body)));
     } catch (err) {
       if (err instanceof InputError) return fail(reply, err.status, err.message);
       throw err;
@@ -173,7 +176,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   });
 
   app.get<{ Params: { file: string } }>("/api/photos/:file", async (req, reply) => {
-    const m = /^([0-9a-f-]{36})\.jpg$/.exec(req.params.file);
+    const m = /^([A-Za-z0-9_-]{16,64})\.jpg$/.exec(req.params.file);
     const jpeg = m ? applicants.photo(m[1]!) : null;
     if (!jpeg) return fail(reply, 404, "no such photo");
     return reply.header("content-type", "image/jpeg").header("cache-control", "public, max-age=86400").header("x-content-type-options", "nosniff").send(jpeg);
@@ -185,6 +188,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     if (!SORTS.includes(sort)) return fail(reply, 400, "sort must be fines, jail or recent");
     const limit = req.query.limit === undefined ? 50 : Number(req.query.limit);
     if (!Number.isInteger(limit) || limit < 1 || limit > 200) return fail(reply, 400, "limit must be an integer 1–200");
+    if (req.query.cursor && !decodeCursor(req.query.cursor)) return fail(reply, 400, "invalid cursor");
     return board.list(sort, limit, req.query.cursor || null);
   });
 
@@ -205,10 +209,10 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   app.get<{ Params: { caseId: string } }>("/api/leaderboard/:caseId", async (req, reply) => {
     const r = board.get(req.params.caseId);
     if (!r) return fail(reply, 404, "not on the leaderboard (yet)");
-    return { ...r.entry, findings: r.findings };
+    return r;
   });
 
-  app.post<{ Body: { submission?: Submission; officers?: [PersonaId, PersonaId]; applicantId?: string } }>("/api/case", async (req, reply) => {
+  app.post<{ Body: { submission?: Submission; officers?: [PersonaId, PersonaId]; applicantId?: string; applicantToken?: string } }>("/api/case", async (req, reply) => {
     const sub = req.body?.submission;
     if (!sub || !["text", "dictation", "repo"].includes(sub.kind)) return fail(reply, 400, "submission.kind must be text, dictation or repo");
     if (sub.revenueEur !== undefined && (typeof sub.revenueEur !== "number" || !Number.isFinite(sub.revenueEur) || sub.revenueEur < 0)) return fail(reply, 400, "submission.revenueEur must be a non-negative number");
@@ -220,13 +224,24 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       if (!Array.isArray(officers) || officers.length !== 2 || officers[0] === officers[1] || !officers.every((o) => d.roster.get(o))) return fail(reply, 400, "officers must be two distinct persona ids");
     } else officers = d.roster.randomPair(d.rand);
     const applicantId = req.body.applicantId;
-    if (applicantId !== undefined && (typeof applicantId !== "string" || !applicants.get(applicantId))) return fail(reply, 404, "unknown applicantId");
+    let applicant: ReturnType<typeof applicants.get> = null;
+    if (applicantId !== undefined) {
+      try {
+        applicant = applicants.authorize(applicantId, tokenOf(req, req.body));
+      } catch (err) {
+        if (err instanceof InputError) return fail(reply, err.status, err.status === 404 ? "unknown applicantId" : err.message);
+        throw err;
+      }
+      // One case per applicant: a second POST returns the existing case.
+      const existing = applicant.caseId ? cases.get(applicant.caseId) : null;
+      if (existing) return reply.code(200).send({ caseId: existing.caseId, ticket: existing.ticket, officers: existing.officers } satisfies Case);
+    }
     if (limited(req, reply)) return reply;
 
     const submission: Submission = { kind: sub.kind, ...(sub.text ? { text: sub.text.trim() } : {}), ...(sub.repoUrl ? { repoUrl: sub.repoUrl.trim() } : {}), ...(sub.revenueEur !== undefined ? { revenueEur: sub.revenueEur } : {}) };
     const state: CaseState = { caseId: randomUUID(), ticket: nextCounter(d.db, "ticket", 4812), officers: [officers[0], officers[1]], submission, tier: 1, replies: [], lines: [], roundPending: true, round: 0, done: false };
-    state.startedAt = applicantId ? applicants.get(applicantId)!.createdAt : now();
-    if (applicantId) state.applicantId = applicantId;
+    state.startedAt = applicant ? applicant.createdAt : now();
+    if (applicant) state.applicantId = applicant.id;
     if (sub.kind === "repo") {
       try {
         const r = await d.intake.fetch(sub.repoUrl!);
@@ -240,6 +255,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       }
     }
     cases.save(state);
+    if (applicant) applicants.setCase(applicant.id, state.caseId);
     const out: Case = { caseId: state.caseId, ticket: state.ticket, officers: state.officers };
     return reply.code(201).send(out);
   });
@@ -299,7 +315,10 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         const audioUrl = await withTimeout(render, Math.max(0, arrived + (d.ttsBudgetMs ?? 2500) - Date.now()), null);
         push({ type: "line", id, speaker: line.speaker, text: line.text, provisions, clip: line.clip, audioUrl, ...(line.stamp ? { stamp: line.stamp } : {}) });
         provisions.forEach((p, k) => {
-          const item = { id: `${id}-f${k}`, ...provisionFine({ caseId: state.caseId, index: meter.items.length, provisionId: p.id, label: p.label, tier: state.tier, revenueEur: revenue, repeat: cited.has(p.id) }) };
+          const jailBases = new Set(meter.items.flatMap((i) => (i.jailBasis ? [i.jailBasis] : [])));
+          const fine = provisionFine({ caseId: state.caseId, index: meter.items.length, provisionId: p.id, label: p.label, tier: state.tier, revenueEur: revenue, repeat: cited.has(p.id), jailBases });
+          if (!fine) return;
+          const item = { id: `${id}-f${k}`, ...fine };
           cited.add(p.id);
           const { crossed } = addFine(meter, item, { eur: MELTDOWN_EUR, jailMonths: MELTDOWN_JAIL_MONTHS });
           push({ type: "fine", id: item.id, provision: p, amountEur: item.amountEur, jailMonths: item.jailMonths, totalEur: meter.totalEur, totalJailMonths: meter.totalJailMonths, caption: item.caption });
@@ -351,7 +370,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       }
       while (count < 3) emit(d.engine.fill(state, d.engine.partner(state, state.lines.at(-1)?.speaker), state.lines.map((l) => l.text)));
       await chain;
-      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 3000, undefined);
+      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 6000, undefined);
     } catch (err) {
       app.log.error({ err }, "round failed; closing it anyway");
     } finally {
@@ -372,7 +391,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         push({ type: "verdict", notice });
         try {
           board.add(
-            { caseId: state.caseId, startupName: notice.startupName, founderName: notice.founderName, oneLiner: a?.oneLiner ?? null, photoUrl: a?.hasPhoto ? `/api/photos/${a.id}.jpg` : null, totalEur: meter.totalEur, totalJailMonths: meter.totalJailMonths, meltdown: meter.meltdown, topLaws: topLaws(meter), issuedAt: notice.issuedAt },
+            { caseId: state.caseId, startupName: notice.startupName, founderName: notice.founderName, oneLiner: a?.oneLiner ?? null, photoUrl: a?.photoId ? `/api/photos/${a.photoId}.jpg` : null, totalEur: meter.totalEur, totalJailMonths: meter.totalJailMonths, meltdown: meter.meltdown, topLaws: topLaws(meter), issuedAt: notice.issuedAt },
             notice.findings,
             state.applicantId ?? null,
           );
