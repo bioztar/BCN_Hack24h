@@ -5,6 +5,8 @@ import Foundation
 /// in a meltdown; a URL also streams `analyzing` progress first.
 struct MockBackend: RoastBackend {
     var lineDelay: Duration = .milliseconds(900)
+    /// "Skip to verdict": the fixture stream stops pacing itself (the live server streams as fast as it generates).
+    nonisolated(unsafe) static var fastForward = false
 
     /// Case state shared across struct copies (pitch flavour, applicant, live leaderboard).
     private final class Store: @unchecked Sendable {
@@ -190,7 +192,7 @@ struct MockBackend: RoastBackend {
         return AsyncThrowingStream { cont in
             let task = Task {
                 for ev in events {
-                    try? await Task.sleep(for: delay)
+                    if !Self.fastForward { try? await Task.sleep(for: delay) }
                     if Task.isCancelled { break }
                     if case .verdict = ev { Self.publish(entry) }
                     cont.yield(ev)

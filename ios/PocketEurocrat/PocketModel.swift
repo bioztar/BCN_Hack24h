@@ -145,7 +145,7 @@ final class PocketModel {
     /// No audio clip: fake a speaking level for `seconds` so the bust still talks.
     private func talkFor(_ seconds: Double, speaker: String) async {
         let end = Date().addingTimeInterval(seconds)
-        while Date() < end, !Task.isCancelled {
+        while Date() < end, !Task.isCancelled, !skipping {
             puppet.setMouth(open: .random(in: 0.1...0.9), wide: .random(in: 0.9...1.2), speaker: speaker)
             try? await Task.sleep(for: .milliseconds(110))
         }
@@ -277,6 +277,20 @@ final class PocketModel {
         if phase == .roasting { phase = .idle }
     }
 
+    /// "⏭ Skip to verdict": stop the audio and the pacing, apply the remaining events instantly, show the
+    /// verdict the moment it arrives ("Stamping your verdict…" until then).
+    func skipToVerdict() {
+        guard phase == .roasting || phase.isAwaiting, !skipping else { return }
+        skipping = true
+        audio.stopPlayback()
+        puppet.setSpeaker(nil)
+        whack.active = false
+        MockBackend.fastForward = true   // the fixture backend paces itself; the live server does not
+    }
+
+    /// True between "Skip to verdict" and the verdict itself.
+    var skipping = false
+
     /// "New startup" while a case runs: silence the officers and drop every event still queued for them.
     func abandon() {
         epoch += 1
@@ -325,7 +339,7 @@ final class PocketModel {
 
     private func audioPath(for line: RoastLine) async -> String? {
         if let p = line.audioUrl { return p }
-        for _ in 0..<25 {   // up to ~2.5 s for the late clip
+        for _ in 0..<25 where !skipping {   // up to ~2.5 s for the late clip
             if let p = lateAudio[line.id] { return p }
             try? await Task.sleep(for: .milliseconds(100))
         }
@@ -338,6 +352,7 @@ final class PocketModel {
             tierName = name
             if whack.active { whack.auditDone = true }   // the audit is over; the game may stay until the audience is done
         case .line(let line):
+            if skipping { subtitle = line; return }   // fast-forward: no audio, no pacing
             if whack.active { whack.auditDone = true }
             await waitForWhack()
             subtitle = line
@@ -356,6 +371,7 @@ final class PocketModel {
             if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6), speaker: line.speaker) }
         case .verdict(let n):
             await waitForWhack()
+            skipping = false
             notice = n; phase = .idle; lastCaseID = caseID ?? lastCaseID; caseID = nil; showSmug()
         case .analyzing(let stage, let progress):
             analyzing = (stage, progress)
@@ -365,7 +381,7 @@ final class PocketModel {
             totalEur = fine.totalEur
             totalJailMonths = fine.totalJailMonths
             lastFine = fine
-            haptics.fineTick(strength: Float(min(max(fine.amountEur / 50_000_000, 0.25), 1)))
+            if !skipping { haptics.fineTick(strength: Float(min(max(fine.amountEur / 50_000_000, 0.25), 1))) }
         case .meltdown(let eur, let jail):
             totalEur = eur
             totalJailMonths = jail
@@ -373,7 +389,8 @@ final class PocketModel {
             puppet.ignite()
             haptics.stamp()                 // the heavy hit at ignition…
             haptics.rumble(seconds: 3)      // …then the crackle
-            try? await Task.sleep(for: .seconds(5))   // let them burn before the verdict card covers the screen
+            // let them burn before the verdict card covers the screen (cut short by "Skip to verdict")
+            for _ in 0..<50 where !skipping { try? await Task.sleep(for: .milliseconds(100)) }
         case .awaiting(let prompt): phase = .awaiting(prompt)
         case .error(let message): errorMessage = message; phase = .idle
         case .meanwhile(let m): meanwhile = m
@@ -393,6 +410,8 @@ final class PocketModel {
         meanwhile = nil
         notice = nil
         whack = Whack()
+        skipping = false
+        MockBackend.fastForward = false
         appealUsed = false
         lastCaseID = nil
         puppet.extinguish()

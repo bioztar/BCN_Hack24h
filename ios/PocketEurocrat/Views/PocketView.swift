@@ -18,7 +18,23 @@ struct PocketView: View {
             VStack(spacing: 0) {
                 meter
                 Spacer()
-                if let line = model.subtitle { SubtitleBar(line: line, tier: model.tierName) }
+                if let line = model.subtitle, !model.skipping { SubtitleBar(line: line, tier: model.tierName) }
+                if model.phase == .roasting, model.notice == nil {
+                    if model.skipping {
+                        HStack(spacing: 8) { ProgressView(); Text("Stamping your verdict…").font(.subheadline.weight(.semibold)) }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .padding(.bottom, 8)
+                    } else {
+                        Button { model.skipToVerdict() } label: {
+                            Label("Skip to verdict", systemImage: "forward.end.fill").font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 16).padding(.vertical, 9)
+                                .background(Capsule().fill(.ultraThinMaterial))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.bottom, 8)
+                    }
+                }
                 controls
             }
 
@@ -31,6 +47,10 @@ struct PocketView: View {
             if ProcessInfo.processInfo.arguments.contains("-focus-input") {   // screenshot aid (tools/sim-shot.sh)
                 try? await Task.sleep(for: .seconds(1.5))
                 typing = true
+            }
+            if ProcessInfo.processInfo.arguments.contains("-skip-demo") {   // taps "Skip to verdict" after 6 s
+                try? await Task.sleep(for: .seconds(6))
+                model.skipToVerdict()
             }
             if ProcessInfo.processInfo.arguments.contains("-outrage") { model.puppet.setExpression(.outrage) }   // screenshot aid
             if ProcessInfo.processInfo.arguments.contains("-ignite") {   // meltdown screenshot aid
