@@ -46,9 +46,11 @@ button { font-family: inherit; }
 .tray small { font-size: 10px; color: #333; }
 
 /* touch pad */
-.pad { flex: none; display: none; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; padding: 8px 12px 10px; }
+.pad { flex: none; display: none; grid-template-columns: 1fr 1fr 1.4fr 1fr; gap: 8px; padding: 8px 12px 10px; }
 .pad button { height: 50px; border-radius: 6px; border: 2px solid #ffffff66; background: #ffffff14; color: #fff; font-size: 22px; font-weight: bold; touch-action: manipulation; }
 .pad button:active { background: #ffffff33; }
+.pad .drop { background: var(--gold); border-color: var(--gold); color: var(--eu-dark); font-size: 17px; letter-spacing: 0.5px; }
+.pad .drop:active { background: #ffe066; }
 @media (pointer: coarse) { .pad { display: grid; } }
 
 /* side panels (desktop) */

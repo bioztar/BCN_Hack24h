@@ -57,7 +57,7 @@ $("#app").innerHTML = `
   <nav class="pad" id="pad">
     <button data-a="left" aria-label="Left">◀</button>
     <button data-a="rotate" aria-label="Rotate">⟳</button>
-    <button data-a="drop" aria-label="Drop">⤓</button>
+    <button data-a="drop" class="drop" aria-label="Drop">⤓ DROP</button>
     <button data-a="right" aria-label="Right">▶</button>
   </nav>
   <div class="overlay open" id="title"><div class="sheet">
@@ -329,12 +329,30 @@ addEventListener("keyup", (e) => {
   if (game && (e.key === "ArrowDown" || e.key === "s" || e.key === "S")) game.softDrop = false;
 });
 
+let repeat: number | undefined;
+const stopRepeat = () => {
+  clearTimeout(repeat);
+  repeat = undefined;
+};
 for (const b of document.querySelectorAll<HTMLButtonElement>("#pad button")) {
   b.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     unlockAudio();
-    act(b.dataset.a!);
+    const a = b.dataset.a!;
+    act(a);
+    buzz(6);
+    if (a === "left" || a === "right") {
+      stopRepeat();
+      const again = (delay: number) => {
+        repeat = window.setTimeout(() => {
+          act(a);
+          again(75);
+        }, delay);
+      };
+      again(190);
+    }
   });
+  for (const ev of ["pointerup", "pointercancel", "pointerleave"]) b.addEventListener(ev, stopRepeat);
 }
 
 const wrap = $("#wrap");
@@ -346,7 +364,7 @@ wrap.addEventListener("pointerdown", (e) => {
 });
 wrap.addEventListener("pointermove", (e) => {
   if (!gesture || e.pointerId !== gesture.id || gesture.done || !game) return;
-  const step = Math.max(24, view.cw * 0.55);
+  const step = Math.max(22, view.cw * 0.42);
   while (e.clientX - gesture.lx > step) { act("right"); gesture.lx += step; gesture.moved = true; }
   while (gesture.lx - e.clientX > step) { act("left"); gesture.lx -= step; gesture.moved = true; }
   const dy = e.clientY - gesture.y0;

@@ -1,4 +1,4 @@
-import { DGS, FORMS, OMNIBUS, WILDCARDS, type FormDef } from "./forms";
+import { DGS, FORMS, OMNIBUS, WILDCARDS, type DgId, type FormDef } from "./forms";
 import { pick, rngFrom, type Rng } from "./rng";
 import {
   CLEAR_PAUSE_MS, COLS, FILED_POINTS, ROWS, SPAWN_DELAY_MS, dropInterval, levelFor, rowScore,
@@ -62,6 +62,7 @@ export interface Game {
   softDrop: boolean;
   over: boolean;
   sinceOmnibus: number;
+  dgBag: DgId[];
   events: GameEvent[];
   /** Forms that were returned to the queue, by id → count (end screen). */
   returnedBy: Map<string, number>;
@@ -85,6 +86,7 @@ export function createGame(seed: string): Game {
     softDrop: false,
     over: false,
     sinceOmnibus: 0,
+    dgBag: [],
     events: [],
     returnedBy: new Map(),
     nextUid: 1,
@@ -112,9 +114,17 @@ export function columnHeight(grid: Grid, col: number): number {
 
 // ---------- piece generation ----------
 
-function randomForm(rng: Rng): FormDef {
-  const dg = pick(rng, DGS).id;
-  return pick(rng, FORMS.filter((f) => f.dg === dg));
+/** Shuffled bag of the three DGs so each inbox gets its fair share of mail. */
+function randomForm(g: Game): FormDef {
+  if (g.dgBag.length === 0) {
+    g.dgBag = DGS.map((d) => d.id);
+    for (let i = g.dgBag.length - 1; i > 0; i--) {
+      const j = Math.floor(g.rng() * (i + 1));
+      [g.dgBag[i], g.dgBag[j]] = [g.dgBag[j]!, g.dgBag[i]!];
+    }
+  }
+  const dg = g.dgBag.pop()!;
+  return pick(g.rng, FORMS.filter((f) => f.dg === dg));
 }
 
 function makeSpec(g: Game): PieceCell[] {
@@ -133,7 +143,7 @@ function makeSpec(g: Game): PieceCell[] {
   return Array.from({ length: size }, (_, i) => ({
     dx: vertical ? 0 : i,
     dy: vertical ? i : 0,
-    form: randomForm(rng),
+    form: randomForm(g),
   }));
 }
 

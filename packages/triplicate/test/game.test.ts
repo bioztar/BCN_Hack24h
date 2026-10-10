@@ -216,6 +216,25 @@ describe("simulation", () => {
   });
 });
 
+describe("mail distribution", () => {
+  it("each DG gets a fair share of forms (shuffled bag)", () => {
+    for (const seed of ["a", "b", "c", "d"]) {
+      const g = createGame(seed);
+      const counts = new Map<string, number>();
+      for (let t = 0; t < 20000 && !g.over && g.stats.forms < 60; t++) {
+        if (g.piece) {
+          for (const c of g.piece.cells) if (c.form.dg) counts.set(c.form.dg, (counts.get(c.form.dg) ?? 0) + 1);
+          sortPiece(g);
+        }
+        update(g, 16);
+      }
+      const v = [...counts.values()];
+      expect(v).toHaveLength(3);
+      expect(Math.max(...v) - Math.min(...v)).toBeLessThanOrEqual(8);
+    }
+  });
+});
+
 /** Greedy bot via the exported sorter. */
 function sortPiece(g: Game): void {
   steer(g, bestPlacement(g)!);
