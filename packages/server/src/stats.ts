@@ -50,15 +50,18 @@ export class StatsHub {
     this.bus.setMaxListeners(1000);
   }
 
-  snapshot(): Stats {
+  /** Day totals; `event` restricts leaderboard rows and applicants to that event tag. */
+  snapshot(event: string | null = null): Stats {
     const t = this.now();
     const midnight = brusselsMidnight(t);
     const since = new Date(midnight).toISOString();
-    const lb = this.db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(total_eur), 0) AS eur, COALESCE(SUM(total_jail), 0) AS jail FROM leaderboard WHERE issued_at >= ?").get(since) as { n: number; eur: number; jail: number };
+    const ev = event ? " AND event = ?" : "";
+    const evArgs = event ? [event] : [];
+    const lb = this.db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(total_eur), 0) AS eur, COALESCE(SUM(total_jail), 0) AS jail FROM leaderboard WHERE issued_at >= ?${ev}`).get(since, ...evArgs) as { n: number; eur: number; jail: number };
     const queued = this.db
-      .prepare("SELECT COUNT(*) AS n FROM applicants a WHERE a.created_at >= ? AND NOT EXISTS (SELECT 1 FROM leaderboard l WHERE l.applicant_id = a.id)")
-      .get(t - QUEUE_WINDOW_MS) as { n: number };
-    const today = this.db.prepare("SELECT COUNT(*) AS n FROM applicants WHERE created_at >= ?").get(midnight) as { n: number };
+      .prepare(`SELECT COUNT(*) AS n FROM applicants a WHERE a.created_at >= ?${event ? " AND a.event = ?" : ""} AND NOT EXISTS (SELECT 1 FROM leaderboard l WHERE l.applicant_id = a.id)`)
+      .get(t - QUEUE_WINDOW_MS, ...evArgs) as { n: number };
+    const today = this.db.prepare(`SELECT COUNT(*) AS n FROM applicants WHERE created_at >= ?${ev}`).get(midnight, ...evArgs) as { n: number };
     const inQueue = Number(queued.n);
     return {
       inQueue,

@@ -58,6 +58,9 @@ export interface CaseState {
   meanwhile?: Meanwhile;
   /** "express": one stream runs tiers 1→5 and the verdict, no replies. */
   mode?: "express";
+  /** Pre-roast amendment: event slug (leaderboard/stats filter) and no-TTS batch cases. */
+  event?: string;
+  silent?: boolean;
   /** Express: the one appeal has been lodged. */
   appealed?: boolean;
   /** No revenue given (field or pitch): the Commission estimates turnover; cached here once chosen. */
@@ -253,6 +256,31 @@ export function cannedStamp(tier: Tier, text: string, override?: string): Stamp 
   return "REFUSÉ";
 }
 
+const MONEY = /€\s?\d|\d[\d.,]*\s?(?:k|m|bn)\b|\beuros?\b|\bEUR\b/i;
+const MONEY_WORDS = /\b(?:million|billion)\b[^.!?]*\b(?:fine|penalt|pay|owe)|\b(?:fine|penalt|pay|owe)\w*\b[^.!?]*\b(?:million|billion)\b/i;
+
+/**
+ * Drops every sentence that states a money amount, unless it states the Ministry's running total (`totalEur`):
+ * spoken amounts must match the meter, so "Fine computed: thirty-five million euros" never contradicts the verdict.
+ */
+export function stripStrayAmounts(text: string, totalEur: number | null): string {
+  const ok = totalEur ? spokenEur(totalEur).split(" ")[0]! : null;
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .filter((s) => !(MONEY.test(s) || MONEY_WORDS.test(s)) || (ok !== null && s.includes(ok)))
+    .join(" ")
+    .trim();
+}
+
+function amountsPrompt(state: CaseState): string {
+  const m = state.meter;
+  if (state.tier === 5 && m && m.totalEur > 0) {
+    const jail = m.totalJailMonths ? ` and ${m.totalJailMonths} months of prison` : "";
+    return `THE RUNNING TOTAL (computed by the Ministry; it only goes up): ${spokenEur(m.totalEur)}${jail} so far. A line that mentions money states exactly "${spokenEur(m.totalEur)}" as the total so far. Never state any other amount, figure or percentage — no per-article fines, no statutory caps, no "Article 99".`;
+  }
+  return 'AMOUNTS: never state a fine amount, figure or percentage — the Ministry\'s meter shows it ("the amount is on your notice").';
+}
+
 /** "€35,000,000" → "35 million euros", for the tier-5 prompt. */
 export function spokenEur(n: number): string {
   if (n >= 1e9) return `${+(n / 1e9).toFixed(2)} billion euros`;
@@ -295,7 +323,7 @@ CURRENT TIER ${state.tier}/5 — ${TIER_NAMES[state.tier - 1]}: ${TIER_BRIEF[sta
 CANDIDATE PROVISIONS (id | label | title) — the ONLY ids you may cite:
 ${prov.join("\n")}
 ${gags.length ? `\nGAG BANK (inspiration, do not copy verbatim):\n${gags.map((g) => `- ${g.text} [${g.provisions.join(", ")}]`).join("\n")}\n` : ""}
-${state.tier === 5 && state.fine ? `THE FINE (already calculated, final): ${spokenEur(state.fine.fineEur)} (€${state.fine.fineEur.toLocaleString("en-GB")}); basis: ${state.fine.fineBasis}. Any line that mentions the fine states exactly this amount. Never state any other amount, figure or percentage for the fine.\n\n` : ""}${state.tier === 5 && state.meanwhile ? `${meanwhilePrompt(state.meanwhile)}\n\n` : ""}SPOKEN TEXT ONLY: "text" is read aloud by a voice engine, word for word. No stage directions, no *actions*, no [bracketed cues], no "OFF-STAGE", no sound effects, no speaker-name prefix, and never a provision id like "gdpr-6" — ids go only in "provisions"; in speech say the label ("Article 6 GDPR"). A catchphrase or signature line already in <already_said> must not be used again.
+${amountsPrompt(state)}\n\n${state.tier === 5 && state.meanwhile ? `${meanwhilePrompt(state.meanwhile)}\n\n` : ""}SPOKEN TEXT ONLY: "text" is read aloud by a voice engine, word for word. No stage directions, no *actions*, no [bracketed cues], no "OFF-STAGE", no sound effects, no speaker-name prefix, and never a provision id like "gdpr-6" — ids go only in "provisions"; in speech say the label ("Article 6 GDPR"). A catchphrase or signature line already in <already_said> must not be used again.
 
 OUTPUT: 3 to 5 lines, alternating speakers, starting with "${first}".${state.tier >= 2 ? ' At least one line this round MUST carry a stamp (not null) — the officials always stamp from tier 2 on.' : ""} Each line is ONE JSON object on its own line, nothing else (no prose, no array, no code fence):
 {"speaker":"<${a!.id}|${b!.id}>","text":"<one or two spoken sentences, max 40 words>","provisions":["<candidate id>"],"clip":"<${CLIP_SLOTS.join("|")}>","stamp":<null|"REFUSÉ"|"INCOMPLET"|"RENVOYÉ EN COMMISSION">,"charge":"<the finding in under 12 words>"}
@@ -328,7 +356,7 @@ Use clip "tier${state.tier}" for the first line, "talking" for most, "stamp" whe
     const names = state.officers.flatMap((id) => [id, this.d.roster.get(id)?.name ?? "", this.d.roster.get(id)?.name.split(" ").at(-1) ?? ""]);
     const v = validateLine({ text: speakable(o.text, names).slice(0, 400), provisions }, this.d.corpus);
     if (v.dropped.length) this.d.log?.("dropped unknown provisions", { dropped: v.dropped });
-    v.text = speakable(v.text);
+    v.text = stripStrayAmounts(speakable(v.text), state.meter?.totalEur || null);
     if (!v.text) return null;
     const clip = CLIP_SLOTS.includes(o.clip as ClipSlot) ? (o.clip as ClipSlot) : "talking";
     const stamp = STAMPS.includes(o.stamp as Stamp) ? (o.stamp as Stamp) : undefined;

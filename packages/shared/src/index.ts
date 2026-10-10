@@ -54,7 +54,8 @@ export interface WallEntry { speaker: PersonaId; text: string; at: string; }  //
 
 export interface ApplicantInput {
   startupName: string;          // "48K", required, ≤ 60 chars
-  founderName: string;          // required, ≤ 60 chars
+  founderName?: string;         // required, ≤ 60 chars — optional only when `event` is set (batch pre-roast)
+  event?: string;               // optional event slug, e.g. "bcn-hack-24h" (pre-roast amendment)
   oneLiner?: string;            // optional pitch teaser shown on the leaderboard
   photo?: string;               // optional data URL (image/jpeg|png), ≤ 400 KB after client downscale to 512 px
 }
@@ -115,5 +116,6 @@ export interface LeaderboardEntry {
   meltdown: boolean;
   topLaws: string[];                            // up to 3 short labels, e.g. ["AI Act", "GDPR"]
   issuedAt: string;
+  event?: string;                               // event slug, when the case was tagged
 }
 export type LeaderboardSort = "fines" | "jail" | "recent";
