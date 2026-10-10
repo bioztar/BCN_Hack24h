@@ -88,14 +88,16 @@ function field(label: string, input: HTMLInputElement | HTMLTextAreaElement): HT
 
 function currentMeanwhile(): Meanwhile {
   const local = me ? estimateMeanwhile(me.applicantId ?? me.startupName, (Date.now() - me.at) / 1000) : estimateMeanwhile("x", 0);
-  // Follow the server once it talks; fill the gaps (queue, older servers) with the local estimate.
-  if (Date.now() - serverMwAt > 7000) shownMw = maxMeanwhile(shownMw, local);
+  // The server is authoritative once it talks (its counters pause between rounds and its final
+  // snapshot is on the badge/PDF); the local estimate only fills the queue and older servers.
+  if (!serverMwAt) shownMw = maxMeanwhile(shownMw, local);
   return shownMw ?? local;
 }
 
 function onServerMeanwhile(m: Meanwhile): void {
+  // The first server sample replaces the local guess, so the verdict's final snapshot never reads lower than the strip.
+  shownMw = serverMwAt ? maxMeanwhile(shownMw, m) : m;
   serverMwAt = Date.now();
-  shownMw = maxMeanwhile(shownMw, m);
 }
 
 function meanwhileStrip(): HTMLDivElement {
@@ -240,14 +242,17 @@ function queueScreen(t: QueueTicket): void {
   };
   requestAnimationFrame(frame);
 
+  let quipEl: HTMLElement | null = null;
   const yourTurn = (msg: string) => {
     if (my !== epoch) return;
+    if (quipEl) return void (quipEl.textContent = msg);
     giant.classList.add("front");
     D.sound.ding();
     buzz([40, 30, 40]);
+    quipEl = el("div", "quip", msg);
     const go = el("button", "btn primary big pulse", "Proceed to pitch →");
     go.addEventListener("click", () => pitchScreen());
-    result.append(el("div", "quip", msg), go);
+    result.append(quipEl, go);
     better.hidden = true;
   };
 
@@ -279,7 +284,7 @@ function queueScreen(t: QueueTicket): void {
         n = Math.max(1, positionAt(t.position, (performance.now() - start) / 1000, t.countdownSec) - 1);
       }
       if (my !== epoch) return;
-      giant.textContent = "1";
+      giant.textContent = quipEl ? "0" : "1";
       causes.hidden = true;
       D.sound.approve();
       yourTurn(`${c.emoji} ${quip} You skipped ${n.toLocaleString("en-GB")} applicants.`);
