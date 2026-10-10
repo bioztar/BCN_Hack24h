@@ -3,7 +3,7 @@ import type { BetterPlaceCause, LeaderboardEntry, Persona } from "../contract";
 import { fmtInt, h, safeUrl } from "../dom";
 import { POCKET_URL } from "../env";
 import { compare, moves, tickerPick, top, type BoardSort } from "../live/board";
-import { fmtEurShort, fmtJail, fmtJailShort, meltdownProgress } from "../live/fines";
+import { fmtEurShort, fmtJail, fmtJailShort, meltdownProgress, turnoverEstimate, turnoverLine } from "../live/fines";
 import type { GameId, LiveApi } from "../live/api";
 import { isV2Notice } from "../live/case";
 import { OfficialView } from "../stage/official";
@@ -388,12 +388,13 @@ export function caseView(root: HTMLElement, hub: Hub): Dispose {
     else if (s.notice) {
       const n = s.notice;
       const total = isV2Notice(n) ? n.totalEur : n.fineEur;
+      const est = turnoverEstimate(n);
       overlay.replaceChildren(
         h(
           "div",
           { class: "lc-verdict" },
           firstImage(["/assets/generated/cutout/stamp-refuse.png"], "lc-stamp-img", "REFUSÉ", () => h("span", { class: "lc-stamp" }, "REFUSÉ")),
-          h("div", { class: "lc-verdict-sum" }, h("b", null, fmtEurShort(total)), isV2Notice(n) ? h("span", null, fmtJail(n.totalJailMonths)) : null, h("small", null, `Notice ${n.serial}`)),
+          h("div", { class: "lc-verdict-sum" }, h("b", null, fmtEurShort(total)), isV2Notice(n) ? h("span", null, fmtJail(n.totalJailMonths)) : null, h("small", null, `Notice ${n.serial}`), est ? h("small", { class: "lc-turnover" }, turnoverLine(est)) : null),
         ),
       );
     } else if (s.meter.meltdown && !overlay.querySelector(".lc-meltdown")) overlay.replaceChildren(h("div", { class: "lc-meltdown" }, "MELTDOWN"));

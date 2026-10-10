@@ -98,7 +98,11 @@ export interface LinePlayerDeps {
   maxMs?: number;
   /** Used when there is no audioUrl (subtitles only), e.g. Web Speech in mock mode. */
   speak?: (text: string, speaker: string) => Promise<void> | null;
+  /** Autoplay refused: resolve true after a user gesture (the line is then replayed), false to give up. */
+  unblock?: () => Promise<boolean>;
 }
+
+const autoplayBlocked = (err: unknown) => (err as Error)?.name === "NotAllowedError" || /NotAllowed/.test(String(err));
 
 /** Time a subtitle stays on screen when there is no audio: ~3.3 words/s, 1.8–12 s. */
 export function readingTimeMs(text: string): number {
@@ -116,12 +120,16 @@ export function makeLinePlayer(deps: LinePlayerDeps) {
         audio.addEventListener("ended", () => resolve(true), { once: true });
         audio.addEventListener("error", () => resolve(false), { once: true });
       });
+      const attempt = async () => {
+        await audio.play();
+        return Promise.race([finished, deps.sleep(maxMs).then(() => true)]);
+      };
       let ok: boolean;
       try {
-        await audio.play();
-        ok = await Promise.race([finished, deps.sleep(maxMs).then(() => true)]);
-      } catch {
+        ok = await attempt();
+      } catch (err) {
         ok = false;
+        if (autoplayBlocked(err) && deps.unblock && (await deps.unblock())) ok = await attempt().catch(() => false);
       }
       audio.pause();
       if (ok) return "audio";

@@ -38,9 +38,9 @@ describe("parseRevenue", () => {
 describe("pickVisual", () => {
   const p: Persona = { id: "x", name: "X", title: "", color: "#000", stills: { neutral: "/n.png", smug: "/s.png" }, model3d: "/x.glb", clips: { talking: "/t.mp4" } };
   const bare = { ...p, model3d: undefined, clips: undefined };
-  it("uses optional clip → bust only when present, else the puppet", () => {
+  it("uses an optional clip, else the puppet — never the GLB bust", () => {
     expect(pickVisual(p, "talking", "smug", () => false)).toEqual({ kind: "clip", url: "/t.mp4", loop: true });
-    expect(pickVisual(p, "stamp", "stamping", () => false)).toEqual({ kind: "bust", url: "/x.glb" });
+    expect(pickVisual(p, "stamp", "stamping", () => false)).toEqual({ kind: "puppet", images: [cutoutUrl("x", "stamping"), cutoutUrl("x", "neutral"), "/n.png", "/s.png"] });
     expect(pickVisual(bare, "talking", "smug", () => false).kind).toBe("puppet");
   });
   it("orders puppet images cut-out → still → neutral, skipping broken ones", () => {

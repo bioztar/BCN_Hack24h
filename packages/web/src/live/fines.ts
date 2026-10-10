@@ -39,6 +39,23 @@ function trim(n: number, digits: number): string {
   return n.toFixed(digits).replace(/\.0+$|(\.\d*?)0+$/, "$1");
 }
 
+export interface TurnoverEstimate {
+  eur: number;
+  basis: string;
+}
+
+/** Optional `turnoverEstimate` on a (v2) notice — server-side estimate from the idea's market; null if absent/invalid. */
+export function turnoverEstimate(notice: unknown): TurnoverEstimate | null {
+  const t = (notice as { turnoverEstimate?: Partial<TurnoverEstimate> } | null)?.turnoverEstimate;
+  if (!t || typeof t.eur !== "number" || !Number.isFinite(t.eur) || t.eur < 0) return null;
+  return { eur: t.eur, basis: typeof t.basis === "string" ? t.basis.trim() : "" };
+}
+
+/** "Estimated turnover (by the Commission, generously): €40 M — EU HR-tech TAM €8 bn × 0.5 %" */
+export function turnoverLine(t: TurnoverEstimate): string {
+  return `Estimated turnover (by the Commission, generously): ${fmtEurShort(t.eur).replace(" ", "\u00a0")}${t.basis ? ` — ${t.basis}` : ""}`;
+}
+
 /** "€0", "€950", "€12.5 k", "€35 M", "€1.24 bn", "€3,400 bn". */
 export function fmtEurShort(n: number): string {
   const v = Math.max(0, Math.round(num(n)));

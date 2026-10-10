@@ -9,7 +9,7 @@ import { HttpStatusError, type AnyEvent, type LiveApi, type Stats } from "../liv
 
 /** How long the stage stays on a case that sits in "awaiting" before following a newer one. */
 const AWAIT_SWITCH_MS = 45_000;
-const LATE_AUDIO_MS = 1500;
+const LATE_AUDIO_MS = 3000;
 
 /**
  * Everything the presenter views show, fed by the server (or the mock world): leaderboard,
