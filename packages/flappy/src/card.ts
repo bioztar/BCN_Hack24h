@@ -69,15 +69,15 @@ export function drawCard(d: CardData): HTMLCanvasElement {
   g.fillText("eurocrat.pro7ocol.com/flappy/", 100, 990);
 
   g.save();
-  g.translate(780, 400);
+  g.translate(720, 400);
   g.rotate(-0.22);
   g.strokeStyle = g.fillStyle = "rgba(200,16,46,0.85)";
   g.lineWidth = 12;
-  g.font = "bold 96px Arial";
-  const w = g.measureText("DISSOLVED").width + 60;
-  g.strokeRect(-w / 2, -80, w, 140);
+  g.font = "bold 80px Arial";
+  const w = g.measureText("DISSOLVED").width + 56;
+  g.strokeRect(-w / 2, -72, w, 124);
   g.textAlign = "center";
-  g.fillText("DISSOLVED", 0, 25);
+  g.fillText("DISSOLVED", 0, 18);
   g.restore();
   return c;
 }
