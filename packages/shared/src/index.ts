@@ -58,6 +58,7 @@ export interface ApplicantInput {
 }
 export interface QueueTicket {
   applicantId: string;
+  applicantToken: string;       // secret, returned ONLY here; send as `applicantToken` with POST /api/case and better-place (header `x-applicant-token` also accepted)
   ticket: number;               // e.g. 48213 — random 5–6 digits
   position: number;             // starts huge (e.g. 2_417_906), client animates it to 0
   etaText: string;              // "Estimated decision: Q3 2031"
