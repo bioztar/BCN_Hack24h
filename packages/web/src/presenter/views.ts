@@ -32,7 +32,7 @@ export function qrView(root: HTMLElement, hub: Hub): Dispose {
       h(
         "div",
         { class: "qr-left" },
-        h("div", { class: "kicker" }, "European Commission · DG ROAST · Form EU-REG-1"),
+        h("div", { class: "kicker" }, "Eurocrat Commission · DG ROAST · Form EU-REG-1"),
         h("h1", { class: "qr-head" }, "Register your startup in the EU", h("br"), h("em", null, "— join now")),
         h("p", { class: "qr-sub" }, "Scan. Register. Be processed. Estimated decision: Q3 2031."),
         h("div", { class: "qr-count" }, count.el, label),

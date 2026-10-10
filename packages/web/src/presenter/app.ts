@@ -6,17 +6,14 @@ import { httpLiveApi, type LiveApi } from "../live/api";
 import { mockWorld } from "../live/mockWorld";
 import { unlockAudio } from "../stage/sfx";
 import { Hub } from "./hub";
+import { firstRun, navHidden, playHref, REPORT_URL, safeStore, setNavHidden } from "./nav";
+import { KEYS, parseView, type View } from "./view";
 import { arcadeView, boardView, caseView, qrView, type Dispose } from "./views";
 
-export type View = "qr" | "board" | "case" | "arcade";
-const KEYS: Record<string, View> = { q: "qr", l: "board", c: "case", a: "arcade" };
-const NAMES: Record<View, string> = { qr: "Q · Join", board: "L · Leaderboard", case: "C · Live case", arcade: "A · Arcade" };
+export { parseView, type View } from "./view";
 
-export function parseView(v: string | null): View {
-  const k = (v ?? "").toLowerCase();
-  if (k in KEYS) return KEYS[k]!;
-  return (["qr", "board", "case", "arcade"] as View[]).find((x) => x === k) ?? (k === "leaderboard" ? "board" : "qr");
-}
+const NAV: [View, string, string][] = [["qr", "QR", "Q"], ["board", "Leaderboard", "L"], ["case", "Live case", "C"], ["arcade", "Arcade", "A"]];
+const TIP = "Presenter? Keys Q L C A · F full screen · H hide bar";
 
 /** The big-screen presenter: Q = QR intro, L = leaderboard, C = live case, A = arcade. */
 export function presenter(root: HTMLElement): void {
@@ -29,9 +26,30 @@ export function presenter(root: HTMLElement): void {
   document.body.classList.add("presenter");
 
   const screen = h("div", { class: "pv-screen" });
-  const nav = h("nav", { class: "pv-nav" });
+  const store = safeStore();
+  const views = h("div", { class: "pv-nav-views" });
+  const nav = h(
+    "nav",
+    { class: "pv-nav", "aria-label": "Stage" },
+    MOCK ? h("span", { class: "pv-mock" }, "REHEARSAL") : null,
+    views,
+    h("a", { class: "pv-nav-play", href: playHref(location.search) }, "▶ Roast my startup on this screen"),
+    h(
+      "div",
+      { class: "pv-nav-links" },
+      h("a", { href: "/pocket/" }, "Phone app"),
+      h("a", { href: "/game/" }, "Arcade"),
+      h("a", { href: REPORT_URL, target: "_blank", rel: "noopener" }, "Real compliance report"),
+    ),
+    h("button", { class: "pv-nav-hide", title: "Hide this bar (H)", onclick: () => setBar(false) }, "Hide", h("kbd", null, "H")),
+  );
   const hint = h("div", { class: "pv-hint" });
-  root.replaceChildren(h("div", { class: "pv-root" }, screen, nav, hint, MOCK ? h("span", { class: "pv-mock" }, "REHEARSAL — ?mock=1") : null));
+  root.replaceChildren(h("div", { class: "pv-root" }, screen, nav, hint));
+  const setBar = (visible: boolean) => {
+    nav.hidden = !visible;
+    setNavHidden(store, !visible);
+  };
+  nav.hidden = navHidden(store);
 
   const sort: { sort: BoardSort } = { sort: params.get("sort") === "jail" ? "jail" : "fines" };
   let view: View = parseView(params.get("view"));
@@ -42,7 +60,7 @@ export function presenter(root: HTMLElement): void {
     view = v;
     screen.dataset.view = v;
     dispose = v === "qr" ? qrView(screen, hub) : v === "board" ? boardView(screen, hub, sort) : v === "case" ? caseView(screen, hub) : arcadeView(screen, api);
-    nav.replaceChildren(...(Object.keys(NAMES) as View[]).map((k) => h("button", { class: k === v ? "on" : "", onclick: () => show(k) }, NAMES[k])));
+    views.replaceChildren(...NAV.map(([k, name, key]) => h("button", { class: k === v ? "on" : "", title: `${name} (${key})`, onclick: () => show(k) }, name, h("kbd", null, key))));
     const u = new URL(location.href);
     u.searchParams.set("view", v);
     history.replaceState(null, "", u);
@@ -69,8 +87,17 @@ export function presenter(root: HTMLElement): void {
       hub.togglePin();
       return flash(hub.pinned ? "📌 Pinned to this case" : "Following the newest case");
     }
+    if (k === "h") {
+      setBar(nav.hidden);
+      return flash(nav.hidden ? "Bar hidden — H to show" : "Bar shown — H to hide");
+    }
     if (k === "f") void (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()).catch?.(() => undefined);
   });
   window.addEventListener("pointerdown", () => unlockAudio(), { once: true });
   show(view);
+  if (firstRun(store)) {
+    const tip = h("div", { class: "pv-tip", role: "status" }, TIP, h("button", { class: "pv-tip-x", "aria-label": "Dismiss", onclick: () => tip.remove() }, "×"));
+    root.append(tip);
+    setTimeout(() => tip.remove(), 6000);
+  }
 }
