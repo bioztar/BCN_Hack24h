@@ -16,6 +16,8 @@ import {
   scoreAnswer,
   tierForSlot,
   verdictLine,
+  costLine,
+  quipFor,
 } from "../src/game";
 
 describe("scoring", () => {
@@ -105,5 +107,14 @@ describe("ranks + meanwhile", () => {
   it("verdict line has stamp, basis and citation", () => {
     const c = CARDS.find((c) => c.id === "emotion-webcam")!;
     expect(verdictLine(c)).toBe("PROHIBITED — emotion recognition at work, AI Act Art. 5(1)(f).");
+  });
+
+  it("high-risk cost line depends on the classification path", () => {
+    const get = (id: string) => CARDS.find((c) => c.id === id)!;
+    expect(costLine(get("cv-ranker"))).toMatch(/EU database.*Arts\. 43, 48, 49, 14/);
+    expect(costLine(get("grid-safety"))).toMatch(/national level.*49\(5\)/);
+    expect(costLine(get("lift-brake"))).toMatch(/August 2027.*notified-body.*43\(3\)/);
+    expect(costLine(get("lift-brake"))).not.toMatch(/database/);
+    expect(quipFor(get("cv-ranker"))).toBe(costLine(get("cv-ranker")));
   });
 });

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { BANNED_KINDS, CARDS, KIND_STAMP, type Kind } from "../src/game";
+import { BANNED_KINDS, CARDS, COST_CITES, KIND_STAMP, costLine, type Kind } from "../src/game";
 
 const corpus = JSON.parse(readFileSync(new URL("../../../corpus/provisions.json", import.meta.url), "utf8")) as {
   provisions: { id: string; label: string; url: string }[];
@@ -8,7 +8,7 @@ const corpus = JSON.parse(readFileSync(new URL("../../../corpus/provisions.json"
 const byId = new Map(corpus.provisions.map((p) => [p.id, p]));
 
 /** Citations shown outside cards.json (default quips in game.ts). */
-const EXTRA_CITES = ["ai-act-99"];
+const EXTRA_CITES = ["ai-act-99", ...COST_CITES];
 
 describe("cards.json", () => {
   it("has at least 80 cards with unique ids", () => {
@@ -61,5 +61,23 @@ describe("cards.json", () => {
       expect(c.pitch.trim()).toBe(c.pitch);
       expect(c.basis.length).toBeGreaterThan(5);
     }
+  });
+
+  it("every high-risk card states its cost: conformity assessment, registration, human oversight", () => {
+    const hr = CARDS.filter((c) => c.kind === "highrisk");
+    expect(hr.length).toBeGreaterThanOrEqual(10);
+    for (const c of hr) {
+      const line = costLine(c)!;
+      expect(line, c.id).toMatch(/conformity assessment/);
+      expect(line, c.id).toMatch(/human to oversee it/);
+      if (c.ref.startsWith("AI Act Annex III")) expect(line, c.id).toMatch(/registration/);
+      expect(c.ref, c.id).toMatch(/^AI Act (Annex III\(\d\)|Art\. 6\(1\))/);
+    }
+    for (const c of CARDS.filter((c) => c.kind !== "highrisk")) expect(costLine(c), c.id).toBeUndefined();
+  });
+
+  it("removed debatable cards stay removed", () => {
+    for (const id of ["abduction-search", "shop-emotion", "border-polygraph", "evidence-reliability"])
+      expect(CARDS.some((c) => c.id === id), id).toBe(false);
   });
 });

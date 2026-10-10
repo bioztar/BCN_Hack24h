@@ -54,7 +54,6 @@ export const KIND_STAMP: Record<Kind, string> = {
 };
 
 const KIND_QUIP: Partial<Record<Kind, string>> = {
-  highrisk: "Bring 400 forms.",
   minimal: "Nothing to fill in. We are as surprised as you.",
   transparency: "Label it and carry on.",
   prohibited: "Fines up to €35 million or 7 % of turnover.",
@@ -64,8 +63,21 @@ export function verdictLine(card: Card): string {
   return `${KIND_STAMP[card.kind]} — ${card.basis}, ${card.ref}.`;
 }
 
+/** Corpus ids cited by `costLine`. */
+export const COST_CITES = ["ai-act-14", "ai-act-43", "ai-act-48", "ai-act-49"] as const;
+
+/** What an allowed-but-high-risk card costs, by classification path. */
+export function costLine(card: Card): string | undefined {
+  if (card.kind !== "highrisk") return undefined;
+  if (card.ref.startsWith("AI Act Art. 6(1)"))
+    return "Admission fee, from August 2027: the product's notified-body conformity assessment, a CE mark and a human to oversee it (AI Act Arts. 43(3), 48, 14).";
+  if (card.ref.startsWith("AI Act Annex III(2)"))
+    return "Admission fee: conformity assessment, a CE mark, registration at national level and a human to oversee it (AI Act Arts. 43, 48, 49(5), 14).";
+  return "Admission fee: conformity assessment, a CE mark, registration in the EU database and a human to oversee it (AI Act Arts. 43, 48, 49, 14).";
+}
+
 export function quipFor(card: Card): string | undefined {
-  return card.quip ?? KIND_QUIP[card.kind];
+  return costLine(card) ?? card.quip ?? KIND_QUIP[card.kind];
 }
 
 /** FNV-1a 32-bit. */

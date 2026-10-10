@@ -21,12 +21,15 @@ npm run build -w packages/swipe      # -> packages/swipe/dist
 
 ## Cards
 
-`src/cards.json` — 88 cards (44 banned / 44 allowed, three difficulty tiers) grounded in
-AI Act Arts. 5, 6, 50, 51/53 and Annex III, GDPR, NIS2 and DORA. Every `cite` is a provision id in
+`src/cards.json` — 92 cards (44 banned / 48 allowed, three difficulty tiers) grounded in
+AI Act Arts. 2, 5, 6, 50, 51/53, 95 and Annex III, GDPR, NIS2 and DORA, each audited in [AUDIT.md](AUDIT.md). Every `cite` is a provision id in
 `corpus/provisions.json`, and every `url` is that provision's corpus URL —
 `test/data.test.ts` fails otherwise. "Banned" means the pitch as described is prohibited
 (AI Act Art. 5) or unlawful as described (e.g. no legal basis under GDPR); "allowed" includes
-high-risk / transparency-obligation products that may be placed on the market with obligations.
+high-risk / transparency-obligation products that may be placed on the market with obligations;
+high-risk cards show their admission fee (`costLine`: conformity assessment, CE mark,
+registration, human oversight — AI Act Arts. 43, 48, 49, 14). Cards whose answer depends on
+exceptions or on facts the pitch does not state are left out.
 
 Difficulty curve: slots 1–6 draw tier 1, 7–14 tier 2, 15–20 tier 3 (falls back to neighbouring
 tiers if a tier runs dry). Each round is exactly 10 banned / 10 allowed, shuffled with a
