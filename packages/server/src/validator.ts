@@ -59,13 +59,31 @@ export function unbackedCitations(text: string, ids: string[]): string[] {
   return bad;
 }
 
+const ESC = /[.*+?^${}()|[\]\\]/g;
+// A connector left orphaned when the citation it introduced is deleted and nothing follows in that clause.
+const LEAD = String.raw`\s*\b(?:[Pp]ursuant\s+to|[Uu]nder|[Pp]er|[Oo]f)\s+`;
+const CLAUSE_END = String.raw`(?=\s*(?:[.,;:!?\u2014\u2013)]|$|\b(?:and|or|but)\b))`;
+
+/** Deletes unbacked citations (no placeholder phrase) and tidies the sentence around the gap. */
 export function rewordWithout(text: string, citations: string[]): string {
   let out = text;
   for (const c of citations) {
-    const esc = c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    out = out.replace(new RegExp(`(?<![\\w])${esc}(?![\\w])`, "g"), "the relevant provision");
+    const esc = c.replace(ESC, "\\$&");
+    out = out.replace(new RegExp(`${LEAD}${esc}(?![\\w])${CLAUSE_END}`, "g"), "");
+    out = out.replace(new RegExp(`(?<![\\w])${esc}(?![\\w])`, "g"), "");
   }
-  return out.replace(/the relevant provision(\s+(of|under)\s+the relevant provision)+/g, "the relevant provision").replace(/\s{2,}/g, " ").trim();
+  out = out
+    .replace(/\(\s*\)/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+(?:and|or)(?=\s*(?:[.,;:!?]|$))/g, "")
+    .replace(/\s+([.,;:!?)])/g, "$1")
+    .replace(/[,;:]+([.,;:!?])/g, "$1")
+    .replace(/(?<!\.[A-Za-z])([.!?])\s*[,;:\u2014\u2013-]+\s*/g, "$1 ")
+    .replace(/^[\s,;:\u2014\u2013-]+/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (/^[A-Z]/.test(text.trim()) && /^[a-z]/.test(out)) out = out[0]!.toUpperCase() + out.slice(1);
+  return out;
 }
 
 export function validateLine(line: DraftLine, corpus: Corpus): ValidatedLine {
