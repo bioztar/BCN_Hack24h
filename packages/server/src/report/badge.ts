@@ -46,7 +46,8 @@ function face(o: ReportOfficer, cx: number, cy: number, r: number, i: number): s
 }
 
 export function meanwhileLine(m: NonNullable<ReportData["meanwhile"]>): string {
-  return `MEANWHILE: CHINA ${m.china.models.toLocaleString("en-US")} AI MODELS · US ${m.us.models.toLocaleString("en-US")} · EU ${m.eu.regulations.toLocaleString("en-US")} REGULATIONS + ${m.eu.forms.toLocaleString("en-US")} FORMS`;
+  const n = (v: number, one: string, many: string) => `${v.toLocaleString("en-US")} ${v === 1 ? one : many}`;
+  return `MEANWHILE: CHINA ${n(m.china.models, "AI MODEL", "AI MODELS")} · US ${m.us.models.toLocaleString("en-US")} · EU ${n(m.eu.regulations, "REGULATION", "REGULATIONS")} + ${n(m.eu.forms, "FORM", "FORMS")}`;
 }
 
 export function badgeSvg(r: ReportData): string {

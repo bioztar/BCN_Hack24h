@@ -50,6 +50,7 @@ describe("report formatting", () => {
 
   it("renders the Meanwhile line in plain text (no flags)", () => {
     expect(meanwhileLine(mockNotice().meanwhile!)).toBe("MEANWHILE: CHINA 11 AI MODELS · US 3 · EU 27 REGULATIONS + 412 FORMS");
+    expect(meanwhileLine({ elapsedSec: 15, china: { models: 1, note: "" }, us: { models: 1, note: "" }, eu: { regulations: 1, forms: 1, note: "" } })).toBe("MEANWHILE: CHINA 1 AI MODEL · US 1 · EU 1 REGULATION + 1 FORM");
   });
 
   it("cuts law excerpts at a word boundary and skips stubs", () => {

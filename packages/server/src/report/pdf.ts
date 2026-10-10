@@ -188,7 +188,8 @@ export function renderReport({ report: r, lawText }: PdfInput): Promise<Buffer> 
 
   if (r.meanwhile) {
     const m = r.meanwhile;
-    const text = `While you were being processed (${formatElapsed(m.elapsedSec)}), China built ${m.china.models.toLocaleString("en-US")} new AI models — ${m.china.note}. The United States built ${m.us.models.toLocaleString("en-US")} ${m.us.note}. Europe adopted ${m.eu.regulations.toLocaleString("en-US")} new regulations and ${m.eu.forms.toLocaleString("en-US")} forms you now have to fill in to start your startup — ${m.eu.note}.`;
+    const n = (v: number, one: string, many: string) => `${v.toLocaleString("en-US")} ${v === 1 ? one : many}`;
+    const text = `While you were being processed (${formatElapsed(m.elapsedSec)}), China built ${n(m.china.models, "new AI model", "new AI models")} — ${m.china.note}. The United States built ${m.us.models.toLocaleString("en-US")} ${m.us.note}. Europe adopted ${n(m.eu.regulations, "new regulation", "new regulations")} and ${n(m.eu.forms, "form", "forms")} you now have to fill in to start your startup — ${m.eu.note}.`;
     doc.font("serif").fontSize(10);
     const h = doc.heightOfString(text, { width: CW - 28 }) + 34;
     ensure(h + 6);
