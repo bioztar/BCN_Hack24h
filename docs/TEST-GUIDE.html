@@ -1,0 +1,425 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Eurocrat Test Guide</title><style>
+:root{--ink:#14161c;--soft:#5a6070;--line:#e2e5ee;--bg:#fff;--panel:#f5f7fb;--eu:#003399;--gold:#ffcc00;--zebra:#f4f6fa;--red:#c8102e}
+@media (prefers-color-scheme:dark){:root{--ink:#e6e8ee;--soft:#9aa2b4;--line:#2a2e39;--bg:#12141a;--panel:#1b1e26;--zebra:#171a21;--eu:#7da2ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:880px;margin:0 auto;padding:32px 18px 80px}
+h1{font-size:30px;margin:0 0 8px;border-bottom:6px solid var(--gold);padding-bottom:10px;color:var(--eu)}
+h2{font-size:21px;margin:40px 0 10px;padding:8px 12px;background:var(--eu);color:#fff;border-radius:6px}
+p{margin:10px 0}a{color:var(--eu)}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:15px;display:block;overflow-x:auto}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--soft)}
+tbody tr:nth-child(even){background:var(--zebra)}
+td:first-child strong{color:var(--red);white-space:nowrap}
+pre{background:var(--panel);border-left:4px solid var(--gold);padding:12px 14px;border-radius:6px;overflow-x:auto;font-size:14px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:var(--panel);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+ol li,ul li{margin:4px 0}
+@media print{body{background:#fff;color:#000}h2{background:none;color:#003399;border-bottom:2px solid #003399}table,pre{break-inside:avoid}tr{break-inside:avoid}}
+</style></head><body><main><h1>Eurocrat — test guide for Vitaly (2026-10-10)</h1>
+<p>About 60–75 minutes for everything. Do the <strong>Core</strong> tests first (about 30 min). The rest is
+nice-to-have. Every test has an ID. Report back in chat as:</p>
+<pre><code>S3 ❌ watermark never covers the faces at tier 5 (laptop, Chrome) — screenshot
+P7 ✅ but the fine counter is too fast to read
+G2 💡 Mistral should look more French
+</code></pre>
+<p>✅ = works · ❌ = broken (say what you saw and what you expected) · 💡 = idea or tone feedback.
+Screenshots or screen recordings help. Tone counts as much as bugs: tell me what isn't funny,
+what drags, and what is too slow for a 5-minute talk.</p>
+<h2>What you need</h2>
+<table>
+<thead>
+<tr>
+<th>Device</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>iPhone (Zond)</strong> — Safari, unlocked</td>
+<td>audience phone app, games, iOS app later</td>
+</tr>
+<tr>
+<td><strong>Laptop + projector / big screen</strong> (or the laptop alone at full screen)</td>
+<td>stage, presenter keys</td>
+</tr>
+<tr>
+<td>Optional: a second phone (Android or a friend's)</td>
+<td>multi-person leaderboard, the QR join</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>https://eurocrat.pro7ocol.com</td>
+<td><strong>Stage</strong> — big-screen presenter (Q/L/C/A)</td>
+</tr>
+<tr>
+<td>https://eurocrat.pro7ocol.com/?play=1</td>
+<td>Stage v1 — a full roast driven on the laptop</td>
+</tr>
+<tr>
+<td>https://eurocrat.pro7ocol.com/pocket/</td>
+<td><strong>Audience phone app (v2)</strong> — what the QR opens</td>
+</tr>
+<tr>
+<td>https://eurocrat.pro7ocol.com/pocket/?toy=1</td>
+<td>Pocket toy v1 — tilt and shake the 3D official</td>
+</tr>
+<tr>
+<td>https://eurocrat.pro7ocol.com/game/</td>
+<td><strong>Arcade</strong> — four games</td>
+</tr>
+<tr>
+<td>https://eurocrat.pro7ocol.com/wall</td>
+<td>Wall — "Official Journal, Series R"</td>
+</tr>
+<tr>
+<td>https://warden.pro7ocol.com</td>
+<td><strong>Analyzer</strong> — the serious tool</td>
+</tr>
+</tbody>
+</table>
+<p>Test pitches to paste or say (each gets a different reaction):</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Pitch</th>
+<th>Expected outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong> (worst)</td>
+<td>"FaceFeel HR: our AI watches candidates' faces in video interviews to read their emotions and honesty and auto-rejects the nervous ones. Biometric data stored forever in the US. Revenue 5 million euros."</td>
+<td><strong>Meltdown</strong> by round 4–5, billions in fines, jail time</td>
+</tr>
+<tr>
+<td><strong>B</strong> (mid)</td>
+<td>"ChatDoc: a GPT chatbot that gives medical advice to patients and stores their chats for training. Revenue 300k."</td>
+<td>heavy fines, maybe no meltdown</td>
+</tr>
+<tr>
+<td><strong>C</strong> (benign)</td>
+<td>"WoodMoves: we sell handmade wooden chess boards online with double opt-in newsletter. Revenue 80k."</td>
+<td>still roasted, but <strong>no meltdown</strong>; fines in the €10–200 M range</td>
+</tr>
+<tr>
+<td><strong>R</strong> (repo)</td>
+<td><code>https://github.com/sindresorhus/slugify</code> (or any public repo of yours)</td>
+<td>the officers audit the repo: no privacy policy, LICENSE, etc.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1 · Audience phone app — <code>/pocket/</code> (CORE, ~15 min, iPhone)</h2>
+<p>This is the core of the demo: what the room does after scanning the QR.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Do</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P1</strong></td>
+<td>Open <code>/pocket/</code> in Safari, then <em>Share → Add to Home Screen</em>, then open it from the icon</td>
+<td>Opens full-screen like an app, with the Eurocrat icon and no Safari bars</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>Register: startup name, founder name, <strong>take a selfie</strong> with the camera</td>
+<td>Copy is cringe-funny ("build a real business in the EU!"); camera opens; photo preview</td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>Queue screen</td>
+<td>A huge number counts down over 30–60 s; the ETA joke; Meanwhile counters ticking at the top</td>
+</tr>
+<tr>
+<td><strong>P4</strong></td>
+<td>Tap <strong>"But we're making the world a better place"</strong> → pick a cause</td>
+<td>Cause tiles look good (emoji posters); a quip; you skip to the front</td>
+</tr>
+<tr>
+<td><strong>P5</strong></td>
+<td>Pitch <strong>A</strong> by <strong>voice</strong> (dictate)</td>
+<td>Mic permission; transcript is right; you can edit it before sending</td>
+</tr>
+<tr>
+<td><strong>P6</strong></td>
+<td>The roast</td>
+<td>Two officers on screen; lines spoken aloud with subtitles; citation chips open EUR-Lex. Is the <strong>voice</strong> audible and is every line voiced?</td>
+</tr>
+<tr>
+<td><strong>P7</strong></td>
+<td>Fines / jail meter</td>
+<td>Spins up like a slot machine on each fine; readable; funny captions</td>
+</tr>
+<tr>
+<td><strong>P8</strong></td>
+<td>Argue back each round (text or voice) until the end</td>
+<td>Each reply escalates: Pre-consultation → Committee → Trilogue → Delegated Act → Official Journal</td>
+</tr>
+<tr>
+<td><strong>P9</strong></td>
+<td>Meltdown (pitch A)</td>
+<td>Both officers burn (flames over the cut-outs). Spectacular enough?</td>
+</tr>
+<tr>
+<td><strong>P10</strong></td>
+<td>Verdict</td>
+<td>Total fines + jail, "While you were being processed…" Meanwhile card, badge preview</td>
+</tr>
+<tr>
+<td><strong>P11</strong></td>
+<td><strong>Share</strong></td>
+<td>iOS share sheet with the <strong>badge image</strong>; try sending it to yourself on WhatsApp/Telegram</td>
+</tr>
+<tr>
+<td><strong>P12</strong></td>
+<td><strong>Download report (PDF)</strong></td>
+<td>Opens the branded PDF: one-page TL;DR, per-law analysis, how to fix, links</td>
+</tr>
+<tr>
+<td><strong>P13</strong></td>
+<td><strong>Leaderboard</strong> tab</td>
+<td>Your startup is there with selfie, fines and jail; sort by fines/jail; tap an entry for the detail</td>
+</tr>
+<tr>
+<td><strong>P14</strong></td>
+<td>Repeat once with pitch <strong>C</strong> typed, skipping the selfie</td>
+<td>No meltdown; smaller fines; still funny?</td>
+</tr>
+<tr>
+<td><strong>P15</strong></td>
+<td>Repeat once with <strong>R</strong> (GitHub URL)</td>
+<td>"Analyzing" screen with appalled officers and flying papers, then repo-specific roasts</td>
+</tr>
+</tbody>
+</table>
+<p>Tone check for P6–P10: are the jokes landing, is anything offensive in a way you don't want,
+is any line too long for the stage, and do the officers' voices fit them?</p>
+<h2>2 · Stage — big screen (CORE, ~10 min, laptop + projector)</h2>
+<p>Open https://eurocrat.pro7ocol.com on the laptop and press <strong>F</strong> for full screen. Keys:
+<strong>Q</strong> QR intro · <strong>L</strong> leaderboard · <strong>C</strong> live case · <strong>A</strong> arcade · <strong>T</strong> (on the leaderboard)
+toggles fines/jail · <strong>M</strong> stage sound on/off · <strong>P</strong> pin the current case.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Do</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td><strong>Q</strong></td>
+<td>Huge QR → <code>/pocket/</code>; scan it with the iPhone camera and it opens the app; the queue counter and day-total MEANWHILE board are visible and readable from the back of a room</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td><strong>L</strong></td>
+<td>Top 10 with photos, € and jail; a new verdict on the phone makes the board <strong>reorder live</strong> (do P8 on the phone while watching)</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td><strong>C</strong> while a phone roast is running</td>
+<td>Stage mirrors the live case: officers, lines, fines meter, meltdown fire. Does it keep up with the phone?</td>
+</tr>
+<tr>
+<td><strong>S4</strong></td>
+<td><strong>M</strong> then <strong>C</strong></td>
+<td>Stage sound: do you want the stage to speak too, or only the phone? (decide for the demo)</td>
+</tr>
+<tr>
+<td><strong>S5</strong></td>
+<td><strong>A</strong></td>
+<td>QR to the arcade plus today's top score per game</td>
+</tr>
+<tr>
+<td><strong>S6</strong></td>
+<td>Open https://eurocrat.pro7ocol.com/wall in a second tab</td>
+<td>Wall shows only the officials' lines (never what people typed)</td>
+</tr>
+<tr>
+<td><strong>S7</strong></td>
+<td>https://eurocrat.pro7ocol.com/?play=1 — a full laptop roast with pitch <strong>B</strong></td>
+<td>Cookie banner from hell, ticket, allocation board, puppet officials with moving mouths, <strong>3D rubber stamp</strong> slams, the Art. 50 watermark grows each tier, notice + PNG download, the Ombudsman auto-reply on Appeal</td>
+</tr>
+</tbody>
+</table>
+<p>Projector check: contrast and font size from 5 m away, and whether the 3D stamp and busts
+render (they've never been seen on real hardware).</p>
+<h2>3 · Arcade — <code>/game/</code> (~15 min, iPhone; also try one game on the laptop)</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Game</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>G1</strong></td>
+<td>Arcade landing <code>/game/</code></td>
+<td>Four tiles plus today's top scores; looks like one product</td>
+</tr>
+<tr>
+<td><strong>G2</strong></td>
+<td><strong>Whack-a-Model</strong> (45 s)</td>
+<td>Stamp every non-EU model fast; <strong>don't stamp Mistral</strong> (−500 + screen shake). Speed feels fair? Model names recognisable? Stamp words funny? End screen rank, Meanwhile joke, share card, name on the leaderboard</td>
+</tr>
+<tr>
+<td><strong>G3</strong></td>
+<td><strong>Legal or Banned?</strong> (20 cards)</td>
+<td>Swipe left = banned, right = allowed. After each card: verdict + real article; "Admission fee" line on high-risk ones. Do you <strong>agree with the verdicts</strong>? Report any card you'd dispute by its text</td>
+</tr>
+<tr>
+<td><strong>G4</strong></td>
+<td><strong>Regulatory Flappy</strong></td>
+<td>Tap to fly through regulation pillars; on a crash you get "DISSOLVED" + one real fact. Score a first-timer gets? Too hard or easy?</td>
+</tr>
+<tr>
+<td><strong>G5</strong></td>
+<td><strong>In Triplicate</strong></td>
+<td>Falling forms → the right DG inbox; swipe moves, tap rotates, DROP button. Controls OK on the phone? Survive about 60–90 s?</td>
+</tr>
+<tr>
+<td><strong>G6</strong></td>
+<td>Any game, then the end screen → share + leaderboard</td>
+<td>Score lands on the arcade landing and the stage <strong>A</strong> view</td>
+</tr>
+</tbody>
+</table>
+<h2>4 · Pocket toy v1 — <code>/pocket/?toy=1</code> (~3 min, iPhone)</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Do</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>T1</strong></td>
+<td>Pick an officer, approve the "Form M-50" motion permission</td>
+<td>The permission gag; 3D official in a box</td>
+</tr>
+<tr>
+<td><strong>T2</strong></td>
+<td>Tilt the phone</td>
+<td>Official slides, tumbles, hits walls, papers fly; indignant lines</td>
+</tr>
+<tr>
+<td><strong>T3</strong></td>
+<td>Shake</td>
+<td>REFUSÉ stamp on the screen (vibration may not work on iPhone Safari)</td>
+</tr>
+<tr>
+<td><strong>T4</strong></td>
+<td>Leave it still for 20 s</td>
+<td>Falls asleep</td>
+</tr>
+</tbody>
+</table>
+<p>Is the toy worth keeping in the demo, or is v2 enough?</p>
+<h2>5 · Analyzer — https://warden.pro7ocol.com (~8 min, laptop)</h2>
+<p>The serious tool behind the joke.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Do</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>W1</strong></td>
+<td>Idea tab: paste pitch <strong>A</strong></td>
+<td>About 30–60 s with live stage progress; AI Act tier (expect <strong>prohibited</strong> or <strong>high-risk</strong>) with step-by-step reasoning; frameworks triggered; findings by severity with EUR-Lex links</td>
+</tr>
+<tr>
+<td><strong>W2</strong></td>
+<td>Document tab: upload a real design doc or PRD of yours (PDF/DOCX/MD)</td>
+<td>Findings quote your document; anything <strong>wrong legally</strong>? (your expertise matters most here)</td>
+</tr>
+<tr>
+<td><strong>W3</strong></td>
+<td>GitHub tab: one of your public repos</td>
+<td>Codebase findings make sense; it reports a committed <code>.env</code> exists but never shows its contents</td>
+</tr>
+<tr>
+<td><strong>W4</strong></td>
+<td>Explainer toggle + Export Markdown + Print to PDF</td>
+<td>Would you hand this to a client as a first-pass quick-scan?</td>
+</tr>
+<tr>
+<td><strong>W5</strong></td>
+<td>From a roast verdict on the stage (<code>?play=1</code>) click "Get the real report"</td>
+<td>Lands on warden</td>
+</tr>
+</tbody>
+</table>
+<h2>6 · iPhone native app — later (after the Mac helm builds PR #20)</h2>
+<p>Not testable yet: the Mac helm builds it when its usage resets, then reinstalls on Zond.
+After that:</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>I1</strong></td>
+<td>v2 flow against live: register → queue → roast → fines → meltdown → badge/report → leaderboard</td>
+</tr>
+<tr>
+<td><strong>I2</strong></td>
+<td>Two officers as 3D photo-relief busts, lip sync, tilt parallax, topple</td>
+</tr>
+<tr>
+<td><strong>I3</strong></td>
+<td><strong>Play</strong> tab = the Arcade inside the app; scores give haptics</td>
+</tr>
+<tr>
+<td><strong>I4</strong></td>
+<td>Meanwhile strip during the roast + card on the verdict</td>
+</tr>
+</tbody>
+</table>
+<h2>7 · Demo dry run — the 5-minute talk (~10 min)</h2>
+<p>Run it end to end once, with a timer:</p>
+<ol>
+<li><strong>Q</strong> on the projector — "Register your startup in the EU" → the room scans.</li>
+<li>You pitch <strong>A</strong> live on the iPhone (voice); the stage on <strong>C</strong> mirrors it.</li>
+<li>Meltdown → verdict → share the badge.</li>
+<li><strong>L</strong> — the room's startups on the leaderboard, live.</li>
+<li><strong>A</strong> — "while you wait for your permit, play Whack-a-Model".</li>
+<li>Close: warden — "and here's the real compliance report".</li>
+</ol>
+<p>Tell me: total time, where it dragged, what you'd cut, and which pitch gets the biggest laugh.</p>
+<h2>Known limits (no need to report)</h2>
+<ul>
+<li>Officer pictures are Picsart stills; there are no "burning" stills (the fire is drawn in code).</li>
+<li>Game difficulty was tuned by bots, so your first-timer numbers are the real data.</li>
+<li>A round can take 6–10 s while the model writes; the first line usually arrives in about 4 s.</li>
+<li>The repo is private; the badge says "Parody · not affiliated with the EU".</li>
+</ul></main></body></html>
