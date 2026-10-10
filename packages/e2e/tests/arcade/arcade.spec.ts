@@ -4,8 +4,7 @@ import { requirePage } from "../../src/routes";
 
 /** `end` = how long the game takes to end on its own once input stops (null: needs the short-round hook). */
 const GAMES = [
-  { route: "/game/", name: "arcade landing / whack-a-model", end: 75_000 },
-  { route: "/game/whack/", name: "whack-a-model", end: 75_000 },
+  { route: "/game/whack/", name: "whack-a-model", end: 60_000 },
   { route: "/swipe/", name: "swipe", end: null },
   { route: "/flappy/", name: "flappy", end: 30_000 },
   { route: "/triplicate/", name: "triplicate", end: null },
@@ -43,6 +42,23 @@ async function play(page: Page, ms: number) {
     await page.waitForTimeout(120);
   }
 }
+
+test.describe("arcade /game/ (landing)", () => {
+  test.beforeEach(async ({ request }) => requirePage(request, "/game/"));
+
+  test("lists the four games, each tile opens its game", async ({ page, consoleLog }) => {
+    await page.goto("/game/?mock=1");
+    const begin = page.getByRole("link", { name: /Begin procedure/ });
+    await expect(begin).toHaveCount(4);
+    const hrefs = await begin.evaluateAll((as) => as.map((a) => new URL((a as HTMLAnchorElement).href).pathname));
+    expect(hrefs.sort()).toEqual(["/flappy/", "/game/whack/", "/swipe/", "/triplicate/"].sort());
+    await expect(page.getByText(/Today's top/).first()).toBeVisible();
+    await begin.first().click();
+    await expect(page).toHaveURL(/\/game\/whack\/\?.*mock=1/);
+    await expect(page.locator("canvas, button, [role=button]").first()).toBeVisible({ timeout: 20_000 });
+    expect(consoleLog.errors(), "console errors").toEqual([]);
+  });
+});
 
 for (const g of GAMES) {
   test.describe(`arcade ${g.route}`, () => {
