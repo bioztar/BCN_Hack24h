@@ -1,5 +1,6 @@
 /** One 45 s round on a 3×3 DOM board. Transforms + WAAPI only, so it stays at 60 fps on a phone. */
 import { ModelPicker, type Model } from "../core/models";
+import type { Hand } from "./hand";
 import { pick, rngFor, type Rng } from "../core/rng";
 import { ESCAPE_GRACE_MS, HOLES, ROUND_MS, STAMP_WORDS, newTally, score, type GameEvent, type Tally } from "../core/rules";
 import { Spawner } from "../core/scheduler";
@@ -105,6 +106,7 @@ export class Round {
     pool: readonly Model[],
     private readonly seed: string,
     private readonly onEnd: (r: RoundResult) => void,
+    private readonly hand?: Hand,
   ) {
     this.rng = rngFor(seed);
     this.spawner = new Spawner(this.rng);
@@ -118,6 +120,7 @@ export class Round {
       clearStamp(h);
       h.root.addEventListener("pointerdown", this.onDown);
     }
+    this.hand?.show(true);
     this.t0 = performance.now();
     this.hud.score(0, 0);
     this.hud.combo(0);
@@ -127,6 +130,7 @@ export class Round {
   stop(): void {
     this.done = true;
     cancelAnimationFrame(this.raf);
+    this.hand?.show(false);
     for (const h of this.holes) h.root.removeEventListener("pointerdown", this.onDown);
   }
 
@@ -206,17 +210,18 @@ export class Round {
     if (!h) return;
     const p = h.pop;
     const elapsed = performance.now() - this.t0;
+    const land = this.hand?.slam(e.clientX, e.clientY, e.pointerType) ?? 0;
     if (!p || p.state === "down") {
       this.apply("miss");
       this.sfx.tap();
-      h.root.animate([{ transform: "scale(0.96)" }, { transform: "scale(1)" }], { duration: 120 });
+      h.root.animate([{ transform: "scale(1)" }, { transform: "scale(0.96)" }, { transform: "scale(1)" }], { duration: 120, delay: land });
       return;
     }
     if (p.state === "hit") return;
     p.state = "hit";
     p.born = elapsed;
     h.root.classList.add("hit");
-    this.stampOn(h, p.model);
+    this.stampOn(h, p.model, land);
     if (p.model.eu) {
       this.apply("mistral");
       this.sfx.buzzer();
@@ -225,14 +230,21 @@ export class Round {
       this.banned();
     } else {
       const pts = this.apply("hit");
-      this.sfx.stamp(0.9 + this.rng() * 0.25);
+      const pitch = 0.9 + this.rng() * 0.25;
+      if (land) setTimeout(() => this.sfx.stamp(pitch), land);
+      else this.sfx.stamp(pitch);
+      this.shake(land);
       vibrate(15);
       const combo = this.tally.streak > 1 ? ` ×${Math.min(this.tally.streak, 10)}` : "";
       this.floatText(h, `+${fmt(pts)}${combo}`, "good");
     }
   }
 
-  private stampOn(h: Hole, m: Model): void {
+  private shake(delay: number): void {
+    this.stage.animate([0, -5, 4, -2, 0].map((y, i) => ({ transform: `translate(${i % 2 ? 2 : -2}px, ${y}px)` })), { duration: 130, delay });
+  }
+
+  private stampOn(h: Hole, m: Model, delay: number): void {
     const word = m.eu ? "REFUSÉ" : pick(this.rng, STAMP_WORDS);
     h.stamp.textContent = word;
     h.stamp.className = `stamp on${word.length > 11 ? " long" : ""}`;
@@ -244,8 +256,9 @@ export class Round {
         { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(0.92)`, opacity: 1, offset: 0.7 },
         { transform: `translate(-50%,-50%) rotate(${rot}deg) scale(1)`, opacity: 0.92 },
       ],
-      { duration: 140, easing: "ease-in", fill: "forwards" },
+      { duration: 140, delay, easing: "ease-in", fill: "both" },
     );
+    if (delay) h.splat.parentElement!.animate([{ opacity: 0 }, { opacity: 0 }], { duration: delay });
   }
 
   private floatText(h: Hole, text: string, cls: string): void {

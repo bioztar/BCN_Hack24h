@@ -76,6 +76,32 @@ export const RANKS: readonly { min: number; title: string }[] = [
   { min: 50_000, title: "President of the Commission" },
 ];
 
+export function rankIndex(points: number): number {
+  let i = 0;
+  RANKS.forEach((r, k) => {
+    if (points >= r.min) i = k;
+  });
+  return i;
+}
+
+export interface RankDelta {
+  kind: "first" | "up" | "same" | "down";
+  line: string;
+}
+
+/** End-screen career line: compares this round's rank with the previous round's. */
+export function rankDelta(prev: number | null, points: number): RankDelta {
+  const i = rankIndex(points);
+  const title = RANKS[i]!.title;
+  const next = RANKS[i + 1];
+  const toNext = next ? ` ${(next.min - points).toLocaleString("en-GB")} more points for ${next.title}.` : "";
+  if (prev === null) return { kind: "first", line: `Appointed ${title}.${toNext}` };
+  const j = rankIndex(prev);
+  if (i > j) return { kind: "up", line: `You were promoted to ${title}!` };
+  if (i < j) return { kind: "down", line: `Demoted to ${title} (was ${RANKS[j]!.title}).${toNext}` };
+  return { kind: "same", line: `Still ${title}.${toNext}` };
+}
+
 export function rankTitle(points: number): string {
   let title = RANKS[0]!.title;
   for (const r of RANKS) if (points >= r.min) title = r.title;

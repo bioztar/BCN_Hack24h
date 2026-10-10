@@ -92,3 +92,15 @@ body.embed .stage > .fine-print { display: none; }
 .hole.eu .tile { background: radial-gradient(circle at 50% 35%, #ff8a3d 0%, var(--bg) 70%); box-shadow: inset 0 0 0 2.2cqw var(--gold), inset 0 0 0 3cqw #fff; }
 .hole.eu .tile::after { content: "🇪🇺 MADE IN EU"; position: absolute; bottom: 9%; left: 50%; transform: translateX(-50%); white-space: nowrap; font: bold 5.4cqw Arial; color: var(--eu); background: var(--gold); padding: 0.6cqw 2cqw; border-radius: 2cqw; }
 .hole.eu .tile small { display: none; }
+
+.hand { position: fixed; left: 0; top: 0; z-index: 8; width: clamp(100px, 25vmin, 190px); pointer-events: none; will-change: transform; filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.35)); }
+.hand[hidden] { display: none; }
+.hand svg { display: block; width: 100%; height: auto; }
+.hand-wobble { transform-origin: 33% 79%; animation: hand-idle 1.7s ease-in-out infinite; }
+.hand-press { transform-origin: 33% 79%; transform: translateY(-16%); }
+@keyframes hand-idle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) translateY(-2%); } }
+@media (pointer: fine) { .stage.hand-on .board, .stage.hand-on .hole { cursor: none; } }
+@media (prefers-reduced-motion: reduce) { .hand-wobble { animation: none; } }
+.end-delta { font: bold 15px Arial; margin: 2px 0 6px; color: #333; }
+.end-delta.up { display: inline-block; color: #0a5c24; background: var(--gold); padding: 4px 10px; border-radius: 6px; }
+.end-delta.down { color: #c8102e; }
