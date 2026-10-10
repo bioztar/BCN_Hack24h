@@ -329,6 +329,7 @@ export function caseView(root: HTMLElement, hub: Hub): Dispose {
     if (s.caseId !== caseKey) {
       caseKey = s.caseId;
       shownFine = "";
+      lastFine.replaceChildren();
       eur.set(0, true);
       jail.set(0, true);
     }
