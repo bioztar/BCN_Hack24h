@@ -329,3 +329,6 @@ html:has(body.shake), body.shake { overflow-x: clip; }
 .sig-ink { color: #1d2f6f !important; }
 .sig b { border-left: 5px solid var(--accent); padding-left: 6px; }
 .nd-recital { font-style: italic; }
+
+.to-stage { position: fixed; left: 12px; bottom: 12px; z-index: 100; background: #003399; color: #fff; border: 2px solid #ffd617; padding: 4px 12px; font: bold 14px/1.4 system-ui, sans-serif; text-decoration: none; }
+.to-stage:hover { background: #ffd617; color: #000; }

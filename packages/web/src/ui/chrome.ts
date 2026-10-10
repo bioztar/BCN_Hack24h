@@ -18,7 +18,7 @@ export function chrome(main: HTMLElement, form: string): HTMLElement {
       "header",
       { class: "eu-header" },
       emblem(),
-      h("div", { class: "eu-title" }, h("strong", null, "European Commission"), h("span", null, "Directorate-General for the Refusal of Startups (DG ROAST)")),
+      h("div", { class: "eu-title" }, h("strong", null, "Eurocrat Commission"), h("span", null, "Directorate-General for the Refusal of Startups (DG ROAST)")),
       h("div", { class: "eu-meta" }, h("span", null, "EN ▾"), h("span", null, "Accessibility statement (pending)"), MOCK ? h("span", { class: "mock-badge" }, "REHEARSAL — ?mock=1") : null),
     ),
     h("nav", { class: "eu-crumbs" }, "Home › Policies › Innovation › Refusal of innovation › ", h("b", null, form)),
