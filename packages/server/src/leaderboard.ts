@@ -17,6 +17,7 @@ interface Row {
   top_laws: string;
   findings: string;
   issued_at: string;
+  event?: string | null;
 }
 
 const toEntry = (r: Row): LeaderboardEntry => ({
@@ -30,6 +31,7 @@ const toEntry = (r: Row): LeaderboardEntry => ({
   meltdown: r.meltdown === 1,
   topLaws: JSON.parse(r.top_laws) as string[],
   issuedAt: r.issued_at,
+  ...(r.event ? { event: r.event } : {}),
 });
 
 /** Sort key column per sort; ties break on issued_at then case_id (both descending). */
@@ -61,34 +63,39 @@ export class Leaderboard {
     this.bus.setMaxListeners(1000);
   }
 
-  add(entry: LeaderboardEntry, findings: Notice["findings"], applicantId: string | null): void {
+  add(entry: LeaderboardEntry, findings: Notice["findings"], applicantId: string | null, event: string | null = null): void {
     const r = this.db
       .prepare(
-        `INSERT INTO leaderboard (case_id, applicant_id, startup_name, founder_name, one_liner, photo_url, total_eur, total_jail, meltdown, top_laws, findings, issued_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO leaderboard (case_id, applicant_id, startup_name, founder_name, one_liner, photo_url, total_eur, total_jail, meltdown, top_laws, findings, issued_at, event)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(case_id) DO UPDATE SET total_eur = excluded.total_eur, total_jail = excluded.total_jail, meltdown = excluded.meltdown, top_laws = excluded.top_laws, findings = excluded.findings, issued_at = excluded.issued_at
          WHERE leaderboard.total_eur != excluded.total_eur OR leaderboard.total_jail != excluded.total_jail OR leaderboard.meltdown != excluded.meltdown`,
       )
-      .run(entry.caseId, applicantId, entry.startupName, entry.founderName, entry.oneLiner, entry.photoUrl, Math.round(entry.totalEur), entry.totalJailMonths, entry.meltdown ? 1 : 0, JSON.stringify(entry.topLaws), JSON.stringify(findings), entry.issuedAt);
-    if (Number(r.changes) > 0) this.bus.emit("entry", entry);
+      .run(entry.caseId, applicantId, entry.startupName, entry.founderName, entry.oneLiner, entry.photoUrl, Math.round(entry.totalEur), entry.totalJailMonths, entry.meltdown ? 1 : 0, JSON.stringify(entry.topLaws), JSON.stringify(findings), entry.issuedAt, event);
+    if (Number(r.changes) > 0) this.bus.emit("entry", event ? { ...entry, event } : entry);
   }
 
-  list(sort: LeaderboardSort = "fines", limit = 50, cursor?: string | null): { entries: LeaderboardEntry[]; next: string | null } {
+  list(sort: LeaderboardSort = "fines", limit = 50, cursor?: string | null, event?: string | null): { entries: LeaderboardEntry[]; next: string | null } {
     const n = Math.min(200, Math.max(1, Math.floor(limit) || 50));
     const key = KEY[sort];
     const c = cursor ? decodeCursor(cursor) : null;
     const order = key ? `${key} DESC, issued_at DESC, case_id DESC` : "issued_at DESC, case_id DESC";
-    let where = "";
+    const conds: string[] = [];
     const args: (string | number)[] = [];
     if (c) {
       if (key) {
-        where = `WHERE (${key} < ? OR (${key} = ? AND (issued_at < ? OR (issued_at = ? AND case_id < ?))))`;
+        conds.push(`(${key} < ? OR (${key} = ? AND (issued_at < ? OR (issued_at = ? AND case_id < ?))))`);
         args.push(c.v ?? 0, c.v ?? 0, c.t, c.t, c.c);
       } else {
-        where = "WHERE (issued_at < ? OR (issued_at = ? AND case_id < ?))";
+        conds.push("(issued_at < ? OR (issued_at = ? AND case_id < ?))");
         args.push(c.t, c.t, c.c);
       }
     }
+    if (event) {
+      conds.push("event = ?");
+      args.push(event);
+    }
+    const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
     const rows = this.db.prepare(`SELECT * FROM leaderboard ${where} ORDER BY ${order} LIMIT ?`).all(...args, n + 1) as unknown as Row[];
     const page = rows.slice(0, n);
     const last = page.at(-1);

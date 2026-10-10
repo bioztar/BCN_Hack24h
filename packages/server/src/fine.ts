@@ -128,6 +128,9 @@ export const tierMultiplier = (tier: number, severe = false): number => {
   return severe ? 3 ** t : 1 + 0.15 * t;
 };
 
+/** Express runs ~6 lines instead of ~20, so severe findings there are multiplied once more (meltdown stays reachable). */
+export const EXPRESS_SEVERE_BOOST = 8;
+
 export const shortEur = (n: number): string =>
   n >= 1e9 ? `€${+(n / 1e9).toFixed(2)}bn` : n >= 1e6 ? `€${+(n / 1e6).toFixed(1)}M` : `€${Math.round(n).toLocaleString("en-GB")}`;
 
@@ -181,7 +184,7 @@ const years = (m: number) => (m % 12 === 0 ? `${m / 12} year${m === 12 ? "" : "s
  * tier multiplier; repeats of a non-severe finding cost a quarter. Jail: a seeded share (30–100 %) of the national
  * maximum, never above it, once per offence per case.
  */
-export function provisionFine(o: { caseId: string; index: number; provisionId: string; label: string; tier: number; revenueEur: number; repeat: boolean; jailBases?: ReadonlySet<string> }): Omit<FineItem, "id"> | null {
+export function provisionFine(o: { caseId: string; index: number; provisionId: string; label: string; tier: number; revenueEur: number; repeat: boolean; jailBases?: ReadonlySet<string>; express?: boolean }): Omit<FineItem, "id"> | null {
   const s = statuteFor(o.provisionId);
   if (!s) return null;
   const rand = seeded(o.caseId, "fine", o.index, o.provisionId);
@@ -189,7 +192,7 @@ export function provisionFine(o: { caseId: string; index: number; provisionId: s
   // Turnover-only regimes (DSA, DMA) assume a €100M turnover when none was given, so the meter still moves.
   const ceiling = Math.max(s.capEur, s.pct * (revenue || (s.capEur ? 0 : 100_000_000)));
   const severe = isSevere(o.provisionId);
-  const mult = tierMultiplier(o.tier, severe);
+  const mult = tierMultiplier(o.tier, severe) * (severe && o.express ? EXPRESS_SEVERE_BOOST : 1);
   const amountEur = Math.round(ceiling * (0.35 + 0.65 * rand()) * mult * (o.repeat && !severe ? 0.25 : 1));
   const statutoryJail = jailFor(o.caseId, o.provisionId);
   const jail = statutoryJail && !o.jailBases?.has(statutoryJail.basis) ? statutoryJail : null;

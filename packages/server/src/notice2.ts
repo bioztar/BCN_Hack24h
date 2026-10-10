@@ -145,7 +145,7 @@ export function buildNoticeV2(
     startup: startupName,
     applicantId: o.applicant?.id ?? null,
     startupName,
-    founderName: o.applicant?.founderName ?? null,
+    founderName: o.applicant?.founderName || null,
     totalEur: o.meter.totalEur,
     totalJailMonths: o.meter.totalJailMonths,
     meltdown: o.meter.meltdown,

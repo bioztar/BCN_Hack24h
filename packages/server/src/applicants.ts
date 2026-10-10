@@ -63,6 +63,7 @@ const ETAS = [
 ];
 
 export interface Applicant {
+  event?: string | null;
   id: string;
   ticket: number;
   startupName: string;
@@ -99,6 +100,13 @@ export function clean(v: unknown, max: number): string {
   return v.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+/** Optional event tag ("bcn-hack-24h"): null when absent, InputError when not a slug. */
+export function eventSlug(v: unknown): string | null {
+  if (v === undefined || v === null || v === "") return null;
+  if (typeof v !== "string" || !/^[a-z0-9][a-z0-9-]{0,47}$/.test(v)) throw new InputError("event must be a slug (a-z, 0-9, -; max 48 chars)");
+  return v;
+}
+
 export const PHOTO_MAX_BYTES = 512 * 1024;
 const DATA_URL = /^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=\s]+)$/;
 
@@ -116,6 +124,7 @@ export async function reencodePhoto(dataUrl: string): Promise<Buffer> {
 }
 
 interface Row {
+  event?: string | null;
   id: string;
   ticket: number;
   startup_name: string;
@@ -141,7 +150,8 @@ export class ApplicantStore {
     const startupName = clean(input?.startupName, 60);
     const founderName = clean(input?.founderName, 60);
     if (!startupName) throw new InputError("startupName is required");
-    if (!founderName) throw new InputError("founderName is required");
+    const event = eventSlug(input?.event);
+    if (!founderName && !event) throw new InputError("founderName is required");
     if (typeof input?.startupName === "string" && input.startupName.trim().length > 60) throw new InputError("startupName is longer than 60 characters");
     if (typeof input?.founderName === "string" && input.founderName.trim().length > 60) throw new InputError("founderName is longer than 60 characters");
     const oneLiner = clean(input?.oneLiner, 140) || null;
@@ -161,11 +171,12 @@ export class ApplicantStore {
       photoId: photo ? randomBytes(18).toString("base64url") : null,
       caseId: null,
       createdAt: this.now(),
+      event,
     };
     const ticket: QueueTicket = { applicantId: applicant.id, applicantToken: token, ticket: applicant.ticket, position: applicant.position, etaText: pick(ETAS, r), countdownSec: countdown(r) };
     this.db
-      .prepare("INSERT INTO applicants (id, ticket, startup_name, founder_name, one_liner, position, cause, has_photo, created_at, token_hash, photo_id) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)")
-      .run(applicant.id, applicant.ticket, startupName, founderName, oneLiner, applicant.position, photo ? 1 : 0, applicant.createdAt, tokenHash(token).toString("hex"), applicant.photoId);
+      .prepare("INSERT INTO applicants (id, ticket, startup_name, founder_name, one_liner, position, cause, has_photo, created_at, token_hash, photo_id, event) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)")
+      .run(applicant.id, applicant.ticket, startupName, founderName, oneLiner, applicant.position, photo ? 1 : 0, applicant.createdAt, tokenHash(token).toString("hex"), applicant.photoId, event);
     if (photo) this.db.prepare("INSERT INTO photos (id, jpeg, created_at) VALUES (?, ?, ?)").run(applicant.photoId, photo, applicant.createdAt);
     return { applicant, ticket };
   }
@@ -185,6 +196,7 @@ export class ApplicantStore {
       photoId: row.photo_id,
       caseId: row.case_id,
       createdAt: row.created_at,
+      event: row.event ?? null,
     };
   }
 

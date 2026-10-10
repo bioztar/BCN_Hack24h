@@ -21,6 +21,7 @@ COPY --from=build /app/packages ./packages
 COPY package.json ./
 COPY corpus ./corpus
 COPY content ./content
+COPY scripts ./scripts
 # Generated media is mounted at /app/assets/generated (compose.yaml); missing is fine.
 RUN mkdir -p /data /app/assets/generated && chown -R node:node /data
 USER node
