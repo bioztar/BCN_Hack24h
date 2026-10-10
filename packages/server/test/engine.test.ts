@@ -147,13 +147,15 @@ describe("engine", () => {
     expect(all.match(/We have a form for that/g)!.length).toBe(1);
   });
 
-  it("tier 5 prompt carries the computed fine and forbids any other amount", () => {
+  it("tier 5 prompt carries the running meter total (not the v1 fine) and forbids any other amount", () => {
     const engine = mk(null);
     const s: CaseState = { ...state(), tier: 5, lines: [{ speaker: "de-vries", text: "x", provisions: ["ai-act-5"], tier: 4 }] };
     s.fine = engine.previewFine(s, { revenueEur: 1_000_000_000 });
     expect(s.fine.fineEur).toBe(70_000_000);
+    s.meter = { items: [], totalEur: 714_300_000, totalJailMonths: 47, meltdown: false };
     const [sys] = engine.buildMessages(s, engine.candidates(s));
-    expect(sys!.content).toContain(`THE FINE (already calculated, final): ${spokenEur(70_000_000)} (€70,000,000)`);
+    expect(sys!.content).toContain(`THE RUNNING TOTAL (computed by the Ministry; it only goes up): ${spokenEur(714_300_000)} and 47 months of prison so far`);
+    expect(sys!.content).not.toContain(spokenEur(70_000_000));
     expect(sys!.content).toMatch(/Never state any other amount/);
     const notice = engine.notice(s, { revenueEur: 1, startup: "X" });
     expect(notice.fineEur).toBe(70_000_000);
