@@ -252,7 +252,7 @@ async function finish(): Promise<void> {
       <span>Approved in triplicate <b>${stats.rows}</b></span>
       <span>Forms filed <b>${stats.filed}</b></span>
       <span>Returned (RENVOYÉ) <b>${stats.returned}</b></span>
-      <span>Best chain <b>×${Math.max(1, stats.bestChain)}</b></span>
+      <span>Best chain <b>${stats.bestChain ? `×${stats.bestChain}` : "—"}</b></span>
       <span>Level reached <b>${stats.level}</b></span>
       <span>Processing time <b>${fmtDuration(g.elapsedMs)}</b></span>
     </div>

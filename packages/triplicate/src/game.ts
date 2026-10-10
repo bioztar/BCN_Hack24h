@@ -138,7 +138,7 @@ function makeSpec(g: Game): PieceCell[] {
   if (rng() < 0.04) return [{ dx: 0, dy: 0, form: pick(rng, WILDCARDS) }];
   const level = levelFor(g.stats.pieces + g.queue.length);
   const r = rng();
-  const size = level < 3 ? (r < 0.7 ? 1 : 2) : r < 0.5 ? 1 : r < 0.85 ? 2 : 3;
+  const size = level === 1 ? (r < 0.85 ? 1 : 2) : level < 3 ? (r < 0.7 ? 1 : 2) : r < 0.5 ? 1 : r < 0.85 ? 2 : 3;
   const vertical = rng() < 0.5;
   return Array.from({ length: size }, (_, i) => ({
     dx: vertical ? 0 : i,
