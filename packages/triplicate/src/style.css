@@ -114,7 +114,7 @@ button { font-family: inherit; }
 .placed { font-weight: bold; color: var(--eu); margin: 4px 0 8px; }
 
 /* embed: no site chrome */
-body.embed .back, body.embed .arcade-link { display: none !important; }
+body.embed .back, body.embed .arcade-link, body.embed .side { display: none !important; }
 
 /* short screens */
 @media (max-height: 700px) { .top { min-height: 50px; padding: 5px 10px; } .pad button { height: 42px; } .ticker { min-height: 30px; font-size: 11px; } }

@@ -54,13 +54,14 @@ export function drawCard(d: CardData): HTMLCanvasElement {
   x.fillText(`Processing time: ${fmtDuration(d.durationMs)}`, -360, 202);
   const m = meanwhileFor(d.durationMs);
   x.font = "italic 28px Arial";
-  wrap(x, `Meanwhile, China released ${m.china} more ${m.china === 1 ? "model" : "models"}. Europe adopted ${m.euForms} new forms.`, -360, 270, 720, 38);
+  wrap(x, `Meanwhile, China released ${m.china} more ${m.china === 1 ? "model" : "models"}. Europe adopted ${m.euForms} new forms.`, -360, 262, 400, 38);
   x.restore();
 
   // stamp
   x.save();
-  x.translate(770, 830);
+  x.translate(790, 840);
   x.rotate(-0.22);
+  x.scale(0.8, 0.8);
   x.strokeStyle = "#c8102e";
   x.fillStyle = "#c8102e";
   x.lineWidth = 10;
