@@ -1,11 +1,12 @@
 import { drawBadge } from "./badge";
-import { FIXTURE_PAIRS, FIXTURE_PERSONAS, MOCK_DICTATION, mockRoundEvents, type MockTotals } from "./fixtures";
+import { FIXTURE_PAIRS, FIXTURE_PERSONAS, MOCK_DICTATION, mockExpressEvents, mockRoundEvents, type MockTotals } from "./fixtures";
 import { mergeEntries } from "./leaderboard";
 import { estimateMeanwhile } from "./meanwhile";
 import { mockLeaderboard, mockNewEntry, mockQuip, mockTicket } from "./mockdata";
 import { buildReportPdf } from "./pdf";
 import { SseParser, toRoastEvent } from "./sse";
 import type {
+  CaseMode,
   ApplicantAuth,
   AnyRoastEvent, ApplicantInput, BetterPlaceCause, BetterPlaceResult, Case, LeaderboardDetail, LeaderboardEntry, LeaderboardSort,
   NoticeV2, Pair, Persona, PersonaId, QueueTicket, Submission,
@@ -18,7 +19,9 @@ export interface Api {
   personas(): Promise<Persona[]>;
   pairs(): Promise<Pair[]>;
   /** One case per applicant: a second call with the same applicant returns the existing caseId. */
-  createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth): Promise<Case>;
+  createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth, mode?: CaseMode): Promise<Case>;
+  /** Express only, once, after the verdict: the next stream is a short tier-5 round and a new verdict. */
+  appeal(caseId: string, applicant?: ApplicantAuth, text?: string): Promise<void>;
   stream(caseId: string, onEvent: (e: AnyRoastEvent) => void, signal: AbortSignal): Promise<void>;
   reply(caseId: string, text: string): Promise<void>;
   stt(audio: Blob): Promise<string>;
@@ -111,9 +114,14 @@ export class LiveApi implements Api {
       return FIXTURE_PAIRS;
     }
   }
-  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth): Promise<Case> {
+  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth, mode?: CaseMode): Promise<Case> {
     const auth = applicant ? { applicantId: applicant.applicantId, applicantToken: applicant.applicantToken } : {};
-    return json<Case>(await post("/case", { submission, ...(officers ? { officers } : {}), ...auth }, tokenHeader(applicant)));
+    return json<Case>(await post("/case", { submission, ...(officers ? { officers } : {}), ...auth, ...(mode === "express" ? { mode } : {}) }, tokenHeader(applicant)));
+  }
+  async appeal(caseId: string, applicant?: ApplicantAuth, text?: string): Promise<void> {
+    const body = { ...(text ? { text } : {}), ...(applicant ? { applicantToken: applicant.applicantToken } : {}) };
+    const res = await post(`/case/${encodeURIComponent(caseId)}/appeal`, body, tokenHeader(applicant));
+    if (!res.ok) await json(res);
   }
   async stream(caseId: string, onEvent: (e: AnyRoastEvent) => void, signal: AbortSignal): Promise<void> {
     const res = await fetch(`${BASE}/case/${encodeURIComponent(caseId)}/stream`, { headers: { accept: "text/event-stream" }, signal });
@@ -167,6 +175,8 @@ interface MockCase {
   revenueEur?: number;
   repoUrl?: string;
   round: number;
+  mode: CaseMode;
+  appealed: boolean;
   serial: string;
   totals: MockTotals;
   startedAt: number;
@@ -204,11 +214,11 @@ export class MockApi implements Api {
     this.authorise(a);
     return { position: 1, skipped: 1_000_000 + Math.floor(Math.random() * 3_000_000), cause, quip: mockQuip(cause) };
   }
-  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth): Promise<Case> {
+  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth, mode: CaseMode = "staged"): Promise<Case> {
     await sleep(350);
     const a = applicant ? this.authorise(applicant) : undefined;
     const existing = a?.caseId ? this.cases.get(a.caseId) : undefined;
-    if (existing) return { caseId: existing.caseId, ticket: existing.ticket, officers: [existing.personas[0].id, existing.personas[1].id] };
+    if (existing) return { caseId: existing.caseId, ticket: existing.ticket, officers: [existing.personas[0].id, existing.personas[1].id], ...(existing.mode === "express" ? { mode: existing.mode } : {}) };
     const applicantId = applicant?.applicantId;
     const pair = officers ?? FIXTURE_PAIRS[Math.floor(Math.random() * FIXTURE_PAIRS.length)]!.officers;
     const caseId = `mock-${Date.now().toString(36)}`;
@@ -223,17 +233,19 @@ export class MockApi implements Api {
       revenueEur: submission.revenueEur,
       repoUrl: submission.kind === "repo" ? submission.repoUrl : undefined,
       round: 0,
+      mode,
+      appealed: false,
       serial: `L-2026/${String(ticket).padStart(5, "0")}`,
       totals: { eur: 0, jail: 0, melted: false, n: 0 },
       startedAt: a?.at ?? Date.now(),
       applicant: a && applicantId ? { applicantId, startupName: a.input.startupName, founderName: a.input.founderName, oneLiner: a.input.oneLiner ?? null, photo: a.input.photo ?? null } : null,
     });
-    return { caseId, ticket, officers: pair };
+    return { caseId, ticket, officers: pair, ...(mode === "express" ? { mode } : {}) };
   }
   async stream(caseId: string, onEvent: (e: AnyRoastEvent) => void, signal: AbortSignal): Promise<void> {
     const c = this.cases.get(caseId);
     if (!c) throw new Error("no such case");
-    const events = mockRoundEvents({ ...c, totals: c.totals }, c.round);
+    const events = c.mode === "express" ? mockExpressEvents({ ...c, totals: c.totals }, c.appealed) : mockRoundEvents({ ...c, totals: c.totals }, c.round);
     const enc = new TextEncoder();
     const meanwhile = () => estimateMeanwhile(c.caseId, (Date.now() - c.startedAt) / 1000);
     const finish = (e: AnyRoastEvent) => (e.type === "verdict" ? this.finishVerdict(c, e.notice as NoticeV2, meanwhile()) : e);
@@ -284,8 +296,21 @@ export class MockApi implements Api {
     this.push(entry);
     return { type: "verdict", notice };
   }
+  async appeal(caseId: string, applicant?: ApplicantAuth): Promise<void> {
+    await sleep(300);
+    const c = this.cases.get(caseId);
+    if (!c) throw new HttpError(404, "unknown case");
+    if (c.mode !== "express") throw new HttpError(409, "only express cases can be appealed");
+    if (c.applicant) {
+      if (!applicant || applicant.applicantId !== c.applicant.applicantId) throw new HttpError(403, "Forbidden: wrong applicant token");
+      this.authorise(applicant);
+    }
+    if (c.appealed) throw new HttpError(409, "the appeal has been lodged and, naturally, rejected");
+    c.appealed = true;
+  }
   async reply(caseId: string): Promise<void> {
     const c = this.cases.get(caseId);
+    if (c?.mode === "express") throw new HttpError(409, "express cases take no replies; lodge an appeal after the verdict");
     if (c) c.round++;
     await sleep(200);
   }

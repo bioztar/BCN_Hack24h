@@ -22,7 +22,9 @@ export interface RepoIntake { repo: string; description: string; stars: number; 
 
 export interface Provision { id: string; label: string; title: string; url: string; }   // id "gdpr-33", label "GDPR Art. 33"
 
-export interface Case { caseId: string; ticket: number; officers: [PersonaId, PersonaId]; }
+export interface Case { caseId: string; ticket: number; officers: [PersonaId, PersonaId]; mode?: CaseMode; }
+/** "staged" (default): rounds with replies. "express": one stream, tiers 1→5, verdict, one appeal. */
+export type CaseMode = "staged" | "express";
 
 // Server-sent events on GET /api/case/:caseId/stream
 export type RoastEvent =

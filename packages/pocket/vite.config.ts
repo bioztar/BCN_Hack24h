@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [iconsPlugin()],
   server: {
     host: true,
-    proxy: { "/api": { target, changeOrigin: true }, "/assets": { target, changeOrigin: true } },
+    proxy: { "/api": { target, changeOrigin: true }, "/assets": { target, changeOrigin: true },
+        "/game": { target, changeOrigin: true } },
   },
   build: { target: "es2020", chunkSizeWarningLimit: 1200 },
   test: { environment: "node", include: ["test/**/*.test.ts"] },

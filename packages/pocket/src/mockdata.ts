@@ -68,6 +68,6 @@ export function mockTicket(countdownSec?: number): QueueTicket {
     ticket: 10_000 + Math.floor(Math.random() * 990_000),
     position: 1_500_000 + Math.floor(Math.random() * 1_500_000),
     etaText: pick(ETAS),
-    countdownSec: countdownSec ?? 30 + Math.floor(Math.random() * 31),
+    countdownSec: countdownSec ?? 5 + Math.floor(Math.random() * 4),
   };
 }
