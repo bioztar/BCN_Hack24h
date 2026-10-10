@@ -1,0 +1,20 @@
+{
+  "name": "@dg-roast/e2e",
+  "private": true,
+  "type": "module",
+  "description": "Playwright end-to-end suite against the live eurocrat + warden deploys (BASE_URL / WARDEN_URL).",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:record": "RECORD=1 playwright test",
+    "e2e:mock": "E2E_LIVE=0 playwright test",
+    "e2e:report": "playwright show-report playwright-report",
+    "e2e:summary": "node scripts/summary.mjs",
+    "e2e:install": "playwright install chromium webkit",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.2",
+    "typescript": "7.0.2"
+  }
+}
