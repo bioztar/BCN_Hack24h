@@ -1,5 +1,5 @@
 # HANDOVER — BCN_Hack24h (Eurocrat / DG ROAST) — 2026-10-10 02:40 CEST
-## State: v1 live on eurocrat.pro7ocol.com + warden.pro7ocol.com; v2 building in 4 Devin sessions; demo today ~17:00–18:00
+## State: v2 + Arcade LIVE on eurocrat.pro7ocol.com, analyzer on warden.pro7ocol.com; open: pwa-v2 #15, QA suite, iOS #20 (Mac); demo today ~17:00–18:00
 
 ## Live (uk-lon-1, container `dg-roast`, compose in this repo, host port 127.0.0.1:8806)
 - https://eurocrat.pro7ocol.com — stage (`packages/web`), `/wall`, `/pocket/` PWA (`packages/pocket`), API (`packages/server`)
@@ -14,10 +14,10 @@
 - Integration helper used tonight: /tmp/integrate.sh (merge main into PR branch, regenerate lockfile, test, push) — lockfile conflicts on every new workspace
 
 ## Next steps (ordered)
-1. Review each v2 PR as it opens (live-test with real keys), consolidated fix list → Devin
-2. Merge in order, regenerate root lockfile if workspaces changed, deploy, E2E: register → queue → pitch → fines meter → meltdown → badge/PDF → leaderboard on stage
+1. Merge pwa-v2 #15 after its live test, deploy, E2E on a real phone
+2. Triage `[e2e]` issues from the QA suite → fix lanes on Devin
 3. Merge `assets-picsart-v2` when its PR lands (server rescans assets, no restart)
-4. Tell Mac helm (append to `20261009-dgroast-ios-native.md`) when v2 API is live
+4. Mac helm: build iOS #20, point at live v2, reinstall on Zond
 5. Rehearsal ~15:30 (Vitaly): phone + projector + QR
 
 ## Blockers / needs human
