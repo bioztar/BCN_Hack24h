@@ -53,7 +53,7 @@ export function turnoverEstimate(notice: unknown): TurnoverEstimate | null {
 
 /** "Estimated turnover (by the Commission, generously): €40 M — EU HR-tech TAM €8 bn × 0.5 %" */
 export function turnoverLine(t: TurnoverEstimate): string {
-  return `Estimated turnover (by the Commission, generously): ${fmtEurShort(t.eur)}${t.basis ? ` — ${t.basis}` : ""}`;
+  return `Estimated turnover (by the Commission, generously): ${fmtEurShort(t.eur).replace(" ", "\u00a0")}${t.basis ? ` — ${t.basis}` : ""}`;
 }
 
 /** "€0", "€950", "€12.5 k", "€35 M", "€1.24 bn", "€3,400 bn". */

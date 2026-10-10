@@ -163,10 +163,10 @@ describe("fmtJailShort", () => {
 describe("turnoverEstimate", () => {
   it("formats the Commission's generous estimate and ignores bad/missing data", () => {
     const est = turnoverEstimate({ turnoverEstimate: { eur: 40_000_000, basis: " EU HR-tech TAM €8 bn × 0.5 % " } });
-    expect(est && turnoverLine(est)).toBe("Estimated turnover (by the Commission, generously): €40 M — EU HR-tech TAM €8 bn × 0.5 %");
+    expect(est && turnoverLine(est)).toBe("Estimated turnover (by the Commission, generously): €40\u00a0M — EU HR-tech TAM €8 bn × 0.5 %");
     expect(turnoverEstimate({})).toBeNull();
     expect(turnoverEstimate(null)).toBeNull();
     expect(turnoverEstimate({ turnoverEstimate: { eur: "lots" } })).toBeNull();
-    expect(turnoverLine({ eur: 1.2e9, basis: "" })).toBe("Estimated turnover (by the Commission, generously): €1.2 bn");
+    expect(turnoverLine({ eur: 1.2e9, basis: "" })).toBe("Estimated turnover (by the Commission, generously): €1.2\u00a0bn");
   });
 });
