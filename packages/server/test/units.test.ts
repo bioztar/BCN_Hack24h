@@ -5,7 +5,10 @@ import { AI_ACT_BASIS, GDPR_BASIS, calculateFine, extractRevenueHeuristic } from
 import { quotesVisitor } from "../src/visitor.js";
 import { FINDING_PROVISIONS } from "../src/repo.js";
 import { validateLine } from "../src/validator.js";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { Roster } from "../src/personas.js";
 import { ROOT, corpus, roster } from "./helpers.js";
 
 describe("citation validator", () => {
@@ -84,7 +87,8 @@ describe("content data", () => {
     for (const id of ids) expect(corpus.has(id), id).toBe(true);
   });
   it("persona wire shape omits missing asset files", () => {
-    const p = roster.toPersona("formblatt");
+    const bare = Roster.load(path.join(ROOT, "content", "personas"), mkdtempSync(path.join(tmpdir(), "no-assets-")));
+    const p = bare.toPersona("formblatt");
     expect(p).toMatchObject({ id: "formblatt", name: expect.any(String), color: expect.stringMatching(/^#/) });
     expect(Object.keys(p.stills).length).toBe(0);
     expect(p.clips).toBeUndefined();
