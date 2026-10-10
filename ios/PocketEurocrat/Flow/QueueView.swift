@@ -81,7 +81,8 @@ struct QueueView: View {
                                       flow.queueFinished()
                                   }
                               },
-                              onLeave: {})
+                              onLeave: {},
+                              playerName: flow.startupName)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.bottom, 70)   // clear of the floating tab bar
             } else {

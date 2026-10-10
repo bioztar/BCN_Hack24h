@@ -126,8 +126,27 @@ struct ArcadeWebView: UIViewRepresentable {
     var onFailed: () -> Void
     var onScore: (ArcadeScore) -> Void
     var onLeave: () -> Void
+    /// Whack-a-Model in the queue: the player is the startup. Prefills `input#name` and hides its label, so the
+    /// title screen is just "Begin procedure".
+    var playerName: String? = nil
 
     static let handlerName = "eurocrat"
+
+    /// documentEnd script: the game's module script may reset the field after us, so the name is also re-applied on
+    /// a short timer and right before the play button / Enter starts the round (capture phase).
+    static func playerNameJS(_ name: String) -> String {
+        let literal = (try? JSONSerialization.data(withJSONObject: [String(name.prefix(24))]))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "[\"\"]"
+        return """
+        (function(){var n=\(literal)[0];
+        var s=document.createElement('style');s.textContent='label.field{display:none!important}';document.head.appendChild(s);
+        function set(){var i=document.getElementById('name');if(i){i.value=n;}}
+        set();var t=0,h=setInterval(function(){set();if(++t>16)clearInterval(h);},250);
+        document.addEventListener('click',function(e){var p=document.getElementById('play');if(p&&e.target&&p.contains(e.target))set();},true);
+        document.addEventListener('keydown',set,true);
+        })();
+        """
+    }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -139,6 +158,9 @@ struct ArcadeWebView: UIViewRepresentable {
         content.add(WeakMessageHandler(context.coordinator), name: Self.handlerName)
         // Belt and braces against pinch / double-tap zoom even if the page's viewport allows it.
         content.addUserScript(WKUserScript(source: Self.noZoomJS, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        if let name = playerName, !name.trimmingCharacters(in: .whitespaces).isEmpty {
+            content.addUserScript(WKUserScript(source: Self.playerNameJS(name), injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        }
         config.userContentController = content
 
         let web = WKWebView(frame: .zero, configuration: config)
