@@ -6,7 +6,8 @@
   "workspaces": ["packages/*"],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && npm run test:corpus",
+    "test:corpus": "vitest run --dir scripts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "start": "npm run start -w @dg-roast/server",
     "dev": "npm run dev -w @dg-roast/server",
