@@ -4,6 +4,7 @@ import { h, fmtEur, safeUrl } from "../dom";
 import { POCKET_URL, REPORT_URL, withFlags } from "../env";
 import { chime } from "../stage/sfx";
 import { qrBox } from "./qr";
+import { turnoverEstimate, turnoverLine } from "../live/fines";
 
 function nameOf(officers: Persona[], id: string): Persona {
   return officers.find((p) => p.id === id) ?? { id, name: id, title: "Official", stills: {}, color: "#003399" };
@@ -52,7 +53,7 @@ export function noticeView(notice: Notice, officers: Persona[], pitch?: string):
       "header",
       { class: "nd-head" },
       h("div", { class: "nd-emblem" }, "★"),
-      h("div", null, h("b", null, "EUROPEAN COMMISSION"), h("br"), "Directorate-General for the Refusal of Startups", h("br"), "Unit R.5 — Notices, Fines and Regret"),
+      h("div", null, h("b", null, "EUROCRAT COMMISSION"), h("br"), "Directorate-General for the Refusal of Startups", h("br"), "Unit R.5 — Notices, Fines and Regret"),
       h("div", { class: "nd-ref" }, "Brussels, ", date, h("br"), h("b", null, notice.serial), h("br"), "C(2026) 4812 final"),
     ),
     h("h1", null, "NOTICE OF NON-COMPLIANCE"),
@@ -69,6 +70,10 @@ export function noticeView(notice: Notice, officers: Persona[], pitch?: string):
       }),
     ),
     h("div", { class: "nd-fine" }, h("span", null, "Administrative fine"), h("strong", null, fmtEur(notice.fineEur)), h("small", null, notice.fineBasis)),
+    (() => {
+      const est = turnoverEstimate(notice);
+      return est ? h("p", { class: "nd-turnover" }, turnoverLine(est)) : null;
+    })(),
     h("p", { class: "nd-small" }, "The fine is payable within 30 days to an account that will be communicated by post, in 2031. This notice may be appealed (see Ombudsman)."),
     h(
       "footer",

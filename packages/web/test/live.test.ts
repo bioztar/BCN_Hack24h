@@ -1,3 +1,4 @@
+import { turnoverEstimate, turnoverLine } from "../src/live/fines";
 import { describe, expect, it } from "vitest";
 import { MELTDOWN_EUR, type LeaderboardEntry, type Provision } from "../src/contract";
 import { compare, funniness, moves, pushCaption, sameDay, tickerPick, toEntry, top, upsert } from "../src/live/board";
@@ -156,5 +157,16 @@ describe("fmtJailShort", () => {
     expect(fmtJailShort(8)).toBe("8 mo");
     expect(fmtJailShort(12)).toBe("1 yr");
     expect(fmtJailShort(47)).toBe("3 yrs 11 mo");
+  });
+});
+
+describe("turnoverEstimate", () => {
+  it("formats the Commission's generous estimate and ignores bad/missing data", () => {
+    const est = turnoverEstimate({ turnoverEstimate: { eur: 40_000_000, basis: " EU HR-tech TAM €8 bn × 0.5 % " } });
+    expect(est && turnoverLine(est)).toBe("Estimated turnover (by the Commission, generously): €40 M — EU HR-tech TAM €8 bn × 0.5 %");
+    expect(turnoverEstimate({})).toBeNull();
+    expect(turnoverEstimate(null)).toBeNull();
+    expect(turnoverEstimate({ turnoverEstimate: { eur: "lots" } })).toBeNull();
+    expect(turnoverLine({ eur: 1.2e9, basis: "" })).toBe("Estimated turnover (by the Commission, generously): €1.2 bn");
   });
 });

@@ -13,7 +13,6 @@ export function isBroken(url: string | undefined): boolean {
 
 export type Visual =
   | { kind: "clip"; url: string; loop: boolean }
-  | { kind: "bust"; url: string }
   /** Talking-portrait puppet; `images` in preference order (empty → procedural silhouette). */
   | { kind: "puppet"; images: string[] };
 
@@ -33,13 +32,12 @@ export function portraitCandidates(p: Persona, expr: Expression, bad: (url: stri
 }
 
 /**
- * Optional clip for the slot → optional 3D bust → the puppet (images or silhouette).
- * Clips and GLBs are only used if a persona actually lists them.
+ * Optional clip for the slot → the puppet (cut-out → still → silhouette).
+ * GLB busts (`model3d`) are never loaded: they looked worse than the cut-outs.
  */
 export function pickVisual(p: Persona, slot: ClipSlot, expression: Expression, bad: (url: string | undefined) => boolean = isBroken): Visual {
   const clip = p.clips?.[slot];
   if (clip && !bad(clip)) return { kind: "clip", url: clip, loop: LOOPING.includes(slot) };
-  if (p.model3d && !bad(p.model3d)) return { kind: "bust", url: p.model3d };
   return { kind: "puppet", images: portraitCandidates(p, expression, bad) };
 }
 

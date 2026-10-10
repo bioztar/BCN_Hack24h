@@ -81,7 +81,7 @@ const ROUNDS: Record<Tier, { lines: ScriptLine[]; prompt: string }> = {
   5: {
     lines: [
       { by: 0, clip: "tier5", text: "The file is closed. I found it, specifically so that I could close it." },
-      { by: 1, text: "Your turnover is {revenue}. Article 99 sets the fine at thirty-five million euros or seven percent of worldwide turnover, whichever is higher. The higher one is thirty-five million. It is always thirty-five million.", cite: ["aiact-99"], stamp: "REFUSÉ" },
+      { by: 1, text: "The Commission has estimated your turnover at {revenue}, generously. Article 99 sets the fine at thirty-five million euros or seven percent of worldwide turnover, whichever is higher. The higher one is thirty-five million. It is always thirty-five million.", cite: ["aiact-99"], stamp: "REFUSÉ" },
       { by: 0, clip: "verdict", text: "You are, however, admitted to the regulatory sandbox. The sandbox opens in 2027. The sand is not yet harmonised.", cite: ["aiact-57"], stamp: "RENVOYÉ EN COMMISSION" },
     ],
     prompt: "",
@@ -113,6 +113,9 @@ export function startupName(sub: Submission): string {
   const cap = named ?? /\b([A-Z][a-z]+(?:[A-Z][a-z]+|ly|ify|io|AI|\.ai))\b/.exec(text)?.[1];
   return cap ?? "Your Startup";
 }
+
+/** Rehearsal copy of the server's optional `turnoverEstimate` (not yet in the shared types). */
+export const MOCK_TURNOVER = { turnoverEstimate: { eur: 40_000_000, basis: "EU HR-tech TAM €8 bn × 0.5 %" } };
 
 export function fineFor(revenueEur: number | undefined): number {
   return Math.max(35_000_000, Math.round((revenueEur ?? 0) * 0.07));
@@ -207,6 +210,7 @@ export function mockApi(opts: { pace?: number } = {}): Api {
         fineBasis: "€35M or 7% of worldwide annual turnover, whichever is higher — AI Act Art. 99(3)",
         findings,
         issuedAt: new Date().toISOString(),
+        ...MOCK_TURNOVER,
       };
       await emit({ type: "verdict", notice }, 400);
     },

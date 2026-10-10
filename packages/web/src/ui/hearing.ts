@@ -7,7 +7,7 @@ import { mockBroadcastLine } from "../mock";
 import { initialState, reduce, type LineEvent, type StageAction, type StageState } from "../reducer";
 import { Sequencer, makeLinePlayer, LateAudio } from "../sequencer";
 import { OfficialView } from "../stage/official";
-import { analyse, chime, council, speak, thud } from "../stage/sfx";
+import { analyse, chime, council, speak, thud, unlockAudio } from "../stage/sfx";
 import { slam } from "../stage/stamp3d";
 import { chrome } from "./chrome";
 import { noticeView } from "./notice";
@@ -17,6 +17,25 @@ import { holdToRecord } from "./recorder";
 let level: (() => number) | null = null;
 const currentLevel = () => (level ? level() : null);
 
+/** The server sends a line with audioUrl:null after ~2.5 s of TTS; a round's first line (cold TTS) needs longer. */
+const FIRST_LINE_AUDIO_MS = 9000;
+const LATE_AUDIO_MS = 3000;
+
+/** Autoplay refused (e.g. reload mid-hearing): one tap replays the line; gives up after 20 s. */
+function tapToHear(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const btn = h("button", { class: "btn primary tap-to-hear", type: "button" }, "🔊 Tap to hear the Commission");
+    const done = (ok: boolean) => {
+      clearTimeout(timer);
+      btn.remove();
+      resolve(ok);
+    };
+    const timer = setTimeout(() => done(false), 20_000);
+    btn.addEventListener("click", () => (unlockAudio(), done(true)), { once: true });
+    document.body.append(btn);
+  });
+}
+
 const playLine = makeLinePlayer({
   createAudio: (url) => {
     const audio = new Audio(url);
@@ -25,6 +44,7 @@ const playLine = makeLinePlayer({
   },
   sleep,
   speak: SPEAK ? speak : undefined,
+  unblock: tapToHear,
 });
 
 function chips(line: LineEvent): HTMLElement | null {
@@ -51,6 +71,8 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
   let views: OfficialView[] = [];
   const late = new LateAudio();
   let stampedThisRound = false;
+  let firstOfRound = true;
+  for (const ev of ["pointerdown", "keydown"] as const) document.addEventListener(ev, unlockAudio, { passive: true });
 
   const tierBanner = h("div", { class: "tier-banner" });
   const ladder = h("ol", { class: "ladder" }, TIER_NAMES.map((n, i) => h("li", { dataset: { t: String(i + 1) } }, n)));
@@ -176,7 +198,9 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
         const stamp = e.stamp;
         if (stamp) stampedThisRound = true;
         level = null;
-        const audioUrl = e.audioUrl ?? (api.mock ? null : await late.wait(e.id, 1500, sleep));
+        const wait = firstOfRound ? FIRST_LINE_AUDIO_MS : LATE_AUDIO_MS;
+        firstOfRound = false;
+        const audioUrl = e.audioUrl ?? (api.mock ? null : await late.wait(e.id, wait, sleep));
         await Promise.all([playLine({ ...e, audioUrl }), stamp ? sleep(500).then(() => slam(stamp, () => impact(stamp))) : null]);
         if (isCurrent()) dispatch({ type: "line-end", id: e.id });
         await sleep(350);
@@ -265,6 +289,7 @@ export function hearing(root: HTMLElement, api: Api, kase: Case, officers: [Pers
     let failure: string | null = null;
     try {
       stampedThisRound = false;
+      firstOfRound = true;
       await api.stream(kase.caseId, (e) => (e.type === "audio" ? late.deliver(e.id, e.audioUrl) : queue.enqueue(e)), ctl.signal);
     } catch (err) {
       failure = (err as Error).message || "connection lost";

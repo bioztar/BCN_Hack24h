@@ -2,7 +2,6 @@ import { markBroken, pickVisual, portraitCandidates } from "../assets";
 import type { ClipSlot, Persona } from "../contract";
 import { h } from "../dom";
 import { expressionFor } from "../reducer";
-import type { Bust } from "./bust3d";
 import { Puppet } from "./puppet";
 
 /** Static portrait (queue board): neutral cut-out/still, else silhouette. Still blinks. */
@@ -14,7 +13,7 @@ export function portrait(p: Persona): HTMLElement {
 
 /**
  * One official on the stage. Main path: the talking-portrait puppet. A persona's optional
- * clip (for the slot) or GLB bust is used only if listed and loadable.
+ * clip (for the slot) is used only if listed and loadable; GLB busts never are.
  */
 export class OfficialView {
   readonly el: HTMLElement;
@@ -23,7 +22,6 @@ export class OfficialView {
   private key = "";
   private slot: ClipSlot = "idle";
   private speaking = false;
-  private bust: Bust | null = null;
   private finishedOneShot = "";
   private level: () => number | null = () => null;
 
@@ -61,7 +59,6 @@ export class OfficialView {
     const slot = this.effectiveSlot();
     const expr = expressionFor(slot, this.speaking);
     const v = pickVisual(this.persona, slot, expr);
-    this.bust?.setTalking(this.speaking);
     this.puppet.setTalking(this.speaking, this.level);
     if (v.kind === "puppet") {
       this.puppet.show(v.images, expr);
@@ -74,8 +71,7 @@ export class OfficialView {
     const key = `${v.kind}:${v.url}`;
     if (key === this.key) return;
     this.key = key;
-    if (v.kind === "clip") this.showClip(v.url, v.loop, key);
-    else this.showBust(v.url, key);
+    this.showClip(v.url, v.loop, key);
   }
 
   private fail(url: string, key: string): void {
@@ -89,10 +85,6 @@ export class OfficialView {
   private swap(layer: HTMLElement): void {
     for (const old of [...this.frame.children]) {
       if (old === layer) continue;
-      if (old.classList.contains("layer-bust") && this.bust) {
-        this.bust.dispose();
-        this.bust = null;
-      }
       old.remove();
     }
     layer.classList.add("layer");
@@ -118,28 +110,7 @@ export class OfficialView {
     this.frame.append(v);
   }
 
-  private showBust(url: string, key: string): void {
-    const host = h("div", { class: "layer-bust" });
-    host.style.visibility = "hidden";
-    this.frame.append(host);
-    import("./bust3d")
-      .then(({ mountBust }) => mountBust(host, url))
-      .then((bust) => {
-        if (this.key !== key) return bust.dispose();
-        host.style.visibility = "";
-        this.swap(host);
-        this.bust = bust;
-        bust.setTalking(this.speaking);
-      })
-      .catch((err) => {
-        console.warn("[official] bust failed", url, err);
-        host.remove();
-        this.fail(url, key);
-      });
-  }
-
   dispose(): void {
-    this.bust?.dispose();
     this.puppet.dispose();
     this.el.remove();
   }

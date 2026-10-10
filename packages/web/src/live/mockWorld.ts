@@ -1,3 +1,4 @@
+import { MOCK_TURNOVER } from "../mock";
 import { MELTDOWN_EUR, MELTDOWN_JAIL_MONTHS, type LeaderboardEntry, type Meanwhile, type NoticeV2, type Provision, type Submission, type Tier } from "../contract";
 import { sleep } from "../dom";
 import { MOCK_PERSONAS, mockApi } from "../mock";
@@ -119,6 +120,7 @@ export function mockWorld(opts: { pace?: number; replyDelayMs?: number; nextCase
         if (e.type === "verdict") {
           const notice: NoticeV2 = {
             ...e.notice,
+            ...MOCK_TURNOVER,
             startup: who.startupName,
             applicantId: null,
             startupName: who.startupName,

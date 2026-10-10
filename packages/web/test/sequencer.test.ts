@@ -55,6 +55,30 @@ describe("audio queue (Sequencer + line player)", () => {
     expect(slept).toEqual([readingTimeMs("one two three"), readingTimeMs("one two three"), readingTimeMs("one two three")]);
   });
 
+  it("replays a line after a tap when autoplay was refused", async () => {
+    const mk = (blockFirst: boolean): PlayableAudio => {
+      let blocked = blockFirst;
+      const ended: (() => void)[] = [];
+      return {
+        play: async () => {
+          if (blocked) {
+            blocked = false;
+            throw Object.assign(new Error("play() failed"), { name: "NotAllowedError" });
+          }
+          setTimeout(() => ended.forEach((f) => f()), 2);
+        },
+        pause: () => {},
+        addEventListener: (t, cb) => void (t === "ended" && ended.push(cb)),
+      };
+    };
+    let taps = 0;
+    const yes = makeLinePlayer({ createAudio: () => mk(true), sleep: (ms) => tick(Math.min(ms, 5)), unblock: async () => (taps++, true) });
+    expect(await yes({ text: "x", audioUrl: "u", speaker: "s" })).toBe("audio");
+    expect(taps).toBe(1);
+    const no = makeLinePlayer({ createAudio: () => mk(true), sleep: (ms) => tick(Math.min(ms, 5)), unblock: async () => false });
+    expect(await no({ text: "x", audioUrl: "u", speaker: "s" })).toBe("read");
+  });
+
   it("caps a hung audio element at maxMs", async () => {
     const hung: PlayableAudio = { play: async () => {}, pause: () => {}, addEventListener: () => {} };
     const play = makeLinePlayer({ createAudio: () => hung, sleep: () => tick(1), maxMs: 1 });

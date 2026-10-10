@@ -2,7 +2,7 @@ import type { Api } from "../api";
 import type { Submission, SubmissionKind } from "../contract";
 import { h } from "../dom";
 import { unlockAudio } from "../stage/sfx";
-import { parseRepoUrl, parseRevenue } from "../validate";
+import { parseRepoUrl } from "../validate";
 import { chrome } from "./chrome";
 import { holdToRecord } from "./recorder";
 
@@ -25,7 +25,6 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
     const transcript = h("textarea", { rows: 5, maxlength: 2000, placeholder: "Your dictated statement will appear here. You may amend it.", "aria-label": "Transcript" });
     const repo = h("input", { type: "url", placeholder: "https://github.com/<owner>/<repo>", "aria-label": "GitHub repository URL", spellcheck: false });
     const repoMsg = h("p", { class: "field-msg" }, "Public repositories on github.com only. Other hosts are a third country.");
-    const revenue = h("input", { type: "text", inputmode: "decimal", placeholder: "e.g. 0, 120k, 2.5m", "aria-label": "Annual worldwide turnover in EUR" });
     const recStatus = h("p", { class: "field-msg", role: "status" }, "Press and hold. Speak clearly. Release to submit for transcription.");
     const rec = holdToRecord({
       api,
@@ -65,7 +64,6 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
       h("p", { class: "form-sub" }, "Form SUB-1 (rev. 14) — to be completed in block capitals, in your head."),
       h("div", { class: "tabs", role: "tablist" }, tabs),
       h("div", { class: "panels" }, Object.values(panels)),
-      h("label", { class: "revenue" }, "Annual worldwide turnover, EUR (optional — used to calculate your fine)", revenue),
       h("fieldset", { class: "consents" }, h("legend", null, "Consent to be insulted — all seven are mandatory"), boxes.map((b) => b.row), selectAll),
       missing,
       submit,
@@ -73,16 +71,14 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
     root.replaceChildren(chrome(form, "SUB-1(2026) 4812 final"));
 
     function current(): Submission | string {
-      const revenueEur = parseRevenue(revenue.value);
-      if (revenue.value.trim() && revenueEur === undefined) return "Turnover must be a number (e.g. 120k). Vibes are not accepted.";
       if (kind === "repo") {
         const r = parseRepoUrl(repo.value);
         if (!r) return "A valid https://github.com/<owner>/<repo> URL is required.";
-        return { kind, repoUrl: r.url, ...(revenueEur !== undefined ? { revenueEur } : {}) };
+        return { kind, repoUrl: r.url };
       }
       const text = (kind === "text" ? pitch : transcript).value.trim();
       if (text.length < 10) return kind === "text" ? "Describe your startup (at least 10 characters)." : "Dictate your pitch first (hold the button).";
-      return { kind, text, ...(revenueEur !== undefined ? { revenueEur } : {}) };
+      return { kind, text };
     }
 
     function update() {
@@ -107,7 +103,7 @@ export function submitScreen(root: HTMLElement, api: Api): Promise<Submission> {
       update();
     }
 
-    [pitch, transcript, repo, revenue].forEach((el) => el.addEventListener("input", update));
+    [pitch, transcript, repo].forEach((el) => el.addEventListener("input", update));
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const sub = current();
