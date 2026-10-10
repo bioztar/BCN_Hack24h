@@ -1,4 +1,4 @@
-/** One SQLite file under $DATA_DIR: cases, the wall, rate-limit buckets. node:sqlite, no native build. */
+/** One SQLite file under $DATA_DIR: cases, the wall, rate-limit buckets, applicants + selfies, the leaderboard. node:sqlite, no native build. */
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -21,6 +21,38 @@ CREATE TABLE IF NOT EXISTS cases (
   updated_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS counters (name TEXT PRIMARY KEY, value INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS applicants (
+  id TEXT PRIMARY KEY,
+  ticket INTEGER NOT NULL,
+  startup_name TEXT NOT NULL,
+  founder_name TEXT NOT NULL,
+  one_liner TEXT,
+  position INTEGER NOT NULL,
+  cause TEXT,
+  has_photo INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  token_hash TEXT,
+  photo_id TEXT,
+  case_id TEXT
+);
+CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, jpeg BLOB NOT NULL, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS leaderboard (
+  case_id TEXT PRIMARY KEY,
+  applicant_id TEXT,
+  startup_name TEXT NOT NULL,
+  founder_name TEXT,
+  one_liner TEXT,
+  photo_url TEXT,
+  total_eur INTEGER NOT NULL,
+  total_jail INTEGER NOT NULL,
+  meltdown INTEGER NOT NULL,
+  top_laws TEXT NOT NULL,
+  findings TEXT NOT NULL,
+  issued_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS leaderboard_fines ON leaderboard (total_eur DESC, issued_at DESC, case_id DESC);
+CREATE INDEX IF NOT EXISTS leaderboard_jail ON leaderboard (total_jail DESC, issued_at DESC, case_id DESC);
+CREATE INDEX IF NOT EXISTS leaderboard_recent ON leaderboard (issued_at DESC, case_id DESC);
 `;
 
 export function openDb(file: string): Db {
@@ -28,6 +60,9 @@ export function openDb(file: string): Db {
   const db = new DatabaseSync(file);
   if (file !== ":memory:") db.exec("PRAGMA journal_mode = WAL");
   db.exec(SCHEMA);
+  // Additive column migrations for databases created before the applicant-token amendment.
+  const cols = new Set((db.prepare("PRAGMA table_info(applicants)").all() as { name: string }[]).map((c) => c.name));
+  for (const c of ["token_hash", "photo_id", "case_id"]) if (!cols.has(c)) db.exec(`ALTER TABLE applicants ADD COLUMN ${c} TEXT`);
   return db;
 }
 

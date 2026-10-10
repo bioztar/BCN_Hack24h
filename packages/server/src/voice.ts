@@ -108,13 +108,38 @@ export class SlngStt implements Stt {
 export class AudioCache {
   private readonly mem = new Map<string, Audio>();
   private readonly inflight = new Map<string, Promise<Audio | null>>();
+  private active = 0;
+  private readonly waiting: (() => void)[] = [];
 
   constructor(
     private readonly tts: Tts,
     private readonly dir: string | null,
     private readonly log: (msg: string) => void = () => undefined,
+    private readonly concurrency = 3,
+    private readonly retryDelayMs = 400,
   ) {
     if (dir) mkdirSync(dir, { recursive: true });
+  }
+
+  /** Bounded concurrency (provider rate limits) and one retry; logs status/class only, never the text. */
+  private async synth(text: string, voice: VoiceSpec): Promise<Audio> {
+    if (this.active >= this.concurrency) await new Promise<void>((r) => this.waiting.push(r));
+    this.active++;
+    try {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          return await this.tts.synthesize(text, voice);
+        } catch (err) {
+          const status = err instanceof Error ? (/\b[1-5]\d\d\b/.exec(err.message)?.[0] ?? "-") : "-";
+          this.log(`tts failed (attempt ${attempt}, status ${status}, ${err instanceof Error ? err.constructor.name : typeof err})`);
+          if (attempt >= 2) throw err;
+          await new Promise((r) => setTimeout(r, this.retryDelayMs));
+        }
+      }
+    } finally {
+      this.active--;
+      this.waiting.shift()?.();
+    }
   }
 
   async render(text: string, voice: VoiceSpec): Promise<string | null> {
@@ -122,8 +147,7 @@ export class AudioCache {
     if (this.get(hash)) return `/api/audio/${hash}.mp3`;
     let flight = this.inflight.get(hash);
     if (!flight) {
-      flight = this.tts
-        .synthesize(text, voice)
+      flight = this.synth(text, voice)
         .then((a) => {
           this.mem.set(hash, a);
           if (this.mem.size > 300) this.mem.delete(this.mem.keys().next().value as string);
@@ -133,10 +157,7 @@ export class AudioCache {
           }
           return a;
         })
-        .catch((err: unknown) => {
-          this.log(`tts failed: ${err instanceof Error ? err.message : String(err)}`);
-          return null;
-        })
+        .catch(() => null)
         .finally(() => this.inflight.delete(hash));
       this.inflight.set(hash, flight);
     }
