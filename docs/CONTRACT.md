@@ -324,3 +324,14 @@ field, or header `x-applicant-token`) → 403 otherwise; one case per applicant 
 `photoId` (`/api/photos/:photoId.jpg`), never the applicantId. `GET
 /api/leaderboard/:caseId` returns `{ entry: LeaderboardEntry, findings: … }` as specified.
 Clients (pocket PWA, iOS) keep the token in memory/session storage for the session only.
+
+### v2 amendment — stage feeds (2026-10-10 02:25, from stage-v2 #21)
+
+- `GET /api/live` → `{ caseId: string | null, startedAt: string | null }` — the most recently
+  *started* case still in progress (null if none in the last 10 min). The stage opens that
+  case's stream read-only (replay + live) for its C view. Stream replay must be safe for
+  multiple concurrent readers.
+- `GET /api/stats` → `{ inQueue: number, refusedToday: number, totalEurToday: number,
+  totalJailMonthsToday: number, meanwhileToday: Meanwhile }` — Q view counter and the
+  day-total MEANWHILE board. `GET /api/stats/stream` SSE pushes it on every change
+  (throttled to ≤ 1/s).

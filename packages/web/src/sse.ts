@@ -38,7 +38,7 @@ export class SseParser {
   }
 }
 
-const ROAST_TYPES = new Set(["officers", "intake", "tier", "line", "audio", "verdict", "awaiting", "error"]);
+const ROAST_TYPES = new Set(["officers", "intake", "tier", "line", "audio", "verdict", "awaiting", "error", "meanwhile", "fine", "meltdown", "analyzing"]);
 
 /** Accepts both `data: {"type":…}` and `event: <type>\ndata: {…}` framings. */
 export function toRoastEvent(msg: SseMessage): RoastEvent | null {
