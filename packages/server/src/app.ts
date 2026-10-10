@@ -19,10 +19,15 @@ import { quotesVisitor } from "./visitor.js";
 import type { RateLimiter } from "./ratelimit.js";
 import { IntakeError, type GitHubIntake } from "./repo.js";
 import { Sse } from "./sse.js";
+import { StatsHub } from "./stats.js";
 import { AUDIO_TYPES, type AudioCache, type Stt } from "./voice.js";
 import type { Wall } from "./wall.js";
+import { registerReportRoutes } from "./report/routes.js";
 
 export const ANALYZER_HOST = "warden.pro7ocol.com";
+
+export const ARCADE_ROUTES = ["game", "swipe", "flappy", "triplicate"] as const;
+export type ArcadeRoute = (typeof ARCADE_ROUTES)[number];
 
 export interface AppDeps {
   db: Db;
@@ -37,12 +42,17 @@ export interface AppDeps {
   webDir?: string;
   pocketDir?: string;
   assetsDir?: string;
+  /** Rendered report.pdf / badge.png per case (DATA_DIR/reports). */
+  reportsDir?: string;
   /** Lane D analyzer: plugin mounted at /api/analyze, its built UI served at /analyze/. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   analyzer?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDir?: string };
+  /** Lane G arcade: gamePlugin at /api/game; built games at /game/, /swipe/, /flappy/, /triplicate/ (missing dirs skipped). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  arcade?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDirs?: Partial<Record<ArcadeRoute, string>> };
   /** Max wait for TTS before a line goes out with `audioUrl: null` (a later `audio` event follows). */
   ttsBudgetMs?: number;
-  /** Before `awaiting`/`verdict`, wait at most this long for late audio. */
+  /** Before `awaiting`/`verdict`, wait at most this long for all of the round's outstanding audio; the rest is replayed at the start of the next stream. */
   lateAudioMs?: number;
   /** A canned opener speaks if no model line arrives by then. */
   firstLineMs?: number;
@@ -107,6 +117,16 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   const now = d.now ?? Date.now;
   const applicants = new ApplicantStore(d.db, d.rand ?? Math.random, now);
   const board = new Leaderboard(d.db);
+  const stats = new StatsHub(d.db, now);
+  board.subscribe(() => stats.changed());
+  app.addHook("onClose", async () => stats.close());
+  const reports = registerReportRoutes(app, {
+    state: (id) => {
+      const s = cases.get(id);
+      return s ? { notice: s.notice ?? null, fines: s.meter?.items } : undefined;
+    },
+    corpus: d.corpus, roster: d.roster, assetsDir: d.assetsDir, reportsDir: d.reportsDir, log: (msg, meta) => app.log.warn(meta ?? {}, msg),
+  });
   const runtimes = new Map<string, Runtime>();
   const background = new Set<Promise<unknown>>();
   const track = (p: Promise<unknown>) => {
@@ -156,6 +176,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     if (limited(req, reply)) return reply;
     try {
       const { ticket } = await applicants.register(req.body);
+      stats.changed();
       return reply.code(201).send(ticket);
     } catch (err) {
       if (err instanceof InputError) return fail(reply, err.status, err.message);
@@ -206,6 +227,23 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     });
   });
 
+  // ── v2 amendment: stage feeds ──
+  app.get("/api/live", async () => stats.live());
+  app.get("/api/stats", async () => stats.snapshot());
+  app.get("/api/stats/stream", async (_req, reply) => {
+    reply.hijack();
+    const sse = new Sse(reply.raw);
+    sse.send("message", stats.snapshot());
+    const off = stats.subscribe((s) => sse.send("message", s));
+    const ping = setInterval(() => {
+      if (!sse.isClosed) reply.raw.write(":ping\n\n");
+    }, 15000);
+    reply.raw.on("close", () => {
+      off();
+      clearInterval(ping);
+    });
+  });
+
   app.get<{ Params: { caseId: string } }>("/api/leaderboard/:caseId", async (req, reply) => {
     const r = board.get(req.params.caseId);
     if (!r) return fail(reply, 404, "not on the leaderboard (yet)");
@@ -240,7 +278,8 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
 
     const submission: Submission = { kind: sub.kind, ...(sub.text ? { text: sub.text.trim() } : {}), ...(sub.repoUrl ? { repoUrl: sub.repoUrl.trim() } : {}), ...(sub.revenueEur !== undefined ? { revenueEur: sub.revenueEur } : {}) };
     const state: CaseState = { caseId: randomUUID(), ticket: nextCounter(d.db, "ticket", 4812), officers: [officers[0], officers[1]], submission, tier: 1, replies: [], lines: [], roundPending: true, round: 0, done: false };
-    state.startedAt = applicant ? applicant.createdAt : now();
+    state.createdAt = now();
+    state.startedAt = applicant ? applicant.createdAt : state.createdAt;
     if (applicant) state.applicantId = applicant.id;
     if (sub.kind === "repo") {
       try {
@@ -278,6 +317,18 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     return reply.code(204).send();
   });
 
+  /** Per case: `audio` events that landed after their round closed, waiting for the next stream. */
+  const carried = new Map<string, { events: AnyEvent[]; push: ((e: AnyEvent) => void) | null }>();
+  const carry = (caseId: string) => {
+    let c = carried.get(caseId);
+    if (!c) {
+      if (carried.size >= 1000) carried.delete(carried.keys().next().value as string);
+      carried.set(caseId, (c = { events: [], push: null }));
+    }
+    return c;
+  };
+  let lineSeq = 0;
+
   const visitorTexts = (s: CaseState) => [s.submission.text ?? "", ...s.replies, s.intake?.description ?? "", s.readme ?? ""].filter(Boolean);
 
   /**
@@ -289,6 +340,20 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     const push = (e: AnyEvent) => {
       rt.events.push(e);
       rt.bus.emit("event", e);
+    };
+    // Late audio from earlier rounds: replay what finished, route the rest into this stream as it lands.
+    const prev = carried.get(state.caseId);
+    if (prev) {
+      prev.push = push;
+      for (const e of prev.events.splice(0)) push(e);
+    }
+    let open = true;
+    const deliverLate = (e: AnyEvent) => {
+      if (open) return push(e);
+      if (state.done) return void rt.events.push(e);
+      const c = carry(state.caseId);
+      if (c.push) c.push(e);
+      else c.events.push(e);
     };
     const started = Date.now();
     const deadline = started + (d.roundDeadlineMs ?? 20000);
@@ -306,7 +371,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     const emit = (line: LineOut) => {
       const id = `${state.caseId}-${state.round}-${n++}`;
       const spec = d.roster.get(line.speaker)!;
-      const render = d.audio.render(line.text, spec.voice);
+      const render = d.audio.render(line.text, spec.voice, lineSeq++);
       const arrived = Date.now();
       const provisions = line.provisions.map((pid) => d.corpus.provision(pid)).filter((p): p is NonNullable<typeof p> => Boolean(p));
       state.lines.push({ speaker: line.speaker, text: line.text, provisions: provisions.map((p) => p.id), tier: state.tier, ...(line.charge ? { charge: line.charge } : {}) });
@@ -325,7 +390,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
           if (crossed) push({ type: "meltdown", totalEur: meter.totalEur, totalJailMonths: meter.totalJailMonths });
         });
         if (!quotesVisitor(line.text, visitorTexts(state))) d.wall.add({ speaker: line.speaker, text: line.text, at: new Date().toISOString() });
-        if (!audioUrl) lateAudio.push(render.then((url) => (url ? push({ type: "audio", id, audioUrl: url }) : undefined), () => undefined));
+        if (!audioUrl) lateAudio.push(render.then((url) => (url ? deliverLate({ type: "audio", id, audioUrl: url }) : undefined), () => undefined));
       });
     };
     try {
@@ -370,11 +435,17 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
       }
       while (count < 3) emit(d.engine.fill(state, d.engine.partner(state, state.lines.at(-1)?.speaker), state.lines.map((l) => l.text)));
       await chain;
-      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 6000, undefined);
+      if (lateAudio.length) await withTimeout(Promise.all(lateAudio).then(() => undefined), d.lateAudioMs ?? 10000, undefined);
     } catch (err) {
       app.log.error({ err }, "round failed; closing it anyway");
     } finally {
       if (ticker) clearInterval(ticker);
+    }
+    open = false;
+    const c = carried.get(state.caseId);
+    if (c) {
+      c.push = null;
+      if (!c.events.length) carried.delete(state.caseId);
     }
     try {
       if (state.tier === 5) {
@@ -398,6 +469,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         } catch (err) {
           app.log.error({ err }, "leaderboard insert failed");
         }
+        void reports.prerender(state.caseId);
       } else {
         push({ type: "awaiting", prompt: AWAITING[state.tier] });
       }
@@ -419,6 +491,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
     let rt = runtimes.get(state.caseId);
     if (!rt) {
       rt = { events: [], done: false, bus: new EventEmitter() };
+      rt.bus.setMaxListeners(1000); // the stage and the audience read the same case stream
       runtimes.set(state.caseId, rt);
       if (state.roundPending) track(runRound(state, rt));
       else {
@@ -493,11 +566,25 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   }
   if (d.analyzer) void app.register(d.analyzer.plugin, { ...(d.analyzer.options ?? {}), prefix: "/api/analyze" });
 
+  // Lane G arcade: leaderboard API + static game builds (SPA fallback via `roots`) + no-slash redirects.
+  const arcadeRoots = ARCADE_ROUTES.map((id) => ({ root: d.arcade?.webDirs?.[id], prefix: `/${id}/`, spa: true }));
+  if (d.arcade) {
+    void app.register(d.arcade.plugin, { ...(d.arcade.options ?? {}), prefix: "/api/game" });
+    const bare = new Set([...ARCADE_ROUTES.map((id) => `/${id}`), "/game/whack"]);
+    app.addHook("onRequest", async (req, reply) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return;
+      const q = req.url.indexOf("?");
+      const pathname = q < 0 ? req.url : req.url.slice(0, q);
+      if (bare.has(pathname)) return reply.redirect(`${pathname}/${q < 0 ? "" : req.url.slice(q)}`, 301);
+    });
+  }
+
   // Static roots; any missing directory is skipped. Only the first registration decorates reply.
   const roots = [
     { root: d.assetsDir, prefix: "/assets/generated/", spa: false },
     { root: d.pocketDir, prefix: "/pocket/", spa: true },
     { root: d.analyzer?.webDir, prefix: "/analyze/", spa: true },
+    ...arcadeRoots,
     { root: d.webDir, prefix: "/", spa: true },
   ].filter((r): r is { root: string; prefix: string; spa: boolean } => Boolean(r.root && existsSync(r.root)));
   roots.forEach((r, i) => void app.register(fastifyStatic, { root: r.root, prefix: r.prefix, decorateReply: i === 0, index: r.spa ? ["index.html"] : false, wildcard: true }));

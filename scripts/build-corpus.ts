@@ -8,11 +8,18 @@
  *                        corpus/nist/nist-ai-100-1.md                     (US Gov work)
  *                        frameworks/{iso-27001,iso-42001,soc2}.md          (ids + warden-authored titles)
  *                        corpus/standards/owasp-llm-top10.md               (ids + names)
+ *   - EUR-Lex / Publications Office XHTML, fetched by CELEX from CELLAR into .cache/corpus-src/eurlex
+ *     (or EURLEX_DIR): DSA, DMA, CRA, Data Act, ePrivacy (consolidated), eIDAS 2 and CSRD (the
+ *     articles they insert into Reg. 910/2014 and Dir. 2013/34/EU). Verbatim, public domain.
+ *
+ * corpus/provisions.lock.json pins a hash of every provision ever published: the build fails if
+ * an existing id disappears or changes, and appends new ids.
  *
  * ISO/IEC 27001, ISO/IEC 42001 and SOC 2 are copyrighted: only control ids and warden's own
  * authored descriptions go in, never standard text. Run: `npm run build:corpus`.
  */
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,6 +54,7 @@ function wardenBranch(): string | undefined {
 }
 
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();
+const EURLEX_TEXT_CHARS = 1200;
 const clip = (s: string, n = TEXT_CHARS) => (s.length > n ? `${s.slice(0, n).replace(/\s\S*$/, "")}…` : s);
 
 interface EuAct {
@@ -277,7 +285,255 @@ export function parseOwasp(md: string): IndexedProvision[] {
   return out;
 }
 
-function main(): void {
+// ---------------------------------------------------------------------------------------------
+// EUR-Lex XHTML (CELLAR). Both layouts are handled: OJ acts (`oj-ti-art` / `oj-sti-art`) and
+// consolidated texts (`title-article-norm` / `stitle-article-norm`, with ▼M amendment markers).
+
+export interface XEl {
+  tag: string;
+  attrs: Record<string, string>;
+  children: XNode[];
+  parent?: XEl;
+}
+export type XNode = XEl | string;
+
+const VOID = new Set(["br", "hr", "img", "col", "meta", "link", "input", "area", "base", "wbr"]);
+const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0" };
+const decode = (s: string) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) =>
+    e[0] === "#"
+      ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : Number(e.slice(1)))
+      : (ENTITIES[e.toLowerCase()] ?? m),
+  );
+
+/** Minimal well-formed-XHTML tree builder (CELLAR serves XHTML). */
+export function parseXhtml(src: string): XEl {
+  const root: XEl = { tag: "#root", attrs: {}, children: [] };
+  let cur = root;
+  const re = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<[?!][^>]*>|<(\/?)([a-zA-Z][\w:.-]*)((?:\s+[^\s=/>]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*)\s*(\/?)>/g;
+  let last = 0;
+  for (const m of src.matchAll(re)) {
+    if (m.index! > last) cur.children.push(decode(src.slice(last, m.index)));
+    last = m.index! + m[0].length;
+    const tag = m[2]?.toLowerCase();
+    if (!tag) continue;
+    if (m[1]) {
+      for (let e: XEl | undefined = cur; e && e !== root; e = e.parent) {
+        if (e.tag === tag) {
+          cur = e.parent!;
+          break;
+        }
+      }
+      continue;
+    }
+    const attrs: Record<string, string> = {};
+    for (const a of (m[3] ?? "").matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/g)) {
+      attrs[a[1]!.toLowerCase()] = decode(a[2] ?? a[3] ?? "");
+    }
+    const el: XEl = { tag, attrs, children: [], parent: cur };
+    cur.children.push(el);
+    if (!m[4] && !VOID.has(tag)) cur = el;
+  }
+  if (last < src.length) cur.children.push(decode(src.slice(last)));
+  return root;
+}
+
+const isEl = (n: XNode): n is XEl => typeof n !== "string";
+const hasClass = (e: XEl, ...cls: string[]) => (e.attrs.class ?? "").split(/\s+/).some((c) => cls.includes(c));
+const elements = (e: XEl) => e.children.filter(isEl);
+
+function* descendants(e: XEl): Generator<XEl> {
+  for (const c of elements(e)) {
+    yield c;
+    yield* descendants(c);
+  }
+}
+
+const SKIP_TEXT = new Set(["script", "style", "head"]);
+
+/** Text of an element, block boundaries as spaces; amendment markers (▼B, ▼M2) dropped. */
+export function textOf(n: XNode): string {
+  if (!isEl(n)) return n;
+  if (SKIP_TEXT.has(n.tag) || hasClass(n, "modref")) return "";
+  return n.children.map((c) => (isEl(c) && c.tag !== "span" && c.tag !== "a" && c.tag !== "sup" ? ` ${textOf(c)} ` : textOf(c))).join("");
+}
+
+const ART_HEAD = ["oj-ti-art", "title-article-norm"];
+const ART_TITLE = ["oj-sti-art", "stitle-article-norm"];
+const containsHead = (e: XEl) => hasClass(e, ...ART_HEAD) || [...descendants(e)].some((d) => hasClass(d, ...ART_HEAD));
+
+export interface RawArticle {
+  /** "34", "15a", or the annex number ("I", "" for a lone ANNEX). */
+  num: string;
+  kind: "article" | "annex";
+  title: string;
+  paras: string[];
+  /** EUR-Lex anchor (element id), e.g. `art_34`, `anx_I`. */
+  anchor: string;
+}
+
+const paraTexts = (els: XEl[]) => els.map((e) => squash(textOf(e))).filter(Boolean);
+
+/** Articles + annexes of a directly-applicable act (OJ or consolidated layout). */
+export function eurlexArticles(doc: XEl): RawArticle[] {
+  const out: RawArticle[] = [];
+  for (const e of descendants(doc)) {
+    const id = e.attrs.id ?? "";
+    const art = /^art_(\d+[a-z]?)$/.exec(id);
+    if (art && hasClass(e, "eli-subdivision")) {
+      const kids = elements(e);
+      const titleEl = [...descendants(e)].find((d) => hasClass(d, ...ART_TITLE));
+      const body = kids.filter(
+        (k) => !hasClass(k, ...ART_HEAD, "eli-title", "modref") && !(titleEl && (k === titleEl || [...descendants(k)].includes(titleEl))),
+      );
+      out.push({ num: art[1]!, kind: "article", title: titleEl ? squash(textOf(titleEl)) : "", paras: paraTexts(body), anchor: id });
+      continue;
+    }
+    if (/^anx_/.test(id) && hasClass(e, "eli-container")) {
+      const kids = elements(e);
+      const heads = kids.filter((k) => hasClass(k, "oj-doc-ti"));
+      const num = /^ANNEX\s*([IVXLC]+)?\b/i.exec(squash(textOf(heads[0] ?? e)))?.[1] ?? "";
+      const title = heads[1] ? squash(textOf(heads[1])) : "Annex";
+      out.push({ num, kind: "annex", title, paras: paraTexts(kids.filter((k) => !heads.includes(k))), anchor: id });
+    }
+  }
+  return out;
+}
+
+/** Articles an amending act inserts or replaces (`‘Article 45 …’`) inside its own `art_<n>`. */
+export function eurlexInsertedArticles(doc: XEl, inArticle = "art_1"): RawArticle[] {
+  const host = [...descendants(doc)].find((e) => e.attrs.id === inArticle && hasClass(e, "eli-subdivision"));
+  if (!host) throw new Error(`amending act has no ${inArticle}`);
+  const out: RawArticle[] = [];
+  for (const h of descendants(host)) {
+    if (!hasClass(h, "oj-ti-art") || h.parent === host) continue;
+    const num = /^‘?\s*Article\s+(\d+[a-z]?)$/i.exec(squash(textOf(h)))?.[1];
+    if (!num) continue;
+    const sibs = elements(h.parent!);
+    let i = sibs.indexOf(h) + 1;
+    let title = "";
+    const t = sibs[i];
+    if (t && (hasClass(t, "oj-sti-art") || hasClass(t, "eli-title"))) {
+      title = squash(textOf(t));
+      i++;
+    }
+    const body: XEl[] = [];
+    for (; i < sibs.length && !containsHead(sibs[i]!); i++) body.push(sibs[i]!);
+    const paras = paraTexts(body);
+    if (paras.length) paras[paras.length - 1] = paras[paras.length - 1]!.replace(/\s*’\s*[;.,]?$/, "");
+    out.push({ num, kind: "article", title: title.replace(/[’;]+$/, ""), paras, anchor: inArticle });
+  }
+  return out;
+}
+
+/** Cap-bearing paragraphs ("6 %", "EUR 15 000 000", "Article 83 of Regulation (EU) 2016/679"). */
+const CAP = /\d\s?%|EUR\s?\d|Article 83/;
+
+/**
+ * A verbatim excerpt of whole paragraphs (≤ max chars). For penalty articles the paragraphs
+ * carrying the caps are always kept; skipped paragraphs are marked with " … ".
+ */
+export function excerpt(paras: string[], penalty: boolean, max = EURLEX_TEXT_CHARS): string {
+  const full = paras.join(" ");
+  if (full.length <= max) return full;
+  const keep = new Set<number>();
+  if (penalty) paras.forEach((p, i) => CAP.test(p) && keep.add(i));
+  if (!keep.size) return clip(full, max - 1);
+  const render = (ks: Set<number>) => {
+    const idx = [...ks].sort((a, b) => a - b);
+    return idx.map((k, j) => (j === 0 ? (k > 0 ? "… " : "") : k === idx[j - 1]! + 1 ? " " : " … ") + paras[k]).join("");
+  };
+  for (let i = 0; i < paras.length; i++) {
+    if (keep.has(i)) continue;
+    const next = new Set([...keep, i]);
+    if (render(next).length > max) break;
+    keep.add(i);
+  }
+  return clip(render(keep), max - 1);
+}
+
+export interface EurlexAct {
+  celex: string;
+  prefix: string;
+  short: string;
+  /** `inserts`: take the articles the act's Article 1 inserts/replaces in the act it amends. */
+  mode: "act" | "inserts";
+  penalties: string[];
+  annexes?: boolean;
+}
+
+export const EURLEX_ACTS: EurlexAct[] = [
+  { celex: "32022R2065", prefix: "dsa", short: "DSA", mode: "act", penalties: ["52", "74", "76"] },
+  { celex: "32022R1925", prefix: "dma", short: "DMA", mode: "act", penalties: ["30", "31"], annexes: true },
+  { celex: "32024R2847", prefix: "cra", short: "CRA", mode: "act", penalties: ["64"], annexes: true },
+  { celex: "32023R2854", prefix: "data-act", short: "Data Act", mode: "act", penalties: ["40"] },
+  { celex: "02002L0058-20091219", prefix: "eprivacy", short: "ePrivacy", mode: "act", penalties: ["15a"] },
+  { celex: "32024R1183", prefix: "eidas2", short: "eIDAS 2", mode: "inserts", penalties: ["16"] },
+  { celex: "32022L2464", prefix: "csrd", short: "CSRD", mode: "inserts", penalties: [] },
+];
+
+export const eurlexUrl = (celex: string, anchor: string) =>
+  `https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:${celex}#${anchor}`;
+
+export function parseEurlexAct(xhtml: string, act: EurlexAct): IndexedProvision[] {
+  const doc = parseXhtml(xhtml);
+  const raw = act.mode === "inserts" ? eurlexInsertedArticles(doc) : eurlexArticles(doc).filter((a) => a.kind === "article" || act.annexes);
+  const out: IndexedProvision[] = [];
+  const seen = new Set<string>();
+  for (const a of raw) {
+    const art = a.kind === "article";
+    const id = art ? `${act.prefix}-${a.num}` : `${act.prefix}-annex${a.num ? `-${a.num.toLowerCase()}` : ""}`;
+    if (seen.has(id)) throw new Error(`${act.short}: duplicate ${id}`);
+    seen.add(id);
+    out.push({
+      id,
+      label: art ? `${act.short} Art. ${a.num}` : `${act.short} Annex${a.num ? ` ${a.num}` : ""}`,
+      title: a.title,
+      url: eurlexUrl(act.celex, a.anchor),
+      framework: act.short,
+      text: excerpt(a.paras, art && act.penalties.includes(a.num)),
+    });
+  }
+  return out;
+}
+
+const CELLAR = "http://publications.europa.eu/resource/celex";
+
+async function eurlexXhtml(celex: string): Promise<string> {
+  const dir = process.env.EURLEX_DIR || path.join(CACHE, "eurlex");
+  const file = path.join(dir, `${celex}.xhtml`);
+  if (!existsSync(file)) {
+    const res = await fetch(`${CELLAR}/${celex}`, {
+      headers: { Accept: "application/xhtml+xml", "Accept-Language": "en", "User-Agent": "dg-roast-corpus-builder" },
+    });
+    const body = await res.text();
+    if (!res.ok || !body.includes("eli-subdivision")) throw new Error(`CELLAR ${celex}: HTTP ${res.status}, not an act XHTML`);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(file, body);
+  }
+  return readFileSync(file, "utf8");
+}
+
+// ---------------------------------------------------------------------------------------------
+// Lock: every provision ever published keeps its id and content.
+
+export const LOCK_FILE = path.join(ROOT, "corpus", "provisions.lock.json");
+
+export const provisionHash = (p: IndexedProvision) =>
+  createHash("sha256").update(JSON.stringify([p.id, p.label, p.title, p.url, p.framework, p.text])).digest("hex").slice(0, 16);
+
+/** Locked ids that are missing or whose content changed. */
+export function lockViolations(lock: Record<string, string>, provisions: IndexedProvision[]): string[] {
+  const byId = new Map(provisions.map((p) => [p.id, p]));
+  return Object.entries(lock)
+    .filter(([id, h]) => {
+      const p = byId.get(id);
+      return !p || provisionHash(p) !== h;
+    })
+    .map(([id]) => id);
+}
+
+async function main(): Promise<void> {
   const euAiAct = checkout("EU-AI-Act", "https://github.com/bioztar/EU-AI-Act.git", "EU_AI_ACT_DIR");
   const warden = checkout("warden", "https://github.com/bioztar/warden.git", "WARDEN_DIR", wardenBranch());
   const read = (...p: string[]) => readFileSync(path.join(...p), "utf8");
@@ -296,6 +552,13 @@ function main(): void {
   all.push(...parseIso42001(read(warden, "frameworks/iso-42001.md")));
   all.push(...parseSoc2(read(warden, "frameworks/soc2.md")));
   all.push(...parseOwasp(read(warden, "corpus/standards/owasp-llm-top10.md")));
+  for (const act of EURLEX_ACTS) all.push(...parseEurlexAct(await eurlexXhtml(act.celex), act));
+
+  const lock: Record<string, string> = existsSync(LOCK_FILE) ? JSON.parse(readFileSync(LOCK_FILE, "utf8")) : {};
+  const broken = lockViolations(lock, all);
+  if (broken.length) throw new Error(`existing provisions removed or changed (see corpus/provisions.lock.json): ${broken.join(", ")}`);
+  for (const p of all) lock[p.id] ??= provisionHash(p);
+  writeFileSync(LOCK_FILE, `${JSON.stringify(lock, null, 1)}\n`);
 
   const counts: Record<string, number> = {};
   for (const p of all) counts[p.framework] = (counts[p.framework] ?? 0) + 1;
@@ -305,4 +568,9 @@ function main(): void {
   console.log(`wrote ${all.length} provisions to corpus/provisions.json`, counts);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e: unknown) => {
+    console.error(e instanceof Error ? e.message : e);
+    process.exit(1);
+  });
+}
