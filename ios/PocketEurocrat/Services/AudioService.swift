@@ -10,6 +10,9 @@ final class AudioService {
     /// One 20 ms slice of the mouth: `open` 0...1 (vowel energy), `wide` ~1 (>1 spread for sibilants).
     struct MouthFrame { var open: Float; var wide: Float }
     nonisolated static let mouthRate: Double = 50   // frames per second
+    /// Officer voices play this much faster (AVAudioPlayer time-stretch keeps the pitch). Every pacing that waits
+    /// on a clip's length divides by it. `currentTime` stays in media time, so the mouth track needs no change.
+    nonisolated static let voiceRate: Float = 1.3
 
     /// Offline-analyses a decoded clip into a mouth track: RMS envelope -> opening, high zero-crossing rate
     /// (fricatives/sibilants, > ~2.5 kHz) -> narrower opening and a wider, thinner mouth. Empty if undecodable.
@@ -69,11 +72,13 @@ final class AudioService {
             let p = try AVAudioPlayer(data: data)
             p.isMeteringEnabled = true
             p.volume = 1
+            p.enableRate = true   // before prepareToPlay
             p.prepareToPlay()
+            p.rate = Self.voiceRate
             player = p
             guard p.play() else { lastProblem = "player refused to start"; return false }
             lastProblem = AVAudioSession.sharedInstance().outputVolume < 0.05 ? "Phone volume is at zero — the Commission is speaking." : nil
-            let deadline = Date().addingTimeInterval(maxSeconds)
+            let deadline = Date().addingTimeInterval(maxSeconds / Double(Self.voiceRate))
             while p.isPlaying, Date() < deadline, !Task.isCancelled {
                 if track.isEmpty {
                     p.updateMeters()

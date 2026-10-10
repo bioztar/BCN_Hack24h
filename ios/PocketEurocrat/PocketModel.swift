@@ -144,7 +144,7 @@ final class PocketModel {
 
     /// No audio clip: fake a speaking level for `seconds` so the bust still talks.
     private func talkFor(_ seconds: Double, speaker: String) async {
-        let end = Date().addingTimeInterval(seconds)
+        let end = Date().addingTimeInterval(seconds / Double(AudioService.voiceRate))   // same pace as a spoken clip
         while Date() < end, !Task.isCancelled, !skipping {
             puppet.setMouth(open: .random(in: 0.1...0.9), wide: .random(in: 0.9...1.2), speaker: speaker)
             try? await Task.sleep(for: .milliseconds(110))
