@@ -55,9 +55,16 @@ export function mockQuip(c: BetterPlaceCause): string {
 
 const ETAS = ["Estimated decision: Q3 2031", "Estimated decision: after the next Treaty change", "Estimated decision: 2 legislative terms", "Estimated decision: when Article 50 applies to you, personally"];
 
+function mockToken(): string {
+  const b = new Uint8Array(32);
+  crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 export function mockTicket(countdownSec?: number): QueueTicket {
   return {
-    applicantId: `app-${Date.now().toString(36)}`,
+    applicantId: `app-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    applicantToken: mockToken(),
     ticket: 10_000 + Math.floor(Math.random() * 990_000),
     position: 1_500_000 + Math.floor(Math.random() * 1_500_000),
     etaText: pick(ETAS),

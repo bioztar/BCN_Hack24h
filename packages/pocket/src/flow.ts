@@ -1,4 +1,4 @@
-import type { Api } from "./api";
+import { HttpError, type Api } from "./api";
 import { buzz, voiceFor, type Playback, type Sound } from "./audio";
 import { AudioBook } from "./audiobook";
 import { drawBadge } from "./badge";
@@ -12,15 +12,18 @@ import { selfieDataUrl } from "./photo";
 import { CAUSES, QUEUE_JOKES, formatPosition, positionAt } from "./queue";
 import { initialState, reduce, type Action, type LineEvent, type RoastState } from "./reducer";
 import { FineSync, Timeline } from "./timeline";
-import type { AnyRoastEvent, FineEvent, LeaderboardEntry, LeaderboardSort, Meanwhile, NoticeV2, Persona, PersonaId, QueueTicket, Submission } from "./types";
+import type { AnyRoastEvent, ApplicantAuth, FineEvent, LeaderboardEntry, LeaderboardSort, Meanwhile, NoticeV2, Persona, PersonaId, QueueTicket, Submission } from "./types";
 import { toNoticeV2 } from "./verdict";
 
 export interface FlowDeps { api: Api; sound: Sound; app: HTMLElement; appUrl: string; }
 
-interface Applicant { applicantId: string | null; startupName: string; founderName: string; oneLiner: string; photo: string | null; at: number; ticket: QueueTicket; }
+/** The token stays in memory for this page session only; it is never persisted or shown. */
+interface Applicant { applicantId: string | null; applicantToken: string | null; startupName: string; founderName: string; oneLiner: string; photo: string | null; at: number; ticket: QueueTicket; }
 
 let D: FlowDeps;
 let me: Applicant | null = null;
+const applicantAuth = (): ApplicantAuth | undefined =>
+  me?.applicantId && me.applicantToken ? { applicantId: me.applicantId, applicantToken: me.applicantToken } : undefined;
 let personas: Persona[] = FIXTURE_PERSONAS;
 let shownMw: Meanwhile | null = null;
 let serverMwAt = 0;
@@ -189,15 +192,17 @@ function register(): void {
     const input = { startupName, founderName, ...(oneLiner.value.trim() ? { oneLiner: oneLiner.value.trim() } : {}), ...(photo ? { photo } : {}) };
     let ticket: QueueTicket;
     let applicantId: string | null;
+    let applicantToken: string | null;
     try {
       ticket = await D.api.register(input);
       applicantId = ticket.applicantId;
+      applicantToken = ticket.applicantToken || null;
     } catch {
       // Older server without /api/applicants: queue locally, pitch without an applicantId.
       ticket = mockTicket();
-      applicantId = null;
+      applicantId = applicantToken = null;
     }
-    me = { applicantId, startupName, founderName, oneLiner: input.oneLiner ?? "", photo, at: Date.now(), ticket };
+    me = { applicantId, applicantToken, startupName, founderName, oneLiner: input.oneLiner ?? "", photo, at: Date.now(), ticket };
     shownMw = null;
     serverMwAt = 0;
     queueScreen(ticket);
@@ -264,8 +269,9 @@ function queueScreen(t: QueueTicket): void {
       let quip: string;
       let n: number;
       try {
-        if (!me?.applicantId) throw new Error("local");
-        const r = await D.api.betterPlace(me.applicantId, c.id);
+        const auth = applicantAuth();
+        if (!auth) throw new Error("local");
+        const r = await D.api.betterPlace(auth, c.id);
         quip = r.quip;
         n = r.skipped;
       } catch {
@@ -842,7 +848,12 @@ async function roastScreen(sub: Submission): Promise<void> {
   if (sub.kind === "repo") showAnalyzing("Requesting the repository from the Publications Office…", 0.02);
   try {
     dispatch({ type: "submit" });
-    const c = await D.api.createCase(sub, undefined, me?.applicantId ?? undefined);
+    const auth = applicantAuth();
+    const c = await D.api.createCase(sub, undefined, auth).catch((err: unknown) => {
+      // A rejected token must not cost the audience their roast: pitch anonymously instead.
+      if (auth && err instanceof HttpError && (err.status === 401 || err.status === 403)) return D.api.createCase(sub);
+      throw err;
+    });
     if (!alive()) return;
     setOfficers(c.officers);
     dispatch({ type: "case", caseId: c.caseId, ticket: c.ticket });

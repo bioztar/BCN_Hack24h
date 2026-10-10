@@ -6,6 +6,7 @@ import { mockLeaderboard, mockNewEntry, mockQuip, mockTicket } from "./mockdata"
 import { buildReportPdf } from "./pdf";
 import { SseParser, toRoastEvent } from "./sse";
 import type {
+  ApplicantAuth,
   AnyRoastEvent, ApplicantInput, BetterPlaceCause, BetterPlaceResult, Case, LeaderboardDetail, LeaderboardEntry, LeaderboardSort,
   NoticeV2, Pair, Persona, PersonaId, QueueTicket, Submission,
 } from "./types";
@@ -14,13 +15,14 @@ export interface Api {
   readonly mock: boolean;
   personas(): Promise<Persona[]>;
   pairs(): Promise<Pair[]>;
-  createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicantId?: string): Promise<Case>;
+  /** One case per applicant: a second call with the same applicant returns the existing caseId. */
+  createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth): Promise<Case>;
   stream(caseId: string, onEvent: (e: AnyRoastEvent) => void, signal: AbortSignal): Promise<void>;
   reply(caseId: string, text: string): Promise<void>;
   stt(audio: Blob): Promise<string>;
   // v2
   register(input: ApplicantInput): Promise<QueueTicket>;
-  betterPlace(applicantId: string, cause: BetterPlaceCause): Promise<BetterPlaceResult>;
+  betterPlace(applicant: ApplicantAuth, cause: BetterPlaceCause): Promise<BetterPlaceResult>;
   leaderboard(sort: LeaderboardSort, limit?: number): Promise<LeaderboardEntry[]>;
   /** Live entries (on connect: top 20 by fines). Returns an unsubscribe. */
   leaderboardStream(onEntry: (e: LeaderboardEntry) => void): () => void;
@@ -29,18 +31,26 @@ export interface Api {
 
 const BASE = "/api";
 
+export class HttpError extends Error {
+  constructor(readonly status: number, msg: string) {
+    super(msg);
+  }
+}
+
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try {
       msg = ((await res.json()) as { error?: string }).error ?? msg;
     } catch { /* not JSON */ }
-    throw new Error(res.status === 429 ? "The Commission is overwhelmed (429). Please queue." : msg);
+    throw new HttpError(res.status, res.status === 429 ? "The Commission is overwhelmed (429). Please queue." : msg);
   }
   return (await res.json()) as T;
 }
 
-const post = (path: string, body: unknown) => fetch(`${BASE}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+const post = (path: string, body: unknown, headers: Record<string, string> = {}) =>
+  fetch(`${BASE}${path}`, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+const tokenHeader = (a?: ApplicantAuth): Record<string, string> => (a?.applicantToken ? { "x-applicant-token": a.applicantToken } : {});
 
 /** Reads an SSE body chunk by chunk (fetch, not EventSource: no auto-reconnect replaying a round). */
 export async function pumpSse(body: ReadableStream<Uint8Array>, onEvent: (e: AnyRoastEvent) => void): Promise<void> {
@@ -99,8 +109,9 @@ export class LiveApi implements Api {
       return FIXTURE_PAIRS;
     }
   }
-  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicantId?: string): Promise<Case> {
-    return json<Case>(await post("/case", { submission, ...(officers ? { officers } : {}), ...(applicantId ? { applicantId } : {}) }));
+  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth): Promise<Case> {
+    const auth = applicant ? { applicantId: applicant.applicantId, applicantToken: applicant.applicantToken } : {};
+    return json<Case>(await post("/case", { submission, ...(officers ? { officers } : {}), ...auth }, tokenHeader(applicant)));
   }
   async stream(caseId: string, onEvent: (e: AnyRoastEvent) => void, signal: AbortSignal): Promise<void> {
     const res = await fetch(`${BASE}/case/${encodeURIComponent(caseId)}/stream`, { headers: { accept: "text/event-stream" }, signal });
@@ -119,8 +130,8 @@ export class LiveApi implements Api {
   async register(input: ApplicantInput): Promise<QueueTicket> {
     return json<QueueTicket>(await post("/applicants", input));
   }
-  async betterPlace(applicantId: string, cause: BetterPlaceCause): Promise<BetterPlaceResult> {
-    return json<BetterPlaceResult>(await post(`/applicants/${encodeURIComponent(applicantId)}/better-place`, { cause }));
+  async betterPlace(a: ApplicantAuth, cause: BetterPlaceCause): Promise<BetterPlaceResult> {
+    return json<BetterPlaceResult>(await post(`/applicants/${encodeURIComponent(a.applicantId)}/better-place`, { cause, applicantToken: a.applicantToken }, tokenHeader(a)));
   }
   async leaderboard(sort: LeaderboardSort, limit = 50): Promise<LeaderboardEntry[]> {
     const r = await json<{ entries: LeaderboardEntry[] }>(await fetch(`${BASE}/leaderboard?sort=${sort}&limit=${limit}`));
@@ -166,7 +177,7 @@ const PACE: Partial<Record<AnyRoastEvent["type"], number>> = { line: 450, analyz
 export class MockApi implements Api {
   readonly mock = true;
   private cases = new Map<string, MockCase>();
-  private applicants = new Map<string, { input: ApplicantInput; at: number }>();
+  private applicants = new Map<string, { input: ApplicantInput; at: number; token: string; caseId?: string }>();
   private board: LeaderboardEntry[] = mockLeaderboard();
   private details = new Map<string, LeaderboardDetail>();
   private listeners = new Set<(e: LeaderboardEntry) => void>();
@@ -178,20 +189,30 @@ export class MockApi implements Api {
   async register(input: ApplicantInput): Promise<QueueTicket> {
     await sleep(400);
     const t = mockTicket(this.countdownSec);
-    this.applicants.set(t.applicantId, { input, at: Date.now() });
+    this.applicants.set(t.applicantId, { input, at: Date.now(), token: t.applicantToken });
     return t;
   }
-  async betterPlace(_id: string, cause: BetterPlaceCause): Promise<BetterPlaceResult> {
+  private authorise(a: ApplicantAuth) {
+    const rec = this.applicants.get(a.applicantId);
+    if (!rec || rec.token !== a.applicantToken) throw new HttpError(403, "Forbidden: wrong applicant token");
+    return rec;
+  }
+  async betterPlace(a: ApplicantAuth, cause: BetterPlaceCause): Promise<BetterPlaceResult> {
     await sleep(500);
+    this.authorise(a);
     return { position: 1, skipped: 1_000_000 + Math.floor(Math.random() * 3_000_000), cause, quip: mockQuip(cause) };
   }
-  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicantId?: string): Promise<Case> {
+  async createCase(submission: Submission, officers?: [PersonaId, PersonaId], applicant?: ApplicantAuth): Promise<Case> {
     await sleep(350);
+    const a = applicant ? this.authorise(applicant) : undefined;
+    const existing = a?.caseId ? this.cases.get(a.caseId) : undefined;
+    if (existing) return { caseId: existing.caseId, ticket: existing.ticket, officers: [existing.personas[0].id, existing.personas[1].id] };
+    const applicantId = applicant?.applicantId;
     const pair = officers ?? FIXTURE_PAIRS[Math.floor(Math.random() * FIXTURE_PAIRS.length)]!.officers;
     const caseId = `mock-${Date.now().toString(36)}`;
     const ticket = 4812 + Math.floor(Math.random() * 900);
     const find = (id: PersonaId) => FIXTURE_PERSONAS.find((p) => p.id === id) ?? FIXTURE_PERSONAS[0]!;
-    const a = applicantId ? this.applicants.get(applicantId) : undefined;
+    if (a) a.caseId = caseId;
     this.cases.set(caseId, {
       caseId,
       personas: [find(pair[0]), find(pair[1])],

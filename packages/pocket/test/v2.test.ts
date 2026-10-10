@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { entriesFromMessage } from "../src/api";
+import { MockApi, entriesFromMessage } from "../src/api";
 import { FIXTURE_PAIRS, FIXTURE_PERSONAS, mockRoundEvents, type MockCtx } from "../src/fixtures";
 import { lawOf, mockFine, statutoryMax } from "../src/fines";
 import { initials, mergeEntries, sortEntries } from "../src/leaderboard";
@@ -11,7 +11,7 @@ import { CAUSES, formatPosition, positionAt } from "../src/queue";
 import { initialState, reduce } from "../src/reducer";
 import { FineSync, Timeline } from "../src/timeline";
 import { SseParser, toRoastEvent } from "../src/sse";
-import { MELTDOWN_EUR, type FineEvent, type LeaderboardEntry, type Notice, type NoticeV2, type Persona, type Provision } from "../src/types";
+import { MELTDOWN_EUR, type FineEvent, type LeaderboardEntry, type Notice, type NoticeV2, type Persona, type Provision, type Submission } from "../src/types";
 import { isNoticeV2, toNoticeV2 } from "../src/verdict";
 
 const prov = (id: string, label: string): Provision => ({ id, label, title: label, url: "https://eur-lex.europa.eu/" });
@@ -272,5 +272,36 @@ describe("verdict + photo helpers", () => {
     expect(fitSize(0, 10)).toEqual({ w: 0, h: 0 });
     expect(dataUrlBytes("data:image/jpeg;base64,QUJD")).toBe(3);
     expect(dataUrlBytes("data:image/jpeg;base64,QUI=")).toBe(2);
+  });
+});
+
+describe("applicant token (contract amendment dd6a356)", () => {
+  const sub = { kind: "text", text: "Uber for forms" } as Submission;
+  const input = { startupName: "Faceify", founderName: "Lena K." };
+
+  it("mock registration returns a secret base64url token distinct from the public id", async () => {
+    const t = await new MockApi(5).register(input);
+    expect(t.applicantToken).toMatch(/^[A-Za-z0-9_-]{40,}$/);
+    expect(t.applicantToken).not.toContain(t.applicantId);
+  });
+
+  it("mock rejects better-place and case creation without the matching token", async () => {
+    const api = new MockApi(5);
+    const t = await api.register(input);
+    const bad = { applicantId: t.applicantId, applicantToken: "nope" };
+    await expect(api.betterPlace(bad, "climate")).rejects.toMatchObject({ status: 403 });
+    await expect(api.createCase(sub, undefined, bad)).rejects.toMatchObject({ status: 403 });
+    await expect(api.betterPlace(t, "climate")).resolves.toMatchObject({ cause: "climate" });
+  });
+
+  it("a second case for the same applicant returns the existing caseId", async () => {
+    const api = new MockApi(5);
+    const t = await api.register(input);
+    const a = await api.createCase(sub, undefined, t);
+    const b = await api.createCase(sub, undefined, t);
+    expect(b.caseId).toBe(a.caseId);
+    expect(b.officers).toEqual(a.officers);
+    const anon = await api.createCase(sub);
+    expect(anon.caseId).not.toBe(a.caseId);
   });
 });

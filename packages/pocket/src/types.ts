@@ -52,7 +52,9 @@ export interface Pair { id: string; officers: [PersonaId, PersonaId]; }
 // ───────── v2 (docs/CONTRACT.md "v2" + "Meanwhile") — local copy of packages/shared v2 types ─────────
 
 export interface ApplicantInput { startupName: string; founderName: string; oneLiner?: string; photo?: string; }
-export interface QueueTicket { applicantId: string; ticket: number; position: number; etaText: string; countdownSec: number; }
+/** applicantId is public (leaderboard); the token, returned only by registration, authorises its case + better-place. */
+export interface ApplicantAuth { applicantId: string; applicantToken: string; }
+export interface QueueTicket { applicantId: string; applicantToken: string; ticket: number; position: number; etaText: string; countdownSec: number; }
 export type BetterPlaceCause =
   | "climate" | "lgbtq" | "refugees" | "homeless" | "ukraine" | "rare-diseases"
   | "gender-equality" | "animal-welfare" | "accessibility" | "ai-safety";
