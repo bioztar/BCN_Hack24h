@@ -95,16 +95,5 @@ export async function tryApplyCutout(rig: Rig, personaId: string): Promise<boole
   plane.position.set(0, m.y, m.z);
   m.parent.add(plane);
   for (const p of rig.faceParts) p.visible = false;
-  let level = 0;
-  const talk = rig.talk.bind(rig);
-  const update = rig.update.bind(rig);
-  rig.talk = (l) => {
-    level = l;
-    talk(l);
-  };
-  rig.update = (dt, t) => {
-    update(dt, t);
-    plane.scale.set(1 - level * 0.03, 1 + level * 0.07, 1);
-  };
   return true;
 }

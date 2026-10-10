@@ -162,7 +162,6 @@ interface HumanOpts {
 }
 
 function makeRig(root: THREE.Group, inner: THREE.Group, head: THREE.Object3D, face: Face | null, arm: THREE.Object3D | null, onStamp?: () => void, onMood?: (m: Mood) => void, onTalk?: (l: number) => void): Rig {
-  let talk = 0;
   let stampT = -1;
   let current: Mood = "neutral";
   let blinkT = 2 + Math.random() * 3;
@@ -187,8 +186,8 @@ function makeRig(root: THREE.Group, inner: THREE.Group, head: THREE.Object3D, fa
     head,
     faceParts: face ? [...face.eyes, face.mouth, ...face.brows, ...face.extra] : [],
     faceMount: null,
+    // No mouth/jaw motion while speaking: expressions are cut on events instead.
     talk(level) {
-      talk = level;
       onTalk?.(level);
     },
     stamp() {
@@ -201,12 +200,10 @@ function makeRig(root: THREE.Group, inner: THREE.Group, head: THREE.Object3D, fa
       onMood?.(m);
     },
     update(dt, t) {
-      inner.position.y = Math.sin(t * 16) * 0.012 * talk;
-      head.rotation.x = Math.sin(t * 9) * 0.08 * talk + (current === "asleep" ? 0.35 : 0);
+      head.rotation.x = current === "asleep" ? 0.35 : 0;
       head.rotation.z = current === "asleep" ? Math.sin(t * 1.5) * 0.06 : 0;
       if (face) {
-        const open = current === "appalled" ? 0.6 : 0;
-        face.mouth.scale.y = 1 + Math.max(open, talk) * 3.2;
+        face.mouth.scale.y = current === "appalled" ? 2.9 : 1;
         face.mouth.scale.x = current === "smug" ? 1.4 : 1;
         blinkT -= dt;
         if (blinkT < 0 && current !== "asleep") {
@@ -224,7 +221,7 @@ function makeRig(root: THREE.Group, inner: THREE.Group, head: THREE.Object3D, fa
           arm.rotation.x = k < 0.25 ? -2.7 * (k / 0.25) : k < 0.33 ? -2.7 + 1.4 * ((k - 0.25) / 0.08) : k < 0.7 ? -1.3 : -1.3 * Math.max(0, 1 - (k - 0.7) / 0.3);
           if (k > 1) stampT = -1;
         } else {
-          arm.rotation.x = -0.15 * talk * (1 + Math.sin(t * 6));
+          arm.rotation.x = 0;
         }
       }
     },
@@ -425,12 +422,11 @@ function terminal(color: string): Rig {
   inner.add(screen);
   const green = color && color.toLowerCase() !== "#ffffff" ? color : "#33ff66";
   let mood: Mood = "neutral";
-  let talk = 0;
   let stampFor = 0;
   let lastKey = "";
   const draw = () => {
-    const mouth = Math.round(talk * 4);
-    const key = `${mood}|${mouth}|${stampFor > 0}`;
+    const mouth = mood === "appalled" ? 2 : 0;
+    const key = `${mood}|${stampFor > 0}`;
     if (key === lastKey) return;
     lastKey = key;
     g.fillStyle = "#031a08";
@@ -474,12 +470,11 @@ function terminal(color: string): Rig {
     head,
     faceParts: [screen],
     faceMount: { parent: inner, y: 0.03, z: 0.292, size: 0.32 },
-    talk(l) { talk = l; },
+    talk() {},
     stamp() { stampFor = 1.1; },
     mood(m) { mood = m; },
     update(dt, t) {
       if (stampFor > 0) stampFor -= dt;
-      inner.position.y = Math.abs(Math.sin(t * 20)) * 0.015 * talk;
       inner.rotation.z = mood === "asleep" ? Math.sin(t * 1.2) * 0.03 : 0;
       draw();
     },

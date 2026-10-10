@@ -165,8 +165,12 @@ const hud = {
   ink: el("div", "ink-layer"),
 };
 
+let sayN = 0;
 function say(personaId: PersonaId, text: string, provisions: LineEvent["provisions"] = [], ttlMs = 3200): void {
   const p = personaById(personaId);
+  ttlMs = Math.max(ttlMs, Math.min(9000, 1400 + text.length * 55));
+  sayN++;
+  stage?.actors.forEach((a, id) => a.rig.mood(id === personaId ? (sayN % 2 ? "smug" : "appalled") : "neutral"));
   hud.sub.replaceChildren();
   hud.sub.classList.add("show");
   const who = el("div", "sub-who", p?.name ?? personaId);
