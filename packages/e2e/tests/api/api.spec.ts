@@ -77,7 +77,7 @@ test.describe("v1 HTTP shapes", () => {
   });
 
   test("unknown case → 404 on stream and reply", async ({ request }) => {
-    expect((await request.post("/api/case/does-not-exist/reply", { data: { reply: "hi" } })).status()).toBe(404);
+    expect((await request.post("/api/case/does-not-exist/reply", { data: { text: "hi" } })).status()).toBe(404);
     const r = await readSse(`${BASE_URL}/api/case/does-not-exist/stream`, 5_000);
     expect(r.status).toBe(404);
   });
@@ -229,7 +229,7 @@ test.describe.serial("live case contract", () => {
         if (round < 5) {
           expect(done?.type).toBe("awaiting");
           expect(done?.prompt).toEqual(expect.any(String));
-          const rep = await request.post(`/api/case/${c.caseId}/reply`, { data: { reply: REPLIES[round - 1] } });
+          const rep = await request.post(`/api/case/${c.caseId}/reply`, { data: { text: REPLIES[round - 1] ?? "No." } });
           expect(rep.status()).toBe(204);
         } else {
           expect(done?.type).toBe("verdict");
@@ -244,7 +244,7 @@ test.describe.serial("live case contract", () => {
     expect(n.findings.length).toBeGreaterThanOrEqual(1);
     for (const f of n.findings) expectProvision(f.provision);
     expect(n.officers).toEqual(c.officers);
-    expect((await request.post(`/api/case/${c.caseId}/reply`, { data: { reply: "late" } })).status(), "reply after verdict").toBe(409);
+    expect((await request.post(`/api/case/${c.caseId}/reply`, { data: { text: "late" } })).status(), "reply after verdict").toBe(409);
 
     if (live.v2) {
       await test.step("v2 notice + events", async () => {
