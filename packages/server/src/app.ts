@@ -451,7 +451,7 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         const revenue = provisions.length ? await revenueP : 0;
         provisions.forEach((p, k) => {
           const jailBases = new Set(meter.items.flatMap((i) => (i.jailBasis ? [i.jailBasis] : [])));
-          const fine = provisionFine({ caseId: state.caseId, index: meter.items.length, provisionId: p.id, label: p.label, tier: lineTier, revenueEur: revenue, repeat: cited.has(p.id), jailBases });
+          const fine = provisionFine({ caseId: state.caseId, index: meter.items.length, provisionId: p.id, label: p.label, tier: lineTier, revenueEur: revenue, repeat: cited.has(p.id), jailBases, express: state.mode === "express" });
           if (!fine) return;
           const item = { id: `${id}-f${k}`, ...fine };
           cited.add(p.id);
@@ -479,6 +479,8 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
         state.tier = tier;
         push({ type: "tier", tier: state.tier, name: TIER_NAMES[state.tier - 1]! });
         if (state.tier === 5) {
+          // The tier-5 prompt states the running total: let the earlier lines' fines land first.
+          await withTimeout(chain, 4000, undefined);
           if (state.estimateTurnover) await turnoverFor(state);
           meta = await withTimeout(d.engine.extractMeta(state), d.metaBudgetMs ?? 1500, d.engine.metaFallback(state));
           state.fine = d.engine.previewFine(state, meta);
