@@ -153,7 +153,7 @@ export class Round {
         } else {
           const grace = elapsed < ESCAPE_GRACE_MS;
           const pts = this.apply(grace ? "escape_grace" : "escape");
-          this.floatText(h, grace ? "Escaped — transition period, no fine" : `${pts} escaped into the single market`, "bad small");
+          this.floatText(h, grace ? "Escaped — transition period, no fine" : pts ? `${pts} escaped into the single market` : "Escaped — fine waived, budget already empty", "bad small");
           this.sfx.escape();
         }
       } else if (p.state === "hit" && elapsed - p.born >= HIT_HOLD_MS) {

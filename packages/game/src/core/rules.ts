@@ -54,8 +54,11 @@ export function score(t: Tally, ev: GameEvent): Scored {
       return { tally: { ...t, score: t.score + MISTRAL_PENALTY, mistralHits: t.mistralHits + 1, streak: 0 }, points: MISTRAL_PENALTY, combo: 0 };
     case "escape_grace":
       return { tally: { ...t, escapes: t.escapes + 1, streak: 0 }, points: 0, combo: 0 };
-    case "escape":
-      return { tally: { ...t, score: t.score + ESCAPE_PENALTY, escapes: t.escapes + 1, streak: 0 }, points: ESCAPE_PENALTY, combo: 0 };
+    case "escape": {
+      // A fine never takes the budget below zero — only stamping Mistral can.
+      const fine = -Math.min(-ESCAPE_PENALTY, Math.max(0, t.score));
+      return { tally: { ...t, score: t.score + fine, escapes: t.escapes + 1, streak: 0 }, points: fine, combo: 0 };
+    }
     case "miss":
       return { tally: { ...t, misses: t.misses + 1, streak: 0 }, points: 0, combo: 0 };
     case "spared":

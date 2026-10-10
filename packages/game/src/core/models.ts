@@ -16,17 +16,36 @@ export interface Model {
 /** If no Mistral has popped by this point, the next pop is Mistral (the gag must land once). */
 export const MISTRAL_GUARANTEE_MS = 22_000;
 
+/** Mistral pops once every MISTRAL_EVERY pops on average (±MISTRAL_JITTER), regardless of RNG luck. */
+export const MISTRAL_EVERY = 25;
+const MISTRAL_JITTER = 5;
+
 export class ModelPicker {
   private sawEu = false;
+  private untilEu: number;
+  private readonly eu: Model | undefined;
+  private readonly others: readonly Model[];
+
   constructor(
     private readonly rng: Rng,
-    private readonly pool: readonly Model[],
-  ) {}
+    pool: readonly Model[],
+  ) {
+    this.eu = pool.find((m) => m.eu);
+    this.others = pool.filter((m) => !m.eu);
+    this.untilEu = this.gap();
+  }
+
+  private gap(): number {
+    return MISTRAL_EVERY - MISTRAL_JITTER + Math.floor(this.rng() * (2 * MISTRAL_JITTER + 1));
+  }
 
   next(elapsedMs: number): Model {
-    const eu = this.pool.find((m) => m.eu);
-    const m = !this.sawEu && eu && elapsedMs >= MISTRAL_GUARANTEE_MS ? eu : weightedPick(this.rng, this.pool);
-    if (m.eu) this.sawEu = true;
-    return m;
+    const due = --this.untilEu <= 0 || (!this.sawEu && elapsedMs >= MISTRAL_GUARANTEE_MS);
+    if (this.eu && due) {
+      this.sawEu = true;
+      this.untilEu = this.gap();
+      return this.eu;
+    }
+    return weightedPick(this.rng, this.others);
   }
 }

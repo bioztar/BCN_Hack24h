@@ -21,4 +21,5 @@ body { min-height: 100%; background: radial-gradient(120% 70% at 50% 0%, #1d4fb8
 .arc-play { margin-top: auto; align-self: flex-start; }
 .arc-foot { display: flex; flex-wrap: wrap; gap: 6px 10px; justify-content: center; padding: 16px 14px calc(var(--safe-b) + 16px); color: #c9d4ee; font-size: 12px; }
 .arc-foot a { color: #fff; }
+body.embed .arc-foot { display: none; }
 body.embed .arc-head { padding-top: calc(var(--safe-t) + 10px); }

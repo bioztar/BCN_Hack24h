@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import modelsData from "../src/models.json" with { type: "json" };
-import type { Model } from "../src/core/models.js";
+import { ModelPicker, type Model } from "../src/core/models.js";
 import { COMBO_CAP, ESCAPE_PENALTY, MISTRAL_PENALTY, newTally, rankTitle, RANKS, score, type GameEvent, type Tally } from "../src/core/rules.js";
 
 const run = (evs: GameEvent[], t: Tally = newTally()) => evs.reduce((acc, e) => score(acc, e).tally, t);
@@ -75,10 +75,24 @@ describe("rank titles", () => {
     expect(t.streak).toBe(0);
   });
 
-  it("Mistral pops about 1 in 25", () => {
-    const total = POOL.reduce((n, m) => n + m.weight, 0);
-    const eu = POOL.filter((m) => m.eu).reduce((n, m) => n + m.weight, 0);
-    expect(eu / total).toBeGreaterThanOrEqual(0.035);
-    expect(eu / total).toBeLessThanOrEqual(0.05);
+  it("Mistral pops about 1 in 25, never in a long drought", () => {
+    let seed = 7;
+    const rng = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+    const picker = new ModelPicker(rng, POOL);
+    let eu = 0;
+    let gap = 0;
+    let maxGap = 0;
+    for (let i = 0; i < 2500; i++) {
+      if (picker.next(0).eu) { eu++; maxGap = Math.max(maxGap, gap); gap = 0; } else gap++;
+    }
+    expect(eu).toBeGreaterThanOrEqual(90);
+    expect(eu).toBeLessThanOrEqual(110);
+    expect(maxGap).toBeLessThanOrEqual(30);
+  });
+
+  it("escape fines never push the score below zero", () => {
+    expect(run(["escape", "escape"]).score).toBe(0);
+    expect(run(["hit", "escape", "escape", "escape", "escape", "escape"]).score).toBe(0);
+    expect(run(["mistral", "escape"]).score).toBe(-500);
   });
 });
