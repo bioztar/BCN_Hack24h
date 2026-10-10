@@ -158,3 +158,16 @@ describe("ranks + meanwhile", () => {
     expect(meanwhileLine(40_000)).toContain("3 more models");
   });
 });
+
+describe("ready → play", () => {
+  it("idle time on the ready screen does not fast-forward the first flap", () => {
+    const st = newGame("idle");
+    for (let i = 0; i < 120; i++) step(st, 16.7);
+    const y0 = st.bird.y;
+    flap(st);
+    step(st, 16.7);
+    expect(st.phase).toBe("play");
+    expect(st.t).toBeLessThan(20);
+    expect(st.bird.y).toBeLessThan(y0);
+  });
+});

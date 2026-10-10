@@ -167,6 +167,7 @@ export function gapY(p: Pillar, t: number): number {
 
 export function flap(st: State): void {
   if (st.phase === "dead") return;
+  if (st.phase === "ready") st.acc = 0;
   st.phase = "play";
   st.bird.vy = C.flapV;
   st.stats.flaps++;
