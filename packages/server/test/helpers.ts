@@ -1,6 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildApp } from "../src/app.js";
+import { buildApp, type AppDeps } from "../src/app.js";
 import { profiles } from "../src/config.js";
 import { Corpus } from "../src/corpus.js";
 import { openDb } from "../src/db.js";
@@ -110,7 +110,7 @@ export function entries(dir: string, names: string[]) {
   });
 }
 
-export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; reportsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number; lateAudioMs?: number } = {}) {
+export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof fetch; perHour?: number; webDir?: string; pocketDir?: string; assetsDir?: string; reportsDir?: string; timings?: Partial<Timings>; roundDeadlineMs?: number; ttsBudgetMs?: number; lateAudioMs?: number; arcade?: AppDeps["arcade"] } = {}) {
   const db = openDb(":memory:");
   const llm = (opts.llm === undefined ? new FakeLlm() : opts.llm) as FakeLlm | null;
   const tts = opts.tts ?? new FakeTts();
@@ -131,6 +131,7 @@ export function makeApp(opts: { llm?: Llm | null; tts?: FakeTts; github?: typeof
     roundDeadlineMs: opts.roundDeadlineMs,
     ttsBudgetMs: opts.ttsBudgetMs,
     lateAudioMs: opts.lateAudioMs,
+    arcade: opts.arcade,
   });
   return { app, db, llm, tts, wall, engine };
 }

@@ -26,6 +26,7 @@ export const paths = {
   assets: () => path.join(REPO_ROOT, "assets", "generated"),
   web: () => path.join(REPO_ROOT, "packages", "web", "dist"),
   pocket: () => path.join(REPO_ROOT, "packages", "pocket", "dist"),
+  pkgDist: (pkg: string) => path.join(REPO_ROOT, "packages", pkg, "dist"),
   data: () => process.env.DATA_DIR || path.join(REPO_ROOT, "data"),
 };
 

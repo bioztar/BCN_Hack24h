@@ -26,6 +26,9 @@ import { registerReportRoutes } from "./report/routes.js";
 
 export const ANALYZER_HOST = "warden.pro7ocol.com";
 
+export const ARCADE_ROUTES = ["game", "swipe", "flappy", "triplicate"] as const;
+export type ArcadeRoute = (typeof ARCADE_ROUTES)[number];
+
 export interface AppDeps {
   db: Db;
   corpus: Corpus;
@@ -44,6 +47,9 @@ export interface AppDeps {
   /** Lane D analyzer: plugin mounted at /api/analyze, its built UI served at /analyze/. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   analyzer?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDir?: string };
+  /** Lane G arcade: gamePlugin at /api/game; built games at /game/, /swipe/, /flappy/, /triplicate/ (missing dirs skipped). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  arcade?: { plugin: FastifyPluginAsync<any>; options?: Record<string, unknown>; webDirs?: Partial<Record<ArcadeRoute, string>> };
   /** Max wait for TTS before a line goes out with `audioUrl: null` (a later `audio` event follows). */
   ttsBudgetMs?: number;
   /** Before `awaiting`/`verdict`, wait at most this long for all of the round's outstanding audio; the rest is replayed at the start of the next stream. */
@@ -560,11 +566,25 @@ export function buildApp(d: AppDeps): FastifyInstance & { settle(): Promise<void
   }
   if (d.analyzer) void app.register(d.analyzer.plugin, { ...(d.analyzer.options ?? {}), prefix: "/api/analyze" });
 
+  // Lane G arcade: leaderboard API + static game builds (SPA fallback via `roots`) + no-slash redirects.
+  const arcadeRoots = ARCADE_ROUTES.map((id) => ({ root: d.arcade?.webDirs?.[id], prefix: `/${id}/`, spa: true }));
+  if (d.arcade) {
+    void app.register(d.arcade.plugin, { ...(d.arcade.options ?? {}), prefix: "/api/game" });
+    const bare = new Set([...ARCADE_ROUTES.map((id) => `/${id}`), "/game/whack"]);
+    app.addHook("onRequest", async (req, reply) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return;
+      const q = req.url.indexOf("?");
+      const pathname = q < 0 ? req.url : req.url.slice(0, q);
+      if (bare.has(pathname)) return reply.redirect(`${pathname}/${q < 0 ? "" : req.url.slice(q)}`, 301);
+    });
+  }
+
   // Static roots; any missing directory is skipped. Only the first registration decorates reply.
   const roots = [
     { root: d.assetsDir, prefix: "/assets/generated/", spa: false },
     { root: d.pocketDir, prefix: "/pocket/", spa: true },
     { root: d.analyzer?.webDir, prefix: "/analyze/", spa: true },
+    ...arcadeRoots,
     { root: d.webDir, prefix: "/", spa: true },
   ].filter((r): r is { root: string; prefix: string; spa: boolean } => Boolean(r.root && existsSync(r.root)));
   roots.forEach((r, i) => void app.register(fastifyStatic, { root: r.root, prefix: r.prefix, decorateReply: i === 0, index: r.spa ? ["index.html"] : false, wildcard: true }));
