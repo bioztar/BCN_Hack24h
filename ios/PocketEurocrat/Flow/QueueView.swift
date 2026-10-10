@@ -15,26 +15,25 @@ struct QueueView: View {
             }
             .onAppear { started = Date() }
             .sheet(isPresented: $showCauses) { causeSheet }
+        } else {
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)   // never an empty tab
         }
     }
+
+    /// The queue is one Whack-a-Model round: 30 s whatever the ticket says (the game's own round may end it sooner).
+    private static let queueSeconds: Double = 30
 
     /// Eased so it crawls at first and then plunges — it never feels like a real queue.
     private func position(_ t: QueueTicket, now: Date) -> Int {
         if let skip = flow.skipResult { return skipped ? skip.position : t.position }
-        let p = min(max(now.timeIntervalSince(started) / max(t.countdownSec, 1), 0), 1)
-        // Short (5–10 s demo) countdowns need a gentle curve or the number is gone in the first second.
-        return Int(Double(t.position) * pow(1 - p, t.countdownSec <= 10 ? 1.15 : 2.4))
+        let p = min(max(now.timeIntervalSince(started) / Self.queueSeconds, 0), 1)
+        return Int(Double(t.position) * pow(1 - p, 1.6))
     }
 
     private func content(_ t: QueueTicket, position: Int, now: Date) -> some View {
-        VStack(spacing: 18) {
-            // No case stream yet in the queue: the same deterministic race the server will report, from registration.
-            MeanwhileStrip(meanwhile: .estimate(key: t.applicantId,
-                                                elapsedSec: now.timeIntervalSince(flow.registeredAt ?? started)))
+        VStack(spacing: 10) {
+            Text("Application #\(t.ticket) — to be reviewed").font(.footnote.monospaced()).foregroundStyle(.secondary)
                 .padding(.top, 8)
-            Spacer()
-            Text("Application #\(t.ticket)").font(.footnote.monospaced()).foregroundStyle(.secondary)
-            Text("Your position in the queue").font(.headline)
             Text(position.formatted(.number.grouping(.automatic)))
                 .font(.system(size: 52, weight: .black, design: .monospaced))
                 .minimumScaleFactor(0.5).lineLimit(1)
@@ -67,11 +66,29 @@ struct QueueView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.pink)
                 .controlSize(.large)
-                .padding(.top, 8)
             }
-            Spacer()
+            if flow.skipResult == nil {
+                // The queue IS the game: stamp every non-EU model while the file waits. Its round (or 30 s) ends the queue.
+                ArcadeWebView(url: Arcade.whackURL(base: BackendFactory.baseURL()), base: BackendFactory.baseURL(),
+                              onLoaded: {}, onFailed: {},
+                              onScore: { s in
+                                  guard s.game == "whack" else { return }
+                                  flow.pocket.whack.banned = s.hits
+                                  flow.pocket.whack.mistral = s.mistralHits
+                                  flow.pocket.whack.played = true
+                                  Task {
+                                      try? await Task.sleep(for: .seconds(2.5))
+                                      flow.queueFinished()
+                                  }
+                              },
+                              onLeave: {})
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.bottom, 70)   // clear of the floating tab bar
+            } else {
+                Spacer()
+            }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 16)
         .onChange(of: position <= 0) { _, done in if done { flow.queueFinished() } }
     }
 

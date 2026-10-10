@@ -55,7 +55,7 @@ final class FlowModel {
             ticket = try await backend.register(input)
             registeredAt = Date()
             skipResult = nil
-            stage = .queue
+            stage = .select   // register → duo → pitch → queue (with Whack-a-Model) → roast
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -73,9 +73,12 @@ final class FlowModel {
         }
     }
 
+    /// Queue over (Whack round ended / 30 s / better-place skip): the held case starts its roast.
     func queueFinished() {
         guard stage == .queue else { return }
-        stage = .select
+        stage = .play
+        pocket.holdForQueue = false
+        pocket.wake()   // the busts dozed off while the queue was on screen
     }
 
     func choose(pairID: String) {
@@ -87,8 +90,17 @@ final class FlowModel {
 
     /// Pitch screen → roast screen; the chosen submission runs as the case's first pitch.
     func submitPitch(_ submission: Submission, label: String, dictated: Bool = false) {
-        stage = .play
-        Task { await pocket.submit(label, dictated: dictated, as: submission) }
+        skipResult = nil
+        registeredAt = Date()
+        pocket.holdForQueue = true
+        stage = .queue
+        Task {
+            await pocket.submit(label, dictated: dictated, as: submission)   // returns after the stream (or at once on error)
+            if stage == .queue {   // failed before the queue ended: back to the pitch (the alert says why)
+                pocket.holdForQueue = false
+                stage = .pitch
+            }
+        }
     }
 
     /// "Pitch another startup": re-register the same founder as a pivot ("Faceify (pivot 2)"), straight to the pitch

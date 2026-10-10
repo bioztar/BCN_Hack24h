@@ -15,9 +15,11 @@ struct PocketEurocratApp: App {
             switch args[i + 1] {
             case "queue":
                 f.startupName = "48K"; f.founderName = "Pavel K."
-                Task { await f.register() }
+                Task { await f.register(); f.stage = .queue }   // register, then straight into the queue screen
             case "select": f.stage = .select
-            case "pitch": f.stage = .pitch
+            case "pitch":
+                f.startupName = "48K"; f.founderName = "Pavel K."
+                Task { await f.register(); f.stage = .pitch }   // a ticket, so the queue after the pitch has its numbers
             case "play": f.stage = .play
             default: break
             }
@@ -27,7 +29,8 @@ struct PocketEurocratApp: App {
             let f = _flow.wrappedValue
             Task {
                 try? await Task.sleep(for: .seconds(2))
-                await f.pocket.submit(text)
+                if f.stage == .pitch { f.submitPitch(Submission.classify(text, dictated: false), label: text) }   // via the queue
+                else { await f.pocket.submit(text) }
             }
         }
         #endif

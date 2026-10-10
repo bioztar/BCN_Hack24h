@@ -22,7 +22,6 @@ struct PocketView: View {
                 controls
             }
 
-            if model.whack.active { WhackOverlay(model: model).transition(.opacity) }
             if model.isAsleep { Text("💤").font(.system(size: 72)).transition(.opacity) }
             if let stamp = model.stamp { StampView(text: stamp) }
         }

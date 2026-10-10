@@ -37,6 +37,8 @@ final class PocketModel {
     @ObservationIgnored var onStaleApplicant: (() -> Void)?
     @ObservationIgnored private var lastCaseID: String?
     @ObservationIgnored private var audioWarned = false
+    /// Set by the flow while the queue screen runs: the case is created, the stream starts when this clears.
+    @ObservationIgnored var holdForQueue = false
     /// v2 "Meanwhile" counters: latest server tick (applied as it arrives, not queued behind the lines).
     var meanwhile: Meanwhile?
     /// Set by the flow once the founder registered; sent with the case so the verdict lands on the leaderboard.
@@ -230,13 +232,12 @@ final class PocketModel {
                 resetCase()
                 let sub = submission ?? Submission.classify(pitch, dictated: dictated)
                 lastPitch = pitch
-                if case .repo = sub.base {
-                    puppet.setExpression(.outrage)   // outraged while the repo is read
-                    whack = .init(active: true)      // …and the audience plays Whack-a-Model meanwhile
-                }
+                if case .repo = sub.base { puppet.setExpression(.outrage) }   // outraged while the repo is read
                 id = try await backend.createCase(sub, officers: pair.officers, applicantId: applicantId,
                                                   applicantToken: applicantToken, express: true).caseId
                 caseID = id
+                // The case exists; the roast starts when the queue (Whack-a-Model) ends.
+                while holdForQueue, !Task.isCancelled { try? await Task.sleep(for: .milliseconds(100)) }
             }
             phase = .roasting
             try await consume(backend.stream(caseID: id))
