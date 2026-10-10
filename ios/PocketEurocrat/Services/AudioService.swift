@@ -64,13 +64,15 @@ final class AudioService {
     func play(_ url: URL, maxSeconds: Double = 30, onMouth: (Double, Double) -> Void) async -> Bool {
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-            try? AVAudioSession.sharedInstance().setActive(true)
+            if let reason = activatePlayback() { lastProblem = reason; return false }
             let track = Self.mouthTrack(from: data)
             let p = try AVAudioPlayer(data: data)
             p.isMeteringEnabled = true
+            p.volume = 1
+            p.prepareToPlay()
             player = p
-            guard p.play() else { return false }
+            guard p.play() else { lastProblem = "player refused to start"; return false }
+            lastProblem = AVAudioSession.sharedInstance().outputVolume < 0.05 ? "Phone volume is at zero — the Commission is speaking." : nil
             let deadline = Date().addingTimeInterval(maxSeconds)
             while p.isPlaying, Date() < deadline, !Task.isCancelled {
                 if track.isEmpty {
@@ -86,7 +88,8 @@ final class AudioService {
             onMouth(0, 1)
             return true
         } catch {
-            print("audio: playback failed: \(error)")
+            NSLog("audio: playback failed: \(error)")
+            lastProblem = "audio: \(error.localizedDescription)"
             return false
         }
     }
@@ -115,6 +118,32 @@ final class AudioService {
     func stopRecording() -> Data? {
         recorder?.stop()
         recorder = nil
+        // Leave record mode for good: the next thing this session does is play the roast.
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         return try? Data(contentsOf: recordURL)
     }
+
+    /// Playback session: `.playback` ignores the silent switch and routes to the speaker. Falls back to
+    /// `.playAndRecord` + speaker if the switch out of record mode is refused. Returns a reason on failure.
+    private func activatePlayback() -> String? {
+        let s = AVAudioSession.sharedInstance()
+        do {
+            try s.setCategory(.playback, mode: .default, options: [])
+            try s.setActive(true)
+            try? s.overrideOutputAudioPort(.speaker)
+            return nil
+        } catch {
+            NSLog("audio: .playback refused (\(error)); trying playAndRecord")
+        }
+        do {
+            try s.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try s.setActive(true)
+            return nil
+        } catch {
+            return "audio session: \(error.localizedDescription)"
+        }
+    }
+
+    /// Why the last `play` failed (nil = it did not), plus a volume-at-zero hint; the model surfaces it once.
+    private(set) var lastProblem: String?
 }

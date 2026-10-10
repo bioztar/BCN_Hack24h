@@ -14,6 +14,7 @@ final class HapticsService {
         do {
             let e = try CHHapticEngine()
             e.isAutoShutdownEnabled = true
+            e.playsHapticsOnly = true   // never let the haptic engine touch the audio session (roast voices)
             e.resetHandler = { [weak self] in self?.prepare() }
             try e.start()
             engine = e

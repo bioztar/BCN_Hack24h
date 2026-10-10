@@ -36,6 +36,7 @@ final class PocketModel {
     /// Server forgot the applicant (404 on case create): the flow drops the ticket and returns to Register.
     @ObservationIgnored var onStaleApplicant: (() -> Void)?
     @ObservationIgnored private var lastCaseID: String?
+    @ObservationIgnored private var audioWarned = false
     /// v2 "Meanwhile" counters: latest server tick (applied as it arrives, not queued behind the lines).
     var meanwhile: Meanwhile?
     /// Set by the flow once the founder registered; sent with the case so the verdict lands on the leaderboard.
@@ -327,8 +328,14 @@ final class PocketModel {
             puppet.setSpeaker(line.speaker)
             if let s = line.stamp { showStamp(s, by: line.speaker) }
             var played = false
-            if let path = await audioPath(for: line), let url = backend.resolve(path) {
+            let path = await audioPath(for: line)
+            if let path, let url = backend.resolve(path) {
                 played = await audio.play(url) { [puppet] open, wide in puppet.setMouth(open: open, wide: wide, speaker: line.speaker) }
+            }
+            NSLog("audio: line \(line.id.suffix(6)) path=\(path ?? "nil") played=\(played) problem=\(audio.lastProblem ?? "-")")
+            if let problem = audio.lastProblem, !audioWarned {   // tell the audience once why it is silent
+                audioWarned = true
+                errorMessage = problem
             }
             if !played { await talkFor(min(max(Double(line.text.count) * 0.045, 1.8), 6), speaker: line.speaker) }
         case .verdict(let n):
