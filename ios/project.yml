@@ -23,6 +23,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pro7ocol.eurocrat
         TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: PocketEurocrat/Info.plist
       properties:
