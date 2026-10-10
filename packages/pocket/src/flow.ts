@@ -141,7 +141,7 @@ function meanwhileCard(m: Meanwhile): HTMLDivElement {
 // ---------- 1. Register ----------
 
 function register(): void {
-  const s = screen("reg", ["European Commission · DG ROAST", "Form A-1 · Startup Registration"]);
+  const s = screen("reg", ["Eurocrat Commission · DG ROAST", "Form A-1 · Startup Registration"]);
   s.append(el("h1", "", "Register your startup and build a real business in the EU!"), el("p", "sub", "Fast. Simple. Only 27 national procedures. Bring a pen."));
   const startup = el("input");
   startup.maxLength = 60;

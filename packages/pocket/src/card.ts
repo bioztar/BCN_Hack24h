@@ -69,7 +69,7 @@ export function drawNotice(notice: Notice, officers: Persona[], appUrl: string):
   }
   g.fillStyle = "#fff";
   g.font = "bold 30px Arial";
-  g.fillText("EUROPEAN COMMISSION · DG ROAST", 220, 82);
+  g.fillText("EUROCRAT COMMISSION · DG ROAST", 220, 82);
   g.font = "26px Arial";
   g.fillText("Pocket Annex · Unit C.4 (Pre-Conformity)", 220, 124);
   g.font = "22px Arial";
