@@ -1,5 +1,6 @@
 import "./styles.css";
 import { mdToHtml } from "./md.js";
+import { ideaFromQuery, MIN_IDEA_CHARS } from "./query.js";
 import type { Citation, Finding, ItemStatus, Report, Severity } from "../../src/types.js";
 
 const API = "/api/analyze";
@@ -20,14 +21,16 @@ const chip = (s: Severity) => `<span class="chip sev-${s}">${s}</span>`;
 
 let tab: "idea" | "document" | "repo" = "idea";
 let reportId = "";
+let draft = "";
 
 function shell(inner: string) {
-  app.innerHTML = `<header class="top"><span class="brand">warden<small>by Pro7ocol</small></span></header><main>${inner}</main>
+  app.innerHTML = `<header class="top" id="top"><span class="brand">warden<small>by Pro7ocol</small></span></header><main>${inner}</main>
   <footer>warden — EU AI Act &amp; compliance analyzer · <a href="https://warden.pro7ocol.com/analyze/">warden.pro7ocol.com</a> · <a href="https://eurocrat.pro7ocol.com/" title="for the brave">🇪🇺</a></footer>`;
 }
 
 function renderForm(error = "") {
-  shell(`<h1>Which EU AI Act and compliance obligations apply to you?</h1>
+  shell(`<p class="value">Your idea, document or repo vs EU AI Act, GDPR, NIS2, DORA &amp; 5 more — in 60 seconds, with real citations.</p>
+  <h1>Which EU AI Act and compliance obligations apply to you?</h1>
   <p class="lede">Describe a product idea, upload a design document, or point at a public GitHub repo. warden classifies it under the EU AI Act, checks GDPR, NIS2, DORA, ISO 27001/42001, SOC 2, NIST AI RMF and OWASP LLM Top 10, and reports gaps with real, validated citations and concrete fixes.</p>
   <form id="input" class="card">
     <div class="tabs" role="tablist">${(["idea", "document", "repo"] as const).map((t) => `<button type="button" role="tab" data-tab="${t}" aria-selected="${t === tab}">${{ idea: "Idea", document: "Document", repo: "GitHub repo" }[t]}</button>`).join("")}</div>
@@ -36,9 +39,27 @@ function renderForm(error = "") {
     <div class="row"><button class="primary" type="submit">Analyse</button></div>
     <p class="privacy">🔒 processed in memory on EU infrastructure, not stored, not used for training — not legal advice</p>
     ${error ? `<p class="error" role="alert">${esc(error)}</p>` : ""}
-  </form>`);
+  </form>
+  ${pricing()}`);
+  const ta = app.querySelector<HTMLTextAreaElement>("textarea[name=text]");
+  if (ta) (ta.value = draft), (ta.oninput = () => (draft = ta.value));
   app.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) => (b.onclick = () => ((tab = b.dataset.tab as typeof tab), renderForm())));
   (app.querySelector("#input") as HTMLFormElement).onsubmit = submit;
+}
+
+const CONTACT = "hello@pro7ocol.com";
+const mailto = (subject: string) => `mailto:${CONTACT}?subject=${encodeURIComponent(subject)}`;
+
+function pricing() {
+  const plans = [
+    { name: "Quick scan", price: "Free", note: "this tool", items: ["AI Act tier + role", "Which frameworks apply", "Severity-ranked gaps with citations", "Markdown export"], cta: `<a class="ghost" href="#top">Run a scan</a>` },
+    { name: "Full compliance dossier", price: "€49", note: "per artifact", items: ["Everything in the quick scan", "PDF dossier for investors & buyers", "Full checklist with evidence", "Step-by-step fixes and effort"], cta: `<a class="primary" href="${mailto("warden — Full compliance dossier (€49)")}">Get the dossier</a>`, featured: true },
+    { name: "Expert review", price: "€249", note: "per artifact", items: ["The dossier, reviewed by a human compliance consultant", "Written sign-off on tier and priorities", "30-minute call"], cta: `<a class="ghost" href="${mailto("warden — Expert review (€249)")}">Book a review</a>` },
+    { name: "Accelerators & VCs", price: "Portfolio", note: "cohort screening", items: ["Screen a whole cohort or portfolio", "One view of AI Act exposure across companies", "Volume pricing"], cta: `<a class="ghost" href="${mailto("warden — portfolio / cohort screening")}">Contact ${CONTACT}</a>` },
+  ];
+  return `<section class="pricing no-print" id="pricing"><h2>Pricing</h2><div class="plans">${plans
+    .map((p) => `<div class="plan${p.featured ? " featured" : ""}"><h3>${esc(p.name)}</h3><div class="price">${p.price}<small>${p.note}</small></div><ul>${p.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>${p.cta}</div>`)
+    .join("")}</div><p class="privacy">Not legal advice. Paid tiers are delivered by Pro7ocol — <a href="mailto:${CONTACT}">${CONTACT}</a>.</p></section>`;
 }
 
 function pane() {
@@ -165,6 +186,9 @@ async function boot() {
     if (res?.status === 200) return renderReport((await res.json()) as Report);
     if (res?.status === 202) return progress(rid);
   }
+  const idea = ideaFromQuery(location.search);
+  if (idea) (tab = "idea"), (draft = idea), history.replaceState(null, "", location.pathname);
   renderForm();
+  if (idea && idea.length >= MIN_IDEA_CHARS) app.querySelector<HTMLFormElement>("#input")!.requestSubmit();
 }
 void boot();

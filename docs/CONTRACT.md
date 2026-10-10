@@ -351,3 +351,14 @@ Clients (pocket PWA, iOS) keep the token in memory/session storage for the sessi
   `NoticeV2.turnoverEstimate = { eur, basis }`, and an officer says "The Commission has estimated your turnover
   generously, as is our custom." in round 1. `revenueEur` is still accepted.
 - `QUEUE_COUNTDOWN_SEC` (server env): `"6"` or `"5-8"` → `QueueTicket.countdownSec` in that range; unset → 30–60.
+
+### v2 amendment — pre-roast the room (event tag, silent batch)
+
+- `POST /api/applicants` and `POST /api/case` accept optional `event` (slug `^[a-z0-9][a-z0-9-]{0,47}$`, else 400). A case
+  inherits its applicant's event. `founderName` may be omitted only when `event` is set.
+- `POST /api/case` accepts optional `silent: true`: no TTS for that case (`audioUrl` null, no `audio` events).
+- Leaderboard rows carry `event` (`LeaderboardEntry.event?`). `GET /api/leaderboard?event=<slug>` and
+  `GET /api/stats?event=<slug>` filter by it; without `event` everything is listed, tagged rows included.
+- `scripts/batch-roast.ts <projects.csv|json>` (columns `project, oneLiner, repoUrl?`; flags `--event`, `--delay`,
+  `--base`) registers each row and runs a silent express case against the running server (needs `EXPRESS_MODE=1`):
+  `docker compose exec dg-roast node node_modules/tsx/dist/cli.mjs scripts/batch-roast.ts /data/projects.csv`.
