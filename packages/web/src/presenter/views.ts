@@ -382,7 +382,7 @@ export function caseView(root: HTMLElement, hub: Hub): Dispose {
     sub.replaceChildren(
       ...[
       line ? h("span", { class: "lc-sub-name", style: `--accent:${speaker?.color ?? "#ffd617"}` }, speaker?.name ?? line.speaker) : null,
-      line ? h("span", { class: line.text.length > 240 ? "lc-sub-text longer" : line.text.length > 120 ? "lc-sub-text long" : "lc-sub-text" }, line.text) : h("span", { class: "lc-sub-text dim" }, s.caseId ? "The officials are reviewing your file." : "Waiting for the next applicant. Scan the QR code to volunteer."),
+      line ? h("span", { class: line.text.length > 200 ? "lc-sub-text longer" : line.text.length > 100 ? "lc-sub-text long" : "lc-sub-text" }, line.text) : h("span", { class: "lc-sub-text dim" }, s.caseId ? "The officials are reviewing your file." : "Waiting for the next applicant. Scan the QR code to volunteer."),
       line?.provisions.length ? h("span", { class: "lc-chips" }, line.provisions.map((p) => h("span", { class: "chip" }, p.label))) : null,
       ].filter((x): x is HTMLSpanElement => !!x),
     );

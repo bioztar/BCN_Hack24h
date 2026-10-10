@@ -121,7 +121,7 @@ a.pv-nav-play:hover { background: #fff; }
 .lc-flags { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #888; text-align: right; }
 .lc-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr calc(25 * var(--u)); gap: calc(1.4 * var(--u)); }
 .lc-stage { display: flex; flex-direction: column; min-height: 0; gap: 1vh; }
-.lc-room { position: relative; flex: 0 0 40vh; min-height: 0; background: linear-gradient(#1b2440, #0b0f1d 62%, #2a2118 62%, #1a140e); border: 3px solid #333; overflow: hidden; }
+.lc-room { position: relative; flex: 0 0 33vh; min-height: 0; background: linear-gradient(#1b2440, #0b0f1d 62%, #2a2118 62%, #1a140e); border: 3px solid #333; overflow: hidden; }
 .lc-officials { position: absolute; inset: 3% 6% 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8%; }
 .lc-officials .official { filter: none; }
 .lc-officials .nameplate { font-size: clamp(12px, calc(1.2 * var(--u)), 24px); background: #000; color: #ffd617; border: 0; border-top: 4px solid var(--accent); }
