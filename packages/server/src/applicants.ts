@@ -151,7 +151,6 @@ export class ApplicantStore {
     const founderName = clean(input?.founderName, 60);
     if (!startupName) throw new InputError("startupName is required");
     const event = eventSlug(input?.event);
-    if (!founderName && !event) throw new InputError("founderName is required");
     if (typeof input?.startupName === "string" && input.startupName.trim().length > 60) throw new InputError("startupName is longer than 60 characters");
     if (typeof input?.founderName === "string" && input.founderName.trim().length > 60) throw new InputError("founderName is longer than 60 characters");
     const oneLiner = clean(input?.oneLiner, 140) || null;

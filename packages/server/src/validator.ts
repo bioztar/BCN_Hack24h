@@ -19,7 +19,9 @@ export interface ValidatedLine {
   reworded: boolean;
 }
 
-const CITATION = /\b(?:Art(?:icle)?s?\.?|Annex|Recital)\s*(\d+[a-z]?|[IVXL]+)(?:\s*\(\s*\d+\s*\)(?:\s*\(\s*[a-z]\s*\))?)?/gi;
+// Standalone references only: "Art. 5", "Article 5(1)(f)", "ANNEX III" — never "Artificial" or "articles of association".
+// Case-sensitive on purpose so roman numerals are upper-case only ("Arti" + "i" was matched before).
+const CITATION = /\b(?:[Aa]rt(?:icle)?s?\.?|ART(?:ICLE)?S?\.?|[Aa]nnex|ANNEX|[Rr]ecital|RECITAL)\s*(\d+[a-z]?|[IVXL]+)\b(?:\s*\(\s*\d+\s*\)(?:\s*\(\s*[a-z]\s*\))?)?/g;
 const CONTROL = /\b(?:A\.\s?\d+(?:\.\d+)?|CC\d\.\d|(?:GOVERN|MAP|MEASURE|MANAGE)\s+\d+\.\d+|LLM\d{2})\b/g;
 
 /** Article / annex numbers a provision backs: "gdpr-33" → "33", "ai-act-annex-iii" → "III". */
@@ -59,7 +61,10 @@ export function unbackedCitations(text: string, ids: string[]): string[] {
 
 export function rewordWithout(text: string, citations: string[]): string {
   let out = text;
-  for (const c of citations) out = out.split(c).join("the relevant provision");
+  for (const c of citations) {
+    const esc = c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`(?<![\\w])${esc}(?![\\w])`, "g"), "the relevant provision");
+  }
   return out.replace(/the relevant provision(\s+(of|under)\s+the relevant provision)+/g, "the relevant provision").replace(/\s{2,}/g, " ").trim();
 }
 
