@@ -33,6 +33,8 @@ async function roastToNotice(page: Page, roundMs: number) {
     await pitch.click();
     await page.locator(".sheet textarea").fill(REPLIES[round - 1] ?? "No.");
     await page.getByRole("button", { name: "File appeal" }).click();
+    // The button reads "Argue back" until the reply is accepted; don't mistake that for the next round's end.
+    await expect(pitch, `round ${round} reply accepted`).not.toHaveText("Argue back", { timeout: roundMs });
   }
   await expect(notice).toBeVisible({ timeout: roundMs });
   await expect(notice).toHaveAttribute("alt", /Notice of Non-Compliance/);
@@ -47,71 +49,76 @@ test.describe("pocket PWA v1", () => {
 
   test("mock: pick → pitch → roast → share card", async ({ page }) => {
     test.setTimeout(5 * 60_000);
-    await pickAndPitch(page, "?mock=1");
+    await pickAndPitch(page, "?toy=1&mock=1");
     await roastToNotice(page, 60_000);
   });
 
-  test("live: pick → pitch → roast → share card", async ({ page }, testInfo) => {
+  test("live: pick → pitch → roast → share card", async ({ page, request }, testInfo) => {
     liveGate(testInfo, "pocket");
+    test.skip(await applicantsDeployed(request), "≤1 live case per spec: pocket's goes to the v2 flow (v1 toy is covered in mock)");
     takeLiveCase(testInfo, "pocket-v1");
     test.setTimeout(5 * UI_ROUND_MS + 2 * 60_000);
-    await pickAndPitch(page, "");
+    await pickAndPitch(page, "?toy=1");
     await roastToNotice(page, UI_ROUND_MS);
   });
 });
 
-/**
- * v2 applicant flow (CONTRACT "v2"). The pwa-v2 UI had not landed when this was written: the
- * selectors are role/label/text based on the contract's copy and may need tuning once it does.
- */
+/** v2 applicant flow (CONTRACT "v2") — default at /pocket/ since pwa-v2; the v1 toy lives at ?toy=1. */
 async function v2Flow(page: Page, query: string, roundMs: number) {
+  const startup = `QA Rehearsal ${Date.now() % 100_000}`;
   await page.goto(`/pocket/${query}`);
-  const register = page.getByText(/register your startup/i).first();
-  const hasV2 = await register.isVisible({ timeout: 10_000 }).catch(() => false);
+  const hasV2 = await page.getByText("Form A-1 · Startup Registration").isVisible({ timeout: 15_000 }).catch(() => false);
   test.skip(!hasV2, "pwa-v2 register screen not deployed yet");
-  await page.getByLabel(/startup/i).first().fill("Rehearsal GmbH (QA)");
-  await page.getByLabel(/founder/i).first().fill("Playwright");
-  const file = page.locator('input[type="file"]');
-  if (await file.count()) await file.first().setInputFiles({ name: "selfie.png", mimeType: "image/png", buffer: solidPng() });
-  await page.getByRole("button", { name: /register|apply|submit|queue|take a number/i }).first().click();
+
+  await test.step("register: name, founder, selfie", async () => {
+    await page.getByLabel("Startup name *").fill(startup);
+    await page.getByLabel("Founder *").fill("Playwright");
+    await page.locator('input[type="file"]').setInputFiles({ name: "selfie.png", mimeType: "image/png", buffer: solidPng() });
+    await expect(page.getByText(/Face filed/)).toBeVisible();
+    await page.getByRole("button", { name: "Take a number" }).click();
+  });
 
   await test.step("queue countdown + better place skip", async () => {
-    await expect(page.getByText(/estimated decision/i).first()).toBeVisible({ timeout: 20_000 });
-    await page.getByRole("button", { name: /better place/i }).click();
-    await page.getByRole("button", { name: /climate|lgbtq|refugee|homeless|ukraine|rare|gender|animal|accessib|ai safety|ai-safety/i }).first().click();
-    await expect(page.getByText(/position\s*:?\s*1\b|#1\b|front of the queue|skipped/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("People ahead of you")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".q-eta")).not.toBeEmpty();
+    await page.getByRole("button", { name: "But we're making the world a better place" }).click();
+    await page.locator(".causes button.tile, button.tile").first().click();
+    await expect(page.getByText(/You skipped [\d,]+ applicants/)).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Proceed to pitch →" }).click();
   });
 
   await test.step("pitch → fines meter rises", async () => {
-    const box = page.locator("textarea").first();
-    await expect(box).toBeVisible({ timeout: 90_000 });
-    await box.fill(PITCH);
-    await page.getByRole("button", { name: /submit|pitch|file/i }).first().click();
-    const total = async () => {
-      const txt = (await page.locator("body").innerText()).match(/€\s?([\d.,]+)\s*(bn|m|k)?/gi) ?? [];
-      return Math.max(0, ...txt.map((t) => Number(t.replace(/[^\d.]/g, "")) * (/bn/i.test(t) ? 1e9 : /m\b/i.test(t) ? 1e6 : /k/i.test(t) ? 1e3 : 1)));
-    };
-    const first = await expect.poll(total, { timeout: roundMs, message: "fines meter shows an amount" }).toBeGreaterThan(0).then(total);
-    await expect.poll(total, { timeout: roundMs, message: "fines meter rises" }).toBeGreaterThan(first);
+    await page.getByLabel("Your pitch").fill(PITCH);
+    await page.getByRole("button", { name: "Submit to the Commission" }).click();
+    const fines = async () => Number(((await page.locator(".meter .eur b").textContent().catch(() => "")) ?? "").replace(/[^\d]/g, "") || 0);
+    await expect.poll(fines, { timeout: roundMs, intervals: [500], message: "fines meter shows an amount" }).toBeGreaterThan(0);
+    const first = await fines();
+    await expect.poll(fines, { timeout: 2 * roundMs, intervals: [500], message: "fines meter rises" }).toBeGreaterThan(first);
   });
 
-  await test.step("verdict → badge preview → report download → leaderboard", async () => {
-    for (let i = 0; i < 5; i++) {
-      const badge = page.locator('img[src*="badge.png"]');
-      if (await badge.isVisible().catch(() => false)) break;
-      const argue = page.getByRole("button", { name: /argue back/i });
-      if (await argue.isVisible().catch(() => false)) {
-        await argue.click();
-        await page.locator("textarea").first().fill(REPLIES[i] ?? "No.");
-        await page.getByRole("button", { name: /file appeal|submit|send/i }).first().click();
-      }
-      await page.waitForTimeout(3_000);
+  await test.step("argue back → verdict", async () => {
+    const badge = page.locator("img.badge-img");
+    const defence = page.getByLabel("Your defence");
+    for (let round = 1; round <= 5; round++) {
+      await expect.poll(async () => (await badge.isVisible()) || (await defence.isVisible()), { timeout: roundMs, intervals: [500], message: `round ${round} ends (defence box / verdict)` }).toBe(true);
+      if (await badge.isVisible()) break;
+      await defence.fill(REPLIES[round - 1] ?? "No.");
+      await page.locator(".ctrl").getByRole("button", { name: "Argue back" }).click();
+      await expect(defence, `round ${round} reply accepted`).toBeHidden({ timeout: roundMs });
     }
-    await expect(page.locator('img[src*="badge.png"]').first()).toBeVisible({ timeout: roundMs });
-    const report = page.locator('a[href*="report.pdf"]').first();
-    await expect(report).toBeVisible();
-    await page.getByRole("link", { name: /leaderboard/i }).or(page.getByRole("button", { name: /leaderboard/i })).or(page.getByRole("tab", { name: /leaderboard/i })).first().click();
-    await expect(page.getByText("Rehearsal GmbH (QA)").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".v-stamp")).toHaveText(/REFUSÉ|MELTDOWN/, { timeout: roundMs });
+  });
+
+  await test.step("badge preview → report download → leaderboard", async () => {
+    await expect(page.locator("img.badge-img")).toHaveAttribute("src", /^blob:/, { timeout: 20_000 });
+    await expect(page.locator("img.badge-img")).toHaveAttribute("alt", new RegExp(`Eurocrat badge: ${startup}`));
+    const report = page.getByRole("link", { name: "Report (PDF)" });
+    await expect(report).toHaveAttribute("download", /^eurocrat-report-.+\.pdf$/, { timeout: 20_000 });
+    const download = page.waitForEvent("download");
+    await report.click();
+    expect((await download).suggestedFilename()).toMatch(/^eurocrat-report-.+\.pdf$/);
+    await page.getByRole("button", { name: /See the Hall of Shame/ }).click();
+    await expect(page.locator(".board").getByText(startup).first()).toBeVisible({ timeout: 20_000 });
   });
 }
 
