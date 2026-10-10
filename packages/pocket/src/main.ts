@@ -8,10 +8,11 @@ import { reactionLine, type Reaction } from "./lines";
 import { ShakeDetector, Stillness, gravityFromOrientation, lowPass, toScreenFrame, type Vec3 } from "./motion";
 import { initialState, reduce, type Action, type LineEvent, type RoastState } from "./reducer";
 import { Stage } from "./scene";
-import type { Pair, Persona, PersonaId, RoastEvent } from "./types";
+import { startFlow } from "./flow";
+import type { Pair, Persona, PersonaId } from "./types";
 
 const params = new URLSearchParams(location.search);
-const api: Api = params.has("mock") && params.get("mock") !== "0" ? new MockApi() : new LiveApi();
+const api: Api = params.has("mock") && params.get("mock") !== "0" ? new MockApi(Number(params.get("countdown")) || undefined) : new LiveApi();
 const sound = new Sound();
 const app = document.getElementById("app")!;
 const POCKET_URL = "https://eurocrat.pro7ocol.com/pocket/";
@@ -688,7 +689,7 @@ async function openStream(caseId: string): Promise<void> {
   const ctl = new AbortController();
   streamAbort = ctl;
   try {
-    await api.stream(caseId, (e: RoastEvent) => dispatch(e), ctl.signal);
+    await api.stream(caseId, (e) => dispatch(e), ctl.signal);
     if (!ctl.signal.aborted) dispatch({ type: "closed" });
   } catch (err) {
     if (!ctl.signal.aborted) dispatch({ type: "failed", message: err instanceof Error ? err.message : String(err) });
@@ -822,4 +823,6 @@ async function showNotice(force = false): Promise<void> {
   });
 }
 
-void showPick();
+// v2 audience flow by default; the v1 officer toy stays at ?toy=1.
+if (params.has("toy")) void showPick();
+else startFlow({ api, sound, app, appUrl: POCKET_URL });

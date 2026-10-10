@@ -1,4 +1,6 @@
-import type { Notice, Pair, Persona, PersonaId, Provision, RoastEvent, Tier } from "./types";
+import { lawOf, mockFine } from "./fines";
+import { meltdownCrossed } from "./meter";
+import type { AnyRoastEvent, NoticeV2, Pair, Persona, PersonaId, Provision, Tier } from "./types";
 
 // Fallback roster + a full mock roast. Used with ?mock=1 and whenever the server is unreachable.
 
@@ -64,7 +66,7 @@ const SCRIPTS: Record<string, { rounds: Step[][]; findings: { text: string; prov
         { say: 1, text: "Good news. We amended the rules while you were speaking. {startup} is now high-risk under Annex III. Retroactively. Since breakfast.", prov: [P.aiActAnnex3] },
         { say: 0, text: "The fine is thirty-five million euros or seven percent of turnover, whichever is higher. Your turnover is zero. So: thirty-five million. Payable in triplicate.", prov: [P.aiAct99] },
         { tier: 5 },
-        { say: 1, text: "It is published. You are now Rejected Startup No. {serial}. Congratulations — this is the most read you will ever be.", stamp: "RENVOYÉ EN COMMISSION" },
+        { say: 1, text: "It is published. You are now Rejected Startup No. {serial}. Congratulations — this is the most read you will ever be.", prov: [P.aiAct99], stamp: "RENVOYÉ EN COMMISSION" },
         { verdict: true },
       ],
     ],
@@ -92,7 +94,7 @@ const SCRIPTS: Record<string, { rounds: Step[][]; findings: { text: string; prov
         { say: 0, text: "A data breach must be reported within seventy-two hours, dear. I reported you already. I'm very quick for eighty-four.", prov: [P.gdpr33] },
         { say: 1, text: "FINE CALCULATED: {fine} EUR. REMAINDER CARRIED FORWARD TO THE NEXT CENTURY.", prov: [P.aiAct99] },
         { tier: 5 },
-        { say: 0, text: "There. I've knitted your verdict into a cookie banner. You can't reject it, dear. Nobody can.", stamp: "REFUSÉ" },
+        { say: 0, text: "There. I've knitted your verdict into a cookie banner. You can't reject it, dear. Nobody can.", prov: [P.eprivacy5], stamp: "REFUSÉ" },
         { verdict: true },
       ],
     ],
@@ -120,7 +122,7 @@ const SCRIPTS: Record<string, { rounds: Step[][]; findings: { text: string; prov
         { say: 1, text: "We updated our terms while you were talking! You agreed by blinking. Also, by law I must tell you: I am a machine-generated cookie.", prov: [P.aiAct50] },
         { say: 0, text: "Your critical ICT third-party provider is your co-founder. Exit strategy required. Look at him. Now look at the exit.", prov: [P.dora28] },
         { tier: 5 },
-        { say: 0, text: "Scene secured. {startup} neutralised. Bag the hoodie.", stamp: "REFUSÉ" },
+        { say: 0, text: "Scene secured. {startup} neutralised. Bag the hoodie. And the fine.", prov: [P.aiAct99], stamp: "REFUSÉ" },
         { verdict: true },
       ],
     ],
@@ -154,31 +156,109 @@ export function fineFor(revenueEur = 0): number {
   return Math.max(35_000_000, Math.round(revenueEur * 0.07));
 }
 
-export interface MockCtx { personas: [Persona, Persona]; ticket: number; pitch: string; revenueEur?: number; serial: string; }
+export interface MockTotals { eur: number; jail: number; melted: boolean; n: number; }
+export interface MockCtx {
+  personas: [Persona, Persona];
+  ticket: number;
+  pitch: string;
+  revenueEur?: number;
+  serial: string;
+  caseId?: string;
+  totals?: MockTotals;
+  applicant?: { applicantId: string; startupName: string; founderName: string } | null;
+  repoUrl?: string;
+}
 
-/** One round of the mock roast as a text/event-stream body (unnamed `data:` messages, like Lane B). */
-export function mockRoundSse(ctx: MockCtx, round: number): string {
+const LAW_TLDR: Record<string, string> = {
+  GDPR: "You process personal data. Nobody consented, least of all us.",
+  "AI Act": "Your “AI” is an AI system. That is already a finding.",
+  NIS2: "Your pitch is a significant incident. Report it within 24 hours.",
+  DORA: "Your critical ICT third-party provider is your co-founder.",
+  ePrivacy: "You stored something on a device. Possibly a cookie, possibly yourself.",
+};
+const LAW_RECO: Record<string, string> = {
+  GDPR: "Write a record of processing (Art. 30), pick one lawful basis per purpose, and delete what you don't need.",
+  "AI Act": "Classify the system against Art. 6 + Annex III before you build; disclose AI interaction (Art. 50).",
+  NIS2: "Check whether you are an essential/important entity; set up 24 h / 72 h incident reporting.",
+  DORA: "Keep a register of ICT third-party providers and an exit plan for each critical one.",
+  ePrivacy: "Ask before you set non-essential cookies; make “Reject all” as easy as “Accept all”.",
+};
+
+export const REPO_STAGES = [
+  "Cloning the repository (and all 4,000 forks)",
+  "Reading the README, twice, with disgust",
+  "Counting LLM SDKs",
+  "Looking for a LICENSE",
+  "Locating the .env file (found. committed.)",
+  "Forwarding to Unit C.4",
+];
+
+/** One round of the mock roast as events (fines, meltdown and a NoticeV2 included). */
+export function mockRoundEvents(ctx: MockCtx, round: number): AnyRoastEvent[] {
   const pairId = pairFor([ctx.personas[0].id, ctx.personas[1].id]);
   const script = SCRIPTS[pairId]!;
   const order: [Persona, Persona] = FIXTURE_PAIRS.find((p) => p.id === pairId)!.officers[0] === ctx.personas[0].id ? ctx.personas : [ctx.personas[1], ctx.personas[0]];
   const steps = script.rounds[Math.min(round, script.rounds.length - 1)]!;
-  const startup = startupName(ctx.pitch);
+  const startup = ctx.applicant?.startupName ?? (ctx.repoUrl ? ctx.repoUrl.split("/").filter(Boolean).pop() ?? "Your Repo" : startupName(ctx.pitch));
+  const caseId = ctx.caseId ?? ctx.serial;
+  const totals = (ctx.totals ??= { eur: 0, jail: 0, melted: false, n: 0 });
   const fine = fineFor(ctx.revenueEur);
   const fill = (t: string) => t.replace("{ticket}", ctx.ticket.toLocaleString("en-GB")).replace("{startup}", startup).replace("{serial}", ctx.serial).replace("{fine}", fine.toLocaleString("en-GB"));
-  const events: RoastEvent[] = [];
-  if (round === 0) events.push({ type: "officers", officers: ctx.personas, ticket: ctx.ticket });
+  const events: AnyRoastEvent[] = [];
+  if (round === 0) {
+    events.push({ type: "officers", officers: ctx.personas, ticket: ctx.ticket });
+    if (ctx.repoUrl) {
+      REPO_STAGES.forEach((stage, i) => events.push({ type: "analyzing", stage, progress: (i + 1) / REPO_STAGES.length }));
+      const repo = ctx.repoUrl.replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\.git$/, "");
+      events.push({ type: "intake", repo: { repo, description: "A startup, apparently", stars: 3, language: "TypeScript", findings: [{ key: "no-license", detail: "No LICENSE file" }, { key: "env-tracked", detail: ".env is committed" }, { key: "llm-sdk", detail: "Uses an LLM SDK" }], summary: "No licence, a committed .env and an LLM SDK. Sufficient." } });
+    }
+  }
+  let tier: Tier = 1;
   let n = 0;
   for (const s of steps) {
-    if ("tier" in s) events.push({ type: "tier", tier: s.tier, name: TIER_NAMES[s.tier - 1] });
-    else if ("say" in s) {
+    if ("tier" in s) {
+      tier = s.tier;
+      events.push({ type: "tier", tier: s.tier, name: TIER_NAMES[s.tier - 1] });
+    } else if ("say" in s) {
       events.push({ type: "line", id: `mock-${round}-${n++}`, speaker: order[s.say].id, text: fill(s.text), provisions: s.prov ?? [], clip: s.stamp ? "stamp" : "talking", audioUrl: null, ...(s.stamp ? { stamp: s.stamp } : {}) });
+      for (const p of s.prov ?? []) {
+        events.push(mockFine(caseId, p, tier, totals, ctx.revenueEur, totals.n++));
+        if (!totals.melted && meltdownCrossed(totals.eur, totals.jail)) {
+          totals.melted = true;
+          events.push({ type: "meltdown", totalEur: totals.eur, totalJailMonths: totals.jail });
+        }
+      }
     } else if ("awaiting" in s) events.push({ type: "awaiting", prompt: s.awaiting });
     else {
-      const notice: Notice = { serial: ctx.serial, startup, officers: [order[0].id, order[1].id], fineEur: fine, fineBasis: "€35M or 7% of worldwide turnover, whichever is higher — AI Act Art. 99(3)", findings: script.findings, issuedAt: new Date().toISOString() };
+      const laws = [...new Set(script.findings.map((f) => lawOf(f.provision.label)))];
+      const notice: NoticeV2 = {
+        serial: ctx.serial,
+        startup,
+        officers: [order[0].id, order[1].id],
+        fineEur: totals.eur,
+        fineBasis: "Sum of the statutory maxima, scaled by tier — AI Act Art. 99, GDPR Art. 83, and vibes",
+        findings: script.findings,
+        issuedAt: new Date().toISOString(),
+        applicantId: ctx.applicant?.applicantId ?? null,
+        startupName: startup,
+        founderName: ctx.applicant?.founderName ?? null,
+        totalEur: totals.eur,
+        totalJailMonths: totals.jail,
+        meltdown: totals.melted,
+        tldr: laws.map((law) => ({ law, oneLine: LAW_TLDR[law] ?? "Non-compliant, comprehensively." })),
+        recommendations: laws.map((law) => ({ text: LAW_RECO[law] ?? "Read the regulation. Then read it again.", provision: script.findings.find((f) => lawOf(f.provision.label) === law)?.provision })),
+        reportUrl: "",
+        badgeUrl: "",
+      };
       events.push({ type: "verdict", notice });
     }
   }
-  return ":\n\n" + events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join("");
+  return events;
+}
+
+/** One round of the mock roast as a text/event-stream body (unnamed `data:` messages, like Lane B). */
+export function mockRoundSse(ctx: MockCtx, round: number): string {
+  return ":\n\n" + mockRoundEvents(ctx, round).map((e) => `data: ${JSON.stringify(e)}\n\n`).join("");
 }
 
 export const MOCK_DICTATION = "It's Uber for filling in forms. With AI. On the blockchain. We're pre-revenue but post-hype.";

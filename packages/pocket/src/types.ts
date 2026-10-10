@@ -48,3 +48,63 @@ export interface Notice {
 export interface WallEntry { speaker: PersonaId; text: string; at: string; }  // officials' lines ONLY
 
 export interface Pair { id: string; officers: [PersonaId, PersonaId]; }
+
+// ───────── v2 (docs/CONTRACT.md "v2" + "Meanwhile") — local copy of packages/shared v2 types ─────────
+
+export interface ApplicantInput { startupName: string; founderName: string; oneLiner?: string; photo?: string; }
+/** applicantId is public (leaderboard); the token, returned only by registration, authorises its case + better-place. */
+export interface ApplicantAuth { applicantId: string; applicantToken: string; }
+export interface QueueTicket { applicantId: string; applicantToken: string; ticket: number; position: number; etaText: string; countdownSec: number; }
+export type BetterPlaceCause =
+  | "climate" | "lgbtq" | "refugees" | "homeless" | "ukraine" | "rare-diseases"
+  | "gender-equality" | "animal-welfare" | "accessibility" | "ai-safety";
+export interface BetterPlaceResult { position: 1; skipped: number; cause: BetterPlaceCause; quip: string; }
+
+export interface Meanwhile {
+  elapsedSec: number;
+  china: { models: number; note: string };
+  us: { models: number; note: string };
+  eu: { regulations: number; forms: number; note: string };
+}
+
+export type FineEvent = { type: "fine"; id: string; provision: Provision; amountEur: number; jailMonths: number; totalEur: number; totalJailMonths: number; caption: string };
+export type RoastEventV2 =
+  | FineEvent
+  | { type: "meltdown"; totalEur: number; totalJailMonths: number }
+  | { type: "analyzing"; stage: string; progress: number }
+  | { type: "meanwhile"; meanwhile: Meanwhile };
+
+export type AnyRoastEvent = RoastEvent | RoastEventV2;
+
+export const MELTDOWN_EUR = 1_000_000_000;
+export const MELTDOWN_JAIL_MONTHS = 1_200;
+
+export interface NoticeV2 extends Notice {
+  applicantId: string | null;
+  startupName: string;
+  founderName: string | null;
+  totalEur: number;
+  totalJailMonths: number;
+  meltdown: boolean;
+  tldr: { law: string; oneLine: string }[];
+  recommendations: { text: string; provision?: Provision }[];
+  reportUrl: string;
+  badgeUrl: string;
+  meanwhile?: Meanwhile;
+}
+
+export interface LeaderboardEntry {
+  caseId: string;
+  startupName: string;
+  founderName: string | null;
+  oneLiner: string | null;
+  photoUrl: string | null;
+  totalEur: number;
+  totalJailMonths: number;
+  meltdown: boolean;
+  topLaws: string[];
+  issuedAt: string;
+  meanwhile?: Meanwhile;
+}
+export type LeaderboardSort = "fines" | "jail" | "recent";
+export interface LeaderboardDetail { entry: LeaderboardEntry; findings: Notice["findings"]; }

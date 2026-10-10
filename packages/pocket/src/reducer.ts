@@ -1,4 +1,4 @@
-import type { Notice, Persona, RepoIntake, RoastEvent, Tier } from "./types";
+import type { AnyRoastEvent, FineEvent, Meanwhile, Notice, Persona, RepoIntake, RoastEvent, Tier } from "./types";
 
 export type LineEvent = Extract<RoastEvent, { type: "line" }>;
 export type Phase = "idle" | "submitting" | "streaming" | "awaiting" | "verdict" | "error";
@@ -15,10 +15,16 @@ export interface RoastState {
   prompt: string | null;
   notice: Notice | null;
   error: string | null;
+  fines: FineEvent[];
+  totalEur: number;
+  totalJailMonths: number;
+  meltdown: boolean;
+  analyzing: { stage: string; progress: number } | null;
+  meanwhile: Meanwhile | null;
 }
 
 export type Action =
-  | RoastEvent
+  | AnyRoastEvent
   | { type: "reset" }
   | { type: "submit" }
   | { type: "case"; caseId: string; ticket: number }
@@ -38,6 +44,12 @@ export const initialState: RoastState = {
   prompt: null,
   notice: null,
   error: null,
+  fines: [],
+  totalEur: 0,
+  totalJailMonths: 0,
+  meltdown: false,
+  analyzing: null,
+  meanwhile: null,
 };
 
 export function reduce(s: RoastState, a: Action): RoastState {
@@ -67,6 +79,15 @@ export function reduce(s: RoastState, a: Action): RoastState {
       return { ...s, phase: "awaiting", prompt: a.prompt };
     case "verdict":
       return { ...s, phase: "verdict", notice: a.notice, prompt: null };
+    case "fine":
+      if (s.fines.some((f) => f.id === a.id)) return s;
+      return { ...s, fines: [...s.fines, a], totalEur: Math.max(s.totalEur, a.totalEur), totalJailMonths: Math.max(s.totalJailMonths, a.totalJailMonths) };
+    case "meltdown":
+      return { ...s, meltdown: true, totalEur: Math.max(s.totalEur, a.totalEur), totalJailMonths: Math.max(s.totalJailMonths, a.totalJailMonths) };
+    case "analyzing":
+      return { ...s, analyzing: { stage: a.stage, progress: Math.max(s.analyzing?.progress ?? 0, Math.min(1, a.progress)) } };
+    case "meanwhile":
+      return { ...s, meanwhile: a.meanwhile };
     case "error":
     case "failed":
       return { ...s, phase: "error", error: a.message };
