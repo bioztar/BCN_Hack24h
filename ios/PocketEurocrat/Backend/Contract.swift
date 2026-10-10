@@ -102,6 +102,7 @@ struct Notice: Codable, Equatable {
     var recommendations: [Recommendation]? = nil
     var reportUrl: String? = nil
     var badgeUrl: String? = nil
+    var meanwhile: Meanwhile? = nil
 
     struct TLDR: Codable, Equatable { let law: String; let oneLine: String }
     struct Recommendation: Codable, Equatable { let text: String; var provision: Provision? = nil }
@@ -117,17 +118,18 @@ enum RoastEvent: Decodable, Equatable {
     case fine(Fine)                           // v2: one per cited provision; drives the meter
     case meltdown(totalEur: Double, totalJailMonths: Int)
     case analyzing(stage: String, progress: Double)
+    case meanwhile(Meanwhile)                 // v2: live counter tick (~5 s) + final value right before `verdict`
     case awaiting(String)
     case error(String)
     case unknown
 
     private enum Keys: String, CodingKey {
-        case type, officers, ticket, tier, name, notice, prompt, message, id, audioUrl, totalEur, totalJailMonths, stage, progress
+        case type, officers, ticket, tier, name, notice, prompt, message, id, audioUrl, totalEur, totalJailMonths, stage, progress, meanwhile
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
-        switch try c.decode(String.self, forKey: .type) {
+        switch try c.decodeIfPresent(String.self, forKey: .type) ?? "" {
         case "officers": self = .officers(try c.decode([Persona].self, forKey: .officers), ticket: try c.decode(Int.self, forKey: .ticket))
         case "tier": self = .tier(try c.decode(Int.self, forKey: .tier), name: try c.decode(String.self, forKey: .name))
         case "line": self = .line(try RoastLine(from: decoder))
@@ -138,6 +140,7 @@ enum RoastEvent: Decodable, Equatable {
                              totalJailMonths: try c.decode(Int.self, forKey: .totalJailMonths))
         case "analyzing":
             self = .analyzing(stage: try c.decode(String.self, forKey: .stage), progress: try c.decode(Double.self, forKey: .progress))
+        case "meanwhile": self = .meanwhile(try c.decode(Meanwhile.self, forKey: .meanwhile))
         case "audio": self = .audio(lineID: try c.decode(String.self, forKey: .id), url: try c.decode(String.self, forKey: .audioUrl))
         case "awaiting": self = .awaiting(try c.decode(String.self, forKey: .prompt))
         case "error": self = .error(try c.decode(String.self, forKey: .message))

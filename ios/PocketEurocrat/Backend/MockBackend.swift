@@ -11,6 +11,7 @@ struct MockBackend: RoastBackend {
         let lock = NSLock()
         var cases: [String: (pitch: Submission, applicantId: String?, officers: [String])] = [:]
         var applicants: [String: ApplicantInput] = [:]
+        var tokens: [String: String] = [:]
         var board: [LeaderboardEntry] = MockBackend.seedBoard
         var listeners: [UUID: AsyncThrowingStream<LeaderboardEntry, Error>.Continuation] = [:]
     }
@@ -19,7 +20,8 @@ struct MockBackend: RoastBackend {
     func personas() async throws -> [Persona] { Roster.officers }
     func pairs() async throws -> [Pair] { Roster.pairs }
 
-    func createCase(_ submission: Submission, officers: [String], applicantId: String?) async throws -> CaseTicket {
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket {
+        if let applicantId { try Self.authorise(applicantId, applicantToken) }
         let id = "mock-\(officers.joined(separator: "+"))-\(UUID().uuidString.prefix(6))"
         Self.store.lock.withLock { Self.store.cases[id] = (submission, applicantId, officers) }
         return CaseTicket(caseId: id, ticket: 4812, officers: officers)
@@ -36,12 +38,14 @@ struct MockBackend: RoastBackend {
     func register(_ input: ApplicantInput) async throws -> QueueTicket {
         try await Task.sleep(for: .milliseconds(400))
         let id = "app-\(UUID().uuidString.prefix(8))"
-        Self.store.lock.withLock { Self.store.applicants[id] = input }
-        return QueueTicket(applicantId: id, ticket: Int.random(in: 10_000...99_999), position: 2_417_906,
+        let token = UUID().uuidString + UUID().uuidString
+        Self.store.lock.withLock { Self.store.applicants[id] = input; Self.store.tokens[id] = token }
+        return QueueTicket(applicantId: id, applicantToken: token, ticket: Int.random(in: 10_000...99_999), position: 2_417_906,
                            etaText: "Estimated decision: Q3 2031", countdownSec: 35)
     }
 
-    func betterPlace(applicantId: String, cause: BetterPlaceCause) async throws -> BetterPlaceResult {
+    func betterPlace(applicantId: String, applicantToken: String?, cause: BetterPlaceCause) async throws -> BetterPlaceResult {
+        try Self.authorise(applicantId, applicantToken)
         try await Task.sleep(for: .milliseconds(500))
         return BetterPlaceResult(position: 1, skipped: 2_417_905, cause: cause,
                                  quip: "\(cause.label)! Noted, filed, and used to skip 2,417,905 less virtuous applicants.")
@@ -63,6 +67,13 @@ struct MockBackend: RoastBackend {
             let id = UUID()
             Self.store.lock.withLock { Self.store.listeners[id] = cont }
             cont.onTermination = { _ in _ = Self.store.lock.withLock { Self.store.listeners.removeValue(forKey: id) } }
+        }
+    }
+
+    /// Same rule as the server: the applicant's token or 403.
+    private static func authorise(_ applicantId: String, _ token: String?) throws {
+        guard let token, store.lock.withLock({ store.tokens[applicantId] }) == token else {
+            throw LiveBackend.ServerError(status: 403, message: "applicant token mismatch")
         }
     }
 
@@ -106,7 +117,10 @@ struct MockBackend: RoastBackend {
                 script.append(.analyzing(stage: stage, progress: Double(i + 1) / 4))
             }
         }
+        // Meanwhile: as if the founder had queued ~40 s; one tick per tier, final value right before the verdict.
+        let final = Meanwhile.estimate(key: caseID, elapsedSec: 72)
         script.append(.tier(1, name: "Pre-consultation"))
+        script.append(.meanwhile(Meanwhile.estimate(key: caseID, elapsedSec: 41)))
         script.append(.line(RoastLine(id: "m1", speaker: a, text: "Is it an AI system? Article 3, point 1. Varying levels of autonomy. Your pitch has one level. It is called 'next slide'.")))
         var total = 0.0, jail = 0
         func fine(_ i: Int, _ p: Provision, _ caption: String) {
@@ -118,6 +132,7 @@ struct MockBackend: RoastBackend {
         script.append(.line(RoastLine(id: "m2", speaker: b, text: "I have read your pitch. Fortunately for you, I read slowly.", provisions: [Self.aiAct])))
         fine(1, Self.gdpr, "The dog did not consent.")
         script.append(.tier(2, name: "Committee"))
+        script.append(.meanwhile(Meanwhile.estimate(key: caseID, elapsedSec: 56)))
         script.append(.line(RoastLine(id: "m3", speaker: a, text: "You say it is not high-risk. A derogation! You must document it. You have not documented it.", provisions: [Self.aiAct])))
         fine(2, Self.nis2, "Your incident response plan is a group chat.")
         fine(3, Self.gdpr, "Breach noticed in 2031, estimated.")
@@ -137,16 +152,18 @@ struct MockBackend: RoastBackend {
                    .init(law: "GDPR", oneLine: "No lawful basis for the dog; no breach process.")],
             recommendations: [.init(text: "Document the Article 6(3) derogation before launch.", provision: Self.aiAct),
                               .init(text: "Appoint a DPO. The dog does not qualify.", provision: Self.gdpr)],
-            reportUrl: nil, badgeUrl: nil)
+            reportUrl: nil, badgeUrl: nil, meanwhile: final)
+        script.append(.meanwhile(final))
         script.append(.verdict(notice))
 
         let entry = LeaderboardEntry(caseId: caseID, startupName: startup, founderName: applicant?.founderName,
                                      oneLiner: applicant?.oneLiner, photoUrl: nil, totalEur: total, totalJailMonths: jail,
                                      meltdown: melted, topLaws: ["AI Act", "GDPR", "NIS2"], issuedAt: ISO8601DateFormatter().string(from: Date()))
         let delay = lineDelay
+        let events = script   // a let copy: `script` is a captured var (the `fine` helper appends to it)
         return AsyncThrowingStream { cont in
             let task = Task {
-                for ev in script {
+                for ev in events {
                     try? await Task.sleep(for: delay)
                     if Task.isCancelled { break }
                     if case .verdict = ev { Self.publish(entry) }

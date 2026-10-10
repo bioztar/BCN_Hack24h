@@ -13,10 +13,11 @@ struct LiveBackend: RoastBackend {
     func personas() async throws -> [Persona] { try await get("api/personas") }
     func pairs() async throws -> [Pair] { try await get("api/pairs") }
 
-    func createCase(_ submission: Submission, officers: [String], applicantId: String?) async throws -> CaseTicket {
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket {
         var body: [String: Any] = ["submission": submission.json, "officers": officers]
         if let applicantId { body["applicantId"] = applicantId }
-        return try await send("api/case", json: body)
+        if let applicantToken { body["applicantToken"] = applicantToken }
+        return try await send("api/case", json: body, token: applicantToken)
     }
 
     // MARK: v2
@@ -26,8 +27,10 @@ struct LiveBackend: RoastBackend {
         return try JSONDecoder().decode(QueueTicket.self, from: try await raw(request("api/applicants", method: "POST", body: body, type: "application/json")))
     }
 
-    func betterPlace(applicantId: String, cause: BetterPlaceCause) async throws -> BetterPlaceResult {
-        try await send("api/applicants/\(applicantId)/better-place", json: ["cause": cause.rawValue])
+    func betterPlace(applicantId: String, applicantToken: String?, cause: BetterPlaceCause) async throws -> BetterPlaceResult {
+        var body: [String: Any] = ["cause": cause.rawValue]
+        if let applicantToken { body["applicantToken"] = applicantToken }
+        return try await send("api/applicants/\(applicantId)/better-place", json: body, token: applicantToken)
     }
 
     func leaderboard(sort: LeaderboardSort, limit: Int) async throws -> [LeaderboardEntry] {
@@ -95,9 +98,12 @@ struct LiveBackend: RoastBackend {
         try JSONDecoder().decode(T.self, from: try await raw(request(path)))
     }
 
-    private func send<T: Decodable>(_ path: String, json: [String: Any]) async throws -> T {
+    /// `token` also goes out as `x-applicant-token` (the server accepts body or header).
+    private func send<T: Decodable>(_ path: String, json: [String: Any], token: String? = nil) async throws -> T {
         let body = try JSONSerialization.data(withJSONObject: json)
-        return try JSONDecoder().decode(T.self, from: try await raw(request(path, method: "POST", body: body, type: "application/json")))
+        var req = request(path, method: "POST", body: body, type: "application/json")
+        if let token { req.setValue(token, forHTTPHeaderField: "x-applicant-token") }
+        return try JSONDecoder().decode(T.self, from: try await raw(req))
     }
 
     private static func check(_ resp: URLResponse, data: Data) throws {

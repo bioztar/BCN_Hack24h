@@ -89,6 +89,7 @@ struct PocketView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
+            if let m = model.meanwhile { MeanwhileStrip(meanwhile: m).padding(.top, 4) }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12).padding(.top, 6)

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Apply (the v2 flow) and the leaderboard.
+/// Apply (the v2 flow), the leaderboard, and the Arcade.
 struct RootView: View {
     @Bindable var flow: FlowModel
     @State private var board: LeaderboardModel
@@ -20,6 +20,9 @@ struct RootView: View {
             LeaderboardView(model: board)
                 .tabItem { Label("Hall of Shame", systemImage: "list.number") }
                 .tag(1)
+            ArcadeView(closable: false)
+                .tabItem { Label("Play", systemImage: "gamecontroller") }
+                .tag(2)
         }
     }
 

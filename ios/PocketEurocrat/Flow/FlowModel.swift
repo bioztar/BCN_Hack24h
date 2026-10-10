@@ -14,6 +14,8 @@ final class FlowModel {
     var photo: UIImage?
 
     var ticket: QueueTicket?
+    /// When the ticket was issued: the Meanwhile clock in the queue (server counts from registration too).
+    var registeredAt: Date?
     var skipResult: BetterPlaceResult?
     var busy = false
     var errorMessage: String?
@@ -42,6 +44,7 @@ final class FlowModel {
                 oneLiner: oneLiner.isEmpty ? nil : String(oneLiner.prefix(140)),
                 photo: photo.flatMap(Self.dataURL))
             ticket = try await backend.register(input)
+            registeredAt = Date()
             skipResult = nil
             stage = .queue
         } catch {
@@ -54,7 +57,7 @@ final class FlowModel {
         busy = true
         defer { busy = false }
         do {
-            skipResult = try await backend.betterPlace(applicantId: ticket.applicantId, cause: cause)
+            skipResult = try await backend.betterPlace(applicantId: ticket.applicantId, applicantToken: ticket.applicantToken, cause: cause)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -68,13 +71,14 @@ final class FlowModel {
     func choose(pairID: String) {
         pocket.select(pair: pairID)
         pocket.applicantId = ticket?.applicantId
+        pocket.applicantToken = ticket?.applicantToken
         stage = .play
     }
 
     func applyAgain() {
         pocket.newApplication()
         startupName = ""; founderName = ""; oneLiner = ""; photo = nil
-        ticket = nil; skipResult = nil
+        ticket = nil; skipResult = nil; registeredAt = nil
         stage = .register
     }
 

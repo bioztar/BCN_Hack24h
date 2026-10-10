@@ -65,14 +65,16 @@ final class ContractTests: XCTestCase {
         let b = MockBackend(lineDelay: .milliseconds(1))
         let ticket = try await b.register(ApplicantInput(startupName: "TestCo", founderName: "T. Ester", oneLiner: nil, photo: nil))
         XCTAssertGreaterThan(ticket.position, 1_000_000)
-        let skip = try await b.betterPlace(applicantId: ticket.applicantId, cause: .climate)
+        let skip = try await b.betterPlace(applicantId: ticket.applicantId, applicantToken: ticket.applicantToken, cause: .climate)
         XCTAssertEqual(skip.position, 1)
-        let c = try await b.createCase(.repo("https://github.com/x/y"), officers: ["de-vries", "the-cookie"], applicantId: ticket.applicantId)
-        var fines = 0, melted = false, verdict: Notice?
+        let c = try await b.createCase(.repo("https://github.com/x/y"), officers: ["de-vries", "the-cookie"],
+                                       applicantId: ticket.applicantId, applicantToken: ticket.applicantToken)
+        var fines = 0, melted = false, verdict: Notice?, ticks = 0
         for try await ev in b.stream(caseID: c.caseId) {
             switch ev {
             case .fine: fines += 1
             case .meltdown: melted = true
+            case .meanwhile: ticks += 1
             case .verdict(let n): verdict = n
             default: break
             }
@@ -81,6 +83,8 @@ final class ContractTests: XCTestCase {
         XCTAssertTrue(melted)
         XCTAssertEqual(verdict?.startupName, "TestCo")
         XCTAssertEqual(verdict?.meltdown, true)
+        XCTAssertGreaterThan(ticks, 0)
+        XCTAssertNotNil(verdict?.meanwhile)
         let board = try await b.leaderboard(sort: .fines, limit: 50)
         XCTAssertTrue(board.contains { $0.caseId == c.caseId })
     }
@@ -94,5 +98,67 @@ final class ContractTests: XCTestCase {
 
     func testEveryOfficerIsInAPair() {
         XCTAssertEqual(Set(Roster.pairs.flatMap(\.officers)), Set(Roster.officers.map(\.id)))
+    }
+    // MARK: v2 — Meanwhile, applicant token, leaderboard detail (fixtures from docs/CONTRACT.md / packages/shared)
+
+    static let meanwhileJSON = #"{"elapsedSec":72,"china":{"models":11,"note":"one of them achieved superintelligence"},"us":{"models":3,"note":"and raised $40 bn"},"eu":{"regulations":27,"forms":412,"note":"you need all of them to open a bank account"}}"#
+
+    func testDecodesMeanwhileEvent() throws {
+        let json = #"{"type":"meanwhile","meanwhile":"# + Self.meanwhileJSON + "}"
+        guard case .meanwhile(let m) = try JSONDecoder().decode(RoastEvent.self, from: Data(json.utf8)) else { return XCTFail("not meanwhile") }
+        XCTAssertEqual(m.elapsedSec, 72)
+        XCTAssertEqual(m.china.models, 11)
+        XCTAssertEqual(m.us.note, "and raised $40 bn")
+        XCTAssertEqual(m.eu.regulations, 27)
+        XCTAssertEqual(m.eu.forms, 412)
+        XCTAssertFalse(m.paragraph.isEmpty)
+    }
+
+    func testNoticeMeanwhileIsOptional() throws {
+        let base = #""serial":"DG-1","startup":"X","officers":["de-vries"],"fineEur":1,"fineBasis":"b","findings":[],"issuedAt":"2026-10-10T09:00:00Z""#
+        let without = try JSONDecoder().decode(Notice.self, from: Data("{\(base)}".utf8))
+        XCTAssertNil(without.meanwhile)
+        let with = try JSONDecoder().decode(Notice.self, from: Data("{\(base),\"meanwhile\":\(Self.meanwhileJSON)}".utf8))
+        XCTAssertEqual(with.meanwhile?.china.models, 11)
+    }
+
+    func testUnknownOrUntypedEventsAreNoOps() throws {
+        let dec = JSONDecoder()
+        XCTAssertEqual(try dec.decode(RoastEvent.self, from: Data(#"{"type":"confetti","amount":9000}"#.utf8)), .unknown)
+        XCTAssertEqual(try dec.decode(RoastEvent.self, from: Data(#"{"hello":"world"}"#.utf8)), .unknown)
+    }
+
+    func testQueueTicketCarriesApplicantToken() throws {
+        let json = #"{"applicantId":"a1","applicantToken":"tok_abc","ticket":48213,"position":2417906,"etaText":"Estimated decision: Q3 2031","countdownSec":42}"#
+        let t = try JSONDecoder().decode(QueueTicket.self, from: Data(json.utf8))
+        XCTAssertEqual(t.applicantToken, "tok_abc")
+        let old = try JSONDecoder().decode(QueueTicket.self, from: Data(json.replacingOccurrences(of: #""applicantToken":"tok_abc","#, with: "").utf8))
+        XCTAssertNil(old.applicantToken)
+    }
+
+    func testMockRejectsWrongApplicantToken() async throws {
+        let b = MockBackend(lineDelay: .milliseconds(1))
+        let ticket = try await b.register(ApplicantInput(startupName: "T", founderName: "F", oneLiner: nil, photo: nil))
+        do {
+            _ = try await b.betterPlace(applicantId: ticket.applicantId, applicantToken: "nope", cause: .climate)
+            XCTFail("accepted a wrong token")
+        } catch let e as LiveBackend.ServerError {
+            XCTAssertEqual(e.status, 403)
+        }
+    }
+
+    func testDecodesLeaderboardDetail() throws {
+        let json = #"{"entry":{"caseId":"c1","startupName":"48K","founderName":null,"oneLiner":null,"photoUrl":"/api/photos/p9.jpg","totalEur":5.5e7,"totalJailMonths":36,"meltdown":false,"topLaws":["GDPR"],"issuedAt":"2026-10-10T09:00:00Z"},"findings":[{"text":"No DPO.","provision":{"id":"gdpr-37","label":"GDPR Art. 37","title":"t","url":"u"}}]}"#
+        let d = try JSONDecoder().decode(LeaderboardDetail.self, from: Data(json.utf8))
+        XCTAssertEqual(d.entry.photoUrl, "/api/photos/p9.jpg")
+        XCTAssertEqual(d.findings.first?.provision.id, "gdpr-37")
+    }
+
+    func testArcadeScoreMessage() {
+        let s = ArcadeScore(body: ["type": "score", "game": "whack", "score": NSNumber(value: 1240), "rank": "Head of Unit"] as [String: Any])
+        XCTAssertEqual(s?.score, 1240)
+        XCTAssertEqual(s?.shareText, "I scored 1240 as Head of Unit in Whack-a-Model — eurocrat.pro7ocol.com")
+        XCTAssertNil(ArcadeScore(body: ["type": "ready"] as [String: Any]))
+        XCTAssertEqual(Arcade.url(base: URL(string: "https://eurocrat.pro7ocol.com")!).absoluteString, "https://eurocrat.pro7ocol.com/game/?embed=1")
     }
 }

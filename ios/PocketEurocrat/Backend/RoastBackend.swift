@@ -4,7 +4,8 @@ import Foundation
 protocol RoastBackend {
     func personas() async throws -> [Persona]
     func pairs() async throws -> [Pair]
-    func createCase(_ submission: Submission, officers: [String], applicantId: String?) async throws -> CaseTicket
+    /// `applicantId` + `applicantToken` come from `register`; the token authorises attaching the case to that applicant.
+    func createCase(_ submission: Submission, officers: [String], applicantId: String?, applicantToken: String?) async throws -> CaseTicket
     func stream(caseID: String) -> AsyncThrowingStream<RoastEvent, Error>
     func reply(caseID: String, text: String) async throws
     /// Raw recorded audio -> transcript.
@@ -14,7 +15,7 @@ protocol RoastBackend {
 
     // v2
     func register(_ input: ApplicantInput) async throws -> QueueTicket
-    func betterPlace(applicantId: String, cause: BetterPlaceCause) async throws -> BetterPlaceResult
+    func betterPlace(applicantId: String, applicantToken: String?, cause: BetterPlaceCause) async throws -> BetterPlaceResult
     func leaderboard(sort: LeaderboardSort, limit: Int) async throws -> [LeaderboardEntry]
     func leaderboardStream() -> AsyncThrowingStream<LeaderboardEntry, Error>
     func leaderboardDetail(caseID: String) async throws -> LeaderboardDetail
@@ -22,7 +23,7 @@ protocol RoastBackend {
 
 extension RoastBackend {
     func createCase(_ submission: Submission, officers: [String]) async throws -> CaseTicket {
-        try await createCase(submission, officers: officers, applicantId: nil)
+        try await createCase(submission, officers: officers, applicantId: nil, applicantToken: nil)
     }
 }
 
@@ -34,7 +35,12 @@ enum BackendFactory {
             ?? bundle.object(forInfoDictionaryKey: "RoastBackend") as? String
             ?? "mock"
         guard mode == "live" else { return MockBackend() }
+        return LiveBackend(base: baseURL(bundle: bundle))
+    }
+
+    /// Info.plist `RoastBaseURL` (build setting ROAST_BASE_URL); also where the Arcade is served.
+    static func baseURL(bundle: Bundle = .main) -> URL {
         let base = bundle.object(forInfoDictionaryKey: "RoastBaseURL") as? String ?? "https://eurocrat.pro7ocol.com"
-        return LiveBackend(base: URL(string: base)!)
+        return URL(string: base) ?? URL(string: "https://eurocrat.pro7ocol.com")!
     }
 }

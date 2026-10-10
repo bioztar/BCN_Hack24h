@@ -11,7 +11,7 @@ struct QueueView: View {
     var body: some View {
         if let ticket = flow.ticket {
             TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
-                content(ticket, position: position(ticket, now: timeline.date))
+                content(ticket, position: position(ticket, now: timeline.date), now: timeline.date)
             }
             .onAppear { started = Date() }
             .sheet(isPresented: $showCauses) { causeSheet }
@@ -25,8 +25,12 @@ struct QueueView: View {
         return Int(Double(t.position) * pow(1 - p, 2.2))
     }
 
-    private func content(_ t: QueueTicket, position: Int) -> some View {
+    private func content(_ t: QueueTicket, position: Int, now: Date) -> some View {
         VStack(spacing: 18) {
+            // No case stream yet in the queue: the same deterministic race the server will report, from registration.
+            MeanwhileStrip(meanwhile: .estimate(key: t.applicantId,
+                                                elapsedSec: now.timeIntervalSince(flow.registeredAt ?? started)))
+                .padding(.top, 8)
             Spacer()
             Text("Application #\(t.ticket)").font(.footnote.monospaced()).foregroundStyle(.secondary)
             Text("Your position in the queue").font(.headline)
