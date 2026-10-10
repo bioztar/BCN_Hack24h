@@ -60,3 +60,13 @@ export function fmtJail(months: number): string {
   if (r === 0 || y >= 20) return ys;
   return `${ys} ${ms}`;
 }
+
+/** Compact jail for table columns: `8 mo`, `3 yrs`, `3 yrs 11 mo`. */
+export function fmtJailShort(months: number): string {
+  const m = Math.max(0, Math.round(months));
+  if (m === 0) return "no jail";
+  const y = Math.floor(m / 12);
+  const r = m % 12;
+  if (y === 0) return `${r} mo`;
+  return r ? `${y} ${y === 1 ? "yr" : "yrs"} ${r} mo` : `${y} ${y === 1 ? "yr" : "yrs"}`;
+}

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { MELTDOWN_EUR, type LeaderboardEntry, type Provision } from "../src/contract";
 import { compare, funniness, moves, pushCaption, sameDay, tickerPick, toEntry, top, upsert } from "../src/live/board";
-import { applyFine, applyMeltdown, emptyMeter, fmtEurShort, fmtJail, meltdownProgress, type FineEvent } from "../src/live/fines";
+import { applyFine, applyMeltdown, emptyMeter, fmtEurShort, fmtJail,
+  fmtJailShort, meltdownProgress, type FineEvent } from "../src/live/fines";
 import { dayMeanwhile, elapsedText, maxMeanwhile, secondsSinceMidnight, toMeanwhile } from "../src/live/meanwhile";
 import { emptyLive, liveReduce } from "../src/live/case";
 import { toGameTop, toLive, toStats } from "../src/live/api";
@@ -146,5 +147,14 @@ describe("optional route parsers", () => {
     expect(toGameTop({ entries: [{ name: "a", score: 3 }, { player: "b", score: 9 }] })).toEqual({ name: "b", score: 9 });
     expect(toGameTop([{ score: 1 }])).toEqual({ name: "Anonymous applicant", score: 1 });
     expect(toGameTop({ entries: [] })).toBeNull();
+  });
+});
+
+describe("fmtJailShort", () => {
+  it("is compact for the leaderboard column", () => {
+    expect(fmtJailShort(0)).toBe("no jail");
+    expect(fmtJailShort(8)).toBe("8 mo");
+    expect(fmtJailShort(12)).toBe("1 yr");
+    expect(fmtJailShort(47)).toBe("3 yrs 11 mo");
   });
 });

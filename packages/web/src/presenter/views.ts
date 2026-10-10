@@ -3,7 +3,7 @@ import type { BetterPlaceCause, LeaderboardEntry, Persona } from "../contract";
 import { fmtInt, h, safeUrl } from "../dom";
 import { POCKET_URL } from "../env";
 import { compare, moves, tickerPick, top, type BoardSort } from "../live/board";
-import { fmtEurShort, fmtJail, meltdownProgress } from "../live/fines";
+import { fmtEurShort, fmtJail, fmtJailShort, meltdownProgress } from "../live/fines";
 import type { GameId, LiveApi } from "../live/api";
 import { isV2Notice } from "../live/case";
 import { OfficialView } from "../stage/official";
@@ -79,7 +79,7 @@ function row(e: LeaderboardEntry): HTMLElement {
       h("small", null, [e.founderName, e.topLaws.join(" · ")].filter(Boolean).join(" — ")),
     ),
     h("span", { class: "lb-eur" }, fmtEurShort(e.totalEur)),
-    h("span", { class: "lb-jail" }, fmtJail(e.totalJailMonths)),
+    h("span", { class: "lb-jail" }, fmtJailShort(e.totalJailMonths)),
   );
 }
 
@@ -358,7 +358,7 @@ export function caseView(root: HTMLElement, hub: Hub): Dispose {
     sub.replaceChildren(
       ...[
       line ? h("span", { class: "lc-sub-name", style: `--accent:${speaker?.color ?? "#ffd617"}` }, speaker?.name ?? line.speaker) : null,
-      line ? h("span", { class: "lc-sub-text" }, line.text) : h("span", { class: "lc-sub-text dim" }, s.caseId ? "The officials are reviewing your file." : "Waiting for the next applicant. Scan the QR code to volunteer."),
+      line ? h("span", { class: line.text.length > 150 ? "lc-sub-text long" : "lc-sub-text" }, line.text) : h("span", { class: "lc-sub-text dim" }, s.caseId ? "The officials are reviewing your file." : "Waiting for the next applicant. Scan the QR code to volunteer."),
       line?.provisions.length ? h("span", { class: "lc-chips" }, line.provisions.map((p) => h("span", { class: "chip" }, p.label))) : null,
       ].filter((x): x is HTMLSpanElement => !!x),
     );
