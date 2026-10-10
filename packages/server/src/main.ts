@@ -11,7 +11,8 @@ import { NebiusLlm } from "./nebius.js";
 import { Roster } from "./personas.js";
 import { RateLimiter } from "./ratelimit.js";
 import { GitHubIntake } from "./repo.js";
-import { AudioCache, SlngStt, SlngTts, PRIORITY_IDLE } from "./voice.js";
+import { prewarm } from "./prewarm.js";
+import { AudioCache, SlngStt, SlngTts } from "./voice.js";
 import { Wall } from "./wall.js";
 
 if (!process.env.NEBIUS_API_KEY) console.warn("NEBIUS_API_KEY is not set — officials will use canned lines only");
@@ -49,16 +50,8 @@ const app = buildApp({
 await app.listen({ host: process.env.HOST || "0.0.0.0", port: port() });
 console.log(`DG ROAST ministry open on :${port()} — ${roster.specs.length} officials, ${corpus.size} provisions`);
 
-// Pre-render every canned/fallback line (cached by content hash) so fallbacks always have audio.
+// Warm each paired voice (cold start), render the round-1 openers, then every other canned line — all cached by
+// content hash (model, voice, speed and style included), so a voice change at deploy re-renders here.
 if (process.env.SLNG_API_KEY) {
-  const jobs = engine.cannedLines();
-  let next = 0;
-  let ok = 0;
-  const worker = async () => {
-    while (next < jobs.length) {
-      const j = jobs[next++]!;
-      if (await audio.render(j.text, roster.get(j.speaker)!.voice, PRIORITY_IDLE)) ok++;
-    }
-  };
-  void Promise.all([worker(), worker(), worker()]).then(() => console.log(`pre-rendered ${ok}/${jobs.length} canned lines`));
+  void prewarm(engine, roster, audio).then((r) => console.log(`voices warmed ${r.warmed}/${r.voices}; pre-rendered ${r.ok}/${r.total} canned lines (${r.openers} openers first)`));
 }

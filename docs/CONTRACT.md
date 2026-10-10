@@ -335,3 +335,19 @@ Clients (pocket PWA, iOS) keep the token in memory/session storage for the sessi
   totalJailMonthsToday: number, meanwhileToday: Meanwhile }` — Q view counter and the
   day-total MEANWHILE board. `GET /api/stats/stream` SSE pushes it on every change
   (throttled to ≤ 1/s).
+
+## v2 amendment — express mode, appeal, turnover estimate (server, additive)
+
+- `POST /api/case` accepts optional `mode: "staged" | "express"` (default `"staged"`, unchanged). `"express"` is
+  accepted only when the server runs with `EXPRESS_MODE=1` (else 400). The `Case` response echoes `mode` for express cases.
+- Express: ONE `GET /api/case/:id/stream` runs tiers 1→5 (`tier` events in order), 5–7 alternating `line`s
+  (1 per tier, the tier-5 Meanwhile closer, plus the turnover jibe below), `fine`s per cited provision, `meltdown`
+  if crossed, then `verdict`. No `awaiting`; `POST /reply` → 409.
+- `POST /api/case/:id/appeal` `{ text?, applicantToken? }` (token / `x-applicant-token` required when the case has
+  an applicant) → 204 once, after the verdict; the next stream is one short tier-5 round (2 lines + closer), more
+  fines, and a new `verdict`. Second appeal or staged case → 409. Leaderboard/report/badge reflect the new verdict.
+- Turnover: never asked from the applicant. If `submission.revenueEur` is absent and the pitch states none, the
+  server estimates it once per case (TAM × early share, clamped €50k…€5bn, cached) for the %-of-turnover caps;
+  `NoticeV2.turnoverEstimate = { eur, basis }`, and an officer says "The Commission has estimated your turnover
+  generously, as is our custom." in round 1. `revenueEur` is still accepted.
+- `QUEUE_COUNTDOWN_SEC` (server env): `"6"` or `"5-8"` → `QueueTicket.countdownSec` in that range; unset → 30–60.

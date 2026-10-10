@@ -19,6 +19,18 @@ function positive(name: string, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/** QUEUE_COUNTDOWN_SEC: "6" or "5-8" (seconds, inclusive); unset → null (the default 30–60 s). */
+export function queueCountdownSec(env: NodeJS.ProcessEnv = process.env): [number, number] | null {
+  const m = /^\s*(\d+)\s*(?:[-–]|\.\.)?\s*(\d+)?\s*$/.exec(env.QUEUE_COUNTDOWN_SEC ?? "");
+  if (!m) return null;
+  const a = Number(m[1]);
+  const b = m[2] !== undefined ? Number(m[2]) : a;
+  return [Math.min(a, b), Math.max(a, b)];
+}
+
+/** EXPRESS_MODE=1 lets `POST /api/case` accept `mode: "express"`; default off. */
+export const expressModeEnabled = (env: NodeJS.ProcessEnv = process.env) => /^(1|true|on|yes)$/i.test(env.EXPRESS_MODE ?? "");
+
 export const paths = {
   corpus: () => process.env.CORPUS_FILE || path.join(REPO_ROOT, "corpus", "provisions.json"),
   personas: () => path.join(REPO_ROOT, "content", "personas"),

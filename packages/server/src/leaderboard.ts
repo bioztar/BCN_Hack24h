@@ -66,7 +66,8 @@ export class Leaderboard {
       .prepare(
         `INSERT INTO leaderboard (case_id, applicant_id, startup_name, founder_name, one_liner, photo_url, total_eur, total_jail, meltdown, top_laws, findings, issued_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(case_id) DO NOTHING`,
+         ON CONFLICT(case_id) DO UPDATE SET total_eur = excluded.total_eur, total_jail = excluded.total_jail, meltdown = excluded.meltdown, top_laws = excluded.top_laws, findings = excluded.findings, issued_at = excluded.issued_at
+         WHERE leaderboard.total_eur != excluded.total_eur OR leaderboard.total_jail != excluded.total_jail OR leaderboard.meltdown != excluded.meltdown`,
       )
       .run(entry.caseId, applicantId, entry.startupName, entry.founderName, entry.oneLiner, entry.photoUrl, Math.round(entry.totalEur), entry.totalJailMonths, entry.meltdown ? 1 : 0, JSON.stringify(entry.topLaws), JSON.stringify(findings), entry.issuedAt);
     if (Number(r.changes) > 0) this.bus.emit("entry", entry);

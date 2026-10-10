@@ -80,18 +80,27 @@ differently.
 | `sandbox` | Cartesia `Charlotte` (`71a7ad14-091c-4e8e-a314-022ece01c121`) | elegant, delighted |
 | `the-cookie` | a small, soft Fish voice at speed 1.05 | wounded |
 
-## The other paired officers (basement, raid)
+## The other paired officers (basement, raid) — recast 2026-10-10
 
-Stock voices from Deepgram Aura-2 (`deepgram/aura:2` over SLNG's HTTP gateway, `encoding: mp3`, $0.005/min).
-Each is distinct from the others and from the Council's Zeus. Aura-2 has no elderly or synthetic voices, so age and
-"machine" come from the writing and from optional runtime effects. Intro lines: `intro-<id>` in the manifest, also in `content/clip-lines.md`.
+Runtime source of truth: `voice:` in `content/personas/<id>.yaml` (`model`, `voice`, optional `speed` →
+Fish `prosody.speed`, optional `style: elderly` → delivery cues). All over SLNG HTTP (`POST /v1/tts/{model}`);
+Cartesia is WebSocket-only here, so its elderly voices are out.
 
-| Officer | Voice key | Aura-2 id | Why | Delivery / post |
+Catalogue check (docs.slng.ai/models/voices/fish-audio.md): the Fish catalogue tags **no** feminine voice
+older than "Adult" (the only "Senior" is the masculine Jordan, already Formblatt). We auditioned the preview
+samples of every older-named English and German feminine Fish voice and the Aura-2 alternates with an
+audio model; all read 30s–50s. So Oma's age comes from the oldest-reading timbre + slowing + delivery cues.
+
+| Officer | Model | Voice id | Settings | Why |
 |---|---|---|---|---|
-| Oma Gerda (`grandma-gdpr`) | `grandma-gdpr` | `aura-2-cora-en` | smooth, melodic, caring storyteller | asks consent before every line; short pauses |
-| AUDITOR-9000 (`auditor-9000`) | `auditor-9000` | `aura-2-orion-en` | calm, polite, informative: the flattest male read | terse "Status: …" fragments; optional runtime bit-crush + dot-matrix SFX |
-| Inspector de Vries (`de-vries`) | `de-vries` | `aura-2-arcas-en` | clear, natural male | clipped sentences; optional radio band-pass + squelch |
-| The Cookie (`the-cookie`) | `the-cookie` | `aura-2-delia-en` | young, breathy, cheerful, so it can sound wounded | apologetic restarts ("Hi! Sorry. Hi.") |
+| Oma Gerda (`grandma-gdpr`) | `slng/fish/tts:s2.1-pro` | `15259c52cf5d41c28ea4394080e5e593` ("Marion") | `speed: 0.85`, `style: elderly` | oldest-reading female sample (40–50, higher, thinner pitch); cues: `[sigh]` opener, `…` pauses between sentences, a "dear" on the first sentence (spoken text only, not the displayed line) |
+| AUDITOR-9000 (`auditor-9000`) | `slng/fish/tts:s2.1-pro` | `0b96bf70a20d47f6b9e825d9cfe0e8c8` ("Elin") | `speed: 0.9` | the only stock voice the audit described as "synthetic digital assistant"; flat, slightly accented — the machine (was Aura Orpheus: friendly, 2/10 robotic) |
+| Inspector de Vries (`de-vries`) | `slng/fish/tts:s2.1-pro` | `bf322df2096a46f18c579d0baa36f41d` ("Adrian") | `speed: 1.15` | deep, sped up → terse and clipped (was Aura Mars: smooth, patient — the opposite of gruff) |
+| The Cookie (`the-cookie`) | `deepgram/aura:2` | `aura-2-iris-en` | — | kept: brightest/thinnest of the auditioned voices (4/10 "small"), cheerful enough to play wounded |
 
-Alternates if one disappoints: Oma `aura-2-pandora-en` (British, calm, breathy); AUDITOR `aura-2-pluto-en`;
-de Vries `aura-2-odysseus-en`; Cookie `aura-2-luna-en`.
+Alternates: Oma — Fish "Linda" `94bf3b7fe581422e89d6db3653a61a38` (warm, mid-40s) or German Fish "Melanie"
+`d979e92f9c8a489fa581f55f6b9e48da` (40–50, German accent); AUDITOR — Aura `aura-2-orpheus-en`;
+de Vries — Fish "Richard"; Cookie — Fish "Sheila".
+
+Changing a voice changes the audio hash (model, voice, speed and style are all hashed), so stale audio is
+never reused; the server warms every paired voice and re-renders the openers at boot.

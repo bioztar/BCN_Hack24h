@@ -3,7 +3,7 @@
  * once in a worker thread (pre-rendered when the verdict is published) and persisted under
  * `reportsDir`; later requests are served from disk. `?mock=1` (or case id `mock`) serves the fixture.
  */
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -36,6 +36,8 @@ export interface ReportDeps {
 export interface ReportRoutes {
   /** Renders both files for a published case in the background (called when the verdict is set). */
   prerender(caseId: string): Promise<void>;
+  /** Drop rendered files for a case whose verdict changed (express appeal). */
+  forget(caseId: string): void;
 }
 
 type Kind = "pdf" | "png";
@@ -137,6 +139,13 @@ export function registerReportRoutes(app: FastifyInstance, d: ReportDeps): Repor
   app.get("/api/case/:caseId/badge.png", serve("png"));
 
   return {
+    forget(caseId) {
+      for (const kind of ["png", "pdf"] as const) {
+        mem.delete(`${kind}:${caseId}`);
+        const file = d.reportsDir ? path.join(d.reportsDir, `${caseId.replace(/[^A-Za-z0-9_-]/g, "_")}.${LAYOUT}.${kind}`) : null;
+        if (file && existsSync(file)) rmSync(file, { force: true });
+      }
+    },
     async prerender(caseId) {
       const res = resolve(caseId, false);
       if (!res.ok) return;

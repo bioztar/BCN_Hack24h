@@ -3,6 +3,7 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypt
 import sharp from "sharp";
 import type { ApplicantInput, BetterPlaceCause, BetterPlaceResult, QueueTicket } from "@dg-roast/shared";
 import type { Db } from "./db.js";
+import { queueCountdownSec } from "./config.js";
 import { pick } from "./seed.js";
 
 export const CAUSES: readonly BetterPlaceCause[] = ["climate", "lgbtq", "refugees", "homeless", "ukraine", "rare-diseases", "gender-equality", "animal-welfare", "accessibility", "ai-safety"];
@@ -77,6 +78,11 @@ export interface Applicant {
 }
 
 const tokenHash = (token: string) => createHash("sha256").update(token).digest();
+
+function countdown(r: () => number): number {
+  const [lo, hi] = queueCountdownSec() ?? [30, 60];
+  return lo + Math.floor(r() * (hi - lo + 1));
+}
 
 export class InputError extends Error {
   constructor(
@@ -156,7 +162,7 @@ export class ApplicantStore {
       caseId: null,
       createdAt: this.now(),
     };
-    const ticket: QueueTicket = { applicantId: applicant.id, applicantToken: token, ticket: applicant.ticket, position: applicant.position, etaText: pick(ETAS, r), countdownSec: 30 + Math.floor(r() * 31) };
+    const ticket: QueueTicket = { applicantId: applicant.id, applicantToken: token, ticket: applicant.ticket, position: applicant.position, etaText: pick(ETAS, r), countdownSec: countdown(r) };
     this.db
       .prepare("INSERT INTO applicants (id, ticket, startup_name, founder_name, one_liner, position, cause, has_photo, created_at, token_hash, photo_id) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)")
       .run(applicant.id, applicant.ticket, startupName, founderName, oneLiner, applicant.position, photo ? 1 : 0, applicant.createdAt, tokenHash(token).toString("hex"), applicant.photoId);

@@ -137,7 +137,7 @@ One tldr row per law listed. 3 to 6 recommendations, concrete and specific to th
 
 export function buildNoticeV2(
   base: Notice,
-  o: { caseId: string; applicant: { id: string; startupName: string; founderName: string } | null; meter: FineMeter; extras: Extras; meanwhile?: Meanwhile },
+  o: { caseId: string; applicant: { id: string; startupName: string; founderName: string } | null; meter: FineMeter; extras: Extras; meanwhile?: Meanwhile; turnoverEstimate?: { eur: number; basis: string } },
 ): NoticeV2 {
   const startupName = o.applicant?.startupName ?? base.startup;
   return {
@@ -154,5 +154,6 @@ export function buildNoticeV2(
     reportUrl: `/api/case/${o.caseId}/report.pdf`,
     badgeUrl: `/api/case/${o.caseId}/badge.png`,
     ...(o.meanwhile ? { meanwhile: o.meanwhile } : {}),
+    ...(o.turnoverEstimate ? { turnoverEstimate: { eur: o.turnoverEstimate.eur, basis: o.turnoverEstimate.basis } } : {}),
   };
 }
