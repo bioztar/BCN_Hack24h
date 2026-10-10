@@ -179,17 +179,35 @@ private struct SubtitleBar: View {
     let line: RoastLine
     let tier: String?
 
+    /// The officer's accent colour, lifted toward white so the dark ones (navy, forest) read on black.
+    private var accent: Color {
+        guard let p = Roster.officers.first(where: { $0.id == line.speaker }) else { return .yellow }
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
+        UIColor(hex: p.color).getRed(&r, green: &g, blue: &b, alpha: nil)
+        let lift: CGFloat = 0.55
+        return Color(red: r + (1 - r) * lift, green: g + (1 - g) * lift, blue: b + (1 - b) * lift)
+    }
+
+    /// Cinema subtitles: big bold white on black, speaker name in their colour above.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text([Roster.name(line.speaker), tier].compactMap { $0 }.joined(separator: " · "))
-                .font(.caption2.weight(.bold)).foregroundStyle(.secondary)
-            Text(line.text).font(.callout)
-            if let p = line.provisions.first { Text(p.label).font(.caption2.monospaced()).foregroundStyle(.orange) }
+        VStack(spacing: 6) {
+            Text(Roster.name(line.speaker).uppercased())
+                .font(.footnote.weight(.heavy)).tracking(1)
+                .foregroundStyle(accent)
+            Text(line.text)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(4)
+                .minimumScaleFactor(0.7)
+            if let p = line.provisions.first { Text(p.label).font(.caption.monospaced().weight(.semibold)).foregroundStyle(.orange) }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .padding(.horizontal, 12).padding(.bottom, 6)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(Color.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 12).padding(.bottom, 8)
+        .id(line.id)
+        .transition(.opacity)
     }
 }
 
